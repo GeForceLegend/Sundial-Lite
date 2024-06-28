@@ -1,0 +1,368 @@
+# Sundial Language File : Simplified Chinese
+
+screen.Texture=纹理
+screen.Texture.comment=纹理分辨率与PBR、法线、视差等
+screen.Water=水
+screen.Normal=法线
+screen.Normal.comment=使用纹理包提供的法线纹理修改光学上微表面的朝向
+screen.Parallax=视差
+screen.Parallax.comment=使用纹理包提供的高度图制造凹凸的效果
+screen.Specular=PBR
+screen.Specular.comment=使用纹理包提供的PBR纹理赋予表面不同的物理特性
+screen.PathTrace=路径追踪
+screen.PathTrace.comment=路径追踪系统、全局光照与反射
+screen.GlobalIllumination=全局光照
+screen.GlobalIllumination.comment=全局光照与辐照度缓存
+screen.GIDenoiser=全局光照降噪器
+screen.GIDenoiser.comment=全局光照的降噪器的相关设置
+screen.Reflection=反射
+screen.ScreenSpaceReflection=屏幕空间反射
+screen.Shadow=阴影
+screen.Lighting=光照
+screen.Atmosphere=大气效果
+screen.Atmosphere.comment=体积云、体积光与各种雾气等
+screen.VolumetricLight=体积光
+screen.VolumetricFog=体积雾
+screen.CommonFog=普通雾气
+screen.Cloud=云
+screen.BlockyCloud=方块云
+screen.RealisticCloudQuality=体积云质量
+screen.RealisticCloudShape=体积云形状
+screen.RealisticCloudLighting=体积云光照
+screen.PostProcessing=后处理
+screen.MotionBlur=动态模糊
+screen.ToneMapping=色调映射
+screen.ToneMapping.comment=调整画面的色调与映射曲线
+screen.Uchimura=Uchimura设置
+screen.AgX=AgX设置
+screen.Exposure=曝光
+screen.DepthOfField=景深
+screen.ChromaticDispersion=色散
+screen.Weather=天气
+screen.ModSupport=Mod支持
+screen.ModSupport.comment=自动检测Mod方块的属性
+screen.Experimental=实验性效果
+
+# Texture
+option.TEXTURE_RESOLUTION=纹理分辨率
+option.TEXTURE_RESOLUTION.comment=将此选项调整为当前资源包的分辨率或者自动检测. 影响视差、路径追踪、反射和各向异性过滤的渲染
+value.TEXTURE_RESOLUTION.0=自动检测
+option.ENTITY_TEXTURE_RESOLUTION=实体纹理分辨率
+option.ENTITY_TEXTURE_RESOLUTION.comment=将此选项调整为当前资源包的分辨率. 无法自动检测实体的纹理分辨率. 影响视差和各向异性过滤的渲染
+option.ANISOTROPIC_FILTERING_QUALITY=各向异性过滤
+option.ANISOTROPIC_FILTERING_QUALITY.comment=请使用此设置而非Optifine/显卡驱动内的各向异性过滤. Optifine/显卡驱动内的各向异性过滤会导致显示错误
+value.ANISOTROPIC_FILTERING_QUALITY.0=关
+value.ANISOTROPIC_FILTERING_QUALITY.1=随机采样
+value.ANISOTROPIC_FILTERING_QUALITY.2=2x
+value.ANISOTROPIC_FILTERING_QUALITY.4=4x
+value.ANISOTROPIC_FILTERING_QUALITY.8=8x
+value.ANISOTROPIC_FILTERING_QUALITY.16=16x
+value.ANISOTROPIC_FILTERING_QUALITY.32=32x
+option.REFRACTION_STRENGTH=折射强度
+# Normal
+option.NORMAL_STRENGTH=法线强度
+option.NORMAL_FORMAT=法线格式
+option.NORMAL_FORMAT.comment=LabPBR格式使用法线的xy值重构z值，ClassicPBR直接归一化法线的xyz值
+option.PARALLAX_BASED_NORMAL=基于视差的法线
+option.PARALLAX_BASED_NORMAL.comment=开启视差后，存在视差深度时，使用基于视差深度生成的法线代替法线纹理采样. 会覆盖平滑法线
+option.SMOOTH_NORMAL=平滑法线
+option.SMOOTH_NORMAL.comment=平滑化法线而非每个纹理像素一个固定值. 存在视差深度时会被基于视差的法线替代
+# Parallax
+option.PARALLAX=视差
+option.SMOOTH_PARALLAX=平滑视差
+option.SMOOTH_PARALLAX.comment=使视差呈现坡度而非一个个立方体. 会被体素视差选项覆盖
+option.VOXEL_PARALLAX=体素视差
+option.VOXEL_PARALLAX.comment=使用体素步进的方式计算视差，能避免传统视差精度问题产生的片状边缘. 会覆盖平滑视差，适合于低分辨率纹理包
+option.ENTITY_PARALLAX=实体视差
+option.PARALLAX_DEPTH=视差深度
+option.PARALLAX_QUALITY=视差质量
+option.PARALLAX_QUALITY.comment=能提升视差精度，但是性能损耗较大. 能缓解未开启体素视差时的片状边缘现象.
+option.PARALLAX_MAX_REFINEMENTS=视差精度
+option.PARALLAX_MAX_REFINEMENTS.comment=能提升视差精度且性能损耗较小，但不能缓解片状边缘现象. 不会影响体素视差
+# Specular
+option.RAIN_WET=雨天地面反光
+option.RAIN_WET.comment=雨天露天地面增加光滑度模拟积水效果. 低质量使用一致的光滑度. 高质量使用噪声模拟地面的水洼. 高质量在雨天会严重影响性能
+value.RAIN_WET.0=关
+value.RAIN_WET.1=低
+value.RAIN_WET.2=高
+option.SUBSERFACE_SCATTERING_STRENTGH=次表面散射强度
+option.SPECULAR_FORMAT=PBR格式
+option.SPECULAR_FORMAT.comment=LabPBR格式为R光滑度G反射强度B孔隙度/次表面散射A发光强度. ClassicPBR格式为R光滑度G金属性B发光强度. BedrockRTX格式为R金属性G发光强度B粗糙度
+option.SPECULAR_EMISSIVE=PBR发光
+option.SPECULAR_EMISSIVE.comment=只影响PBR纹理的发光，不会影响预编码的光源
+option.HARDCODED_EMISSIVE=预编码光源
+option.HARDCODED_EMISSIVE.comment=使用预编码的光源. 可以在使用部分PBR纹理时关闭以提升纹理表现
+option.LABPBR_F0=LabPBR F0
+option.LABPBR_F0.comment=使用LabPBR的F0而非金属度，对以F0绘制的资源包有更好的效果
+option.HARDCODED_METAL=LabPBR硬编码金属
+option.HARDCODED_METAL.comment=使用LabPBR标准硬编码的金属属性. 需要资源包支持
+option.LABPBR_POROSITY=LabPBR孔隙度
+option.LABPBR_POROSITY.comment=LabPBR的孔隙度，能影响雨天地面变湿的程度，也能用于计算次表面散射
+option.LABPBR_TEXTURE_AO=LabPBR纹理环境光遮蔽
+option.LABPBR_TEXTURE_AO.comment=LabPBR的纹理环境光遮蔽，会让纹理的部分像素变暗. 除非确认纹理包支持此选项，不建议开启
+# Water
+option.WATER_TYPE=水面样式
+value.WATER_TYPE.0=默认
+value.WATER_TYPE.1=原版
+option.WATER_WAVE_SCALE=水波缩放
+option.WATER_WAVE_HEIGHT=水波高度
+option.WATER_WAVE_SPEED=水波速度
+
+# PathTrace
+option.PATH_TRACE_GEOMETRY_QUALITY=路径追踪几何体质量
+option.PATH_TRACE_GEOMETRY_QUALITY.comment=较低的质量会忽略一部分硬编码几何形状的计算
+option.QUALITY_CUTOUT_TRACE=高质量半透明计算
+option.QUALITY_CUTOUT_TRACE.comment=开启时会考虑铁栏杆、玻璃板等方块的所有面. 关闭后只会在距离玩家最近的面上采样纹理
+option.HIGH_PRECISION_VOXEL_TEXCOORD=高精度体素纹理坐标
+option.HIGH_PRECISION_VOXEL_TEXCOORD.comment=使用更高的精度存储体素的纹理坐标，但是会增加显存消耗. 关闭后，使用部分完成度较高但是不完全的高清纹理时，使用原版纹理的方块可能会读取到错误的纹理. 仅在1.16.5及以上Minecraft版本中有效
+# GlobalIllumination
+option.GI_SAMPLES=全局光照采样数
+option.GI_MAX_STEP=全局光照最大步进次数
+option.MAX_BLENDED_FRAMES=最大混合帧数
+option.MAX_BLENDED_FRAMES.comment=混合GI时的最大混合帧数. 更高的值能减少GI的噪点. 更低的值能提升GI响应速度
+option.IRRADIANCE_CACHE_SAMPLES=辐照度缓存采样数
+option.IRRADIANCE_CACHE_MAX_STEP=辐照度缓存最大步进次数
+option.CLOUD_IN_GI=全局光照中计算云光
+option.DISTANCE_GI_CULLING=远距离光照剔除
+option.DISTANCE_GI_CULLING.comment=只影响辐照度缓存，会降低距离过远的辐照度缓存采样的亮度
+# Reflection
+option.REFLECTION_MAX_STEP=反射最大步进次数
+option.REFLECTION=反射
+option.FULL_REFLECTION=完整反射
+option.FULL_REFLECTION.comment=开启后只要不是完全粗糙的表面都会计算反射. 开启PBR资源包时对性能影响巨大
+option.SCREEN_DATA_COVER=屏幕空间数据覆盖
+option.SCREEN_DATA_COVER.comment=在反射中使用屏幕空间内可用gbuffer数据覆盖获取到的体素表面信息. 由于架构原因仅能在不透明反射上使用
+option.REFLECTION_FILTER=反射过滤
+option.CLOUD_IN_REFLECTION=反射中渲染云
+option.SMOOTH_IRRADIANCE_CACHE=平滑辐照度缓存
+# GIDenoiser
+option.GI_DENOISER_NORMAL_STRICTNESS=法线严格度
+option.GI_DENOISER_NORMAL_STRICTNESS.comment=进行降噪时对法线判定的严格程度. 较高的值会使法线纹理产生的明暗更清晰，但可能会增加噪点
+option.SHARP_GI_FILTER=锐利光照过滤
+option.SHARP_GI_FILTER.comment=光照过滤的结果会更加锐利，噪点更少，并且性能略好. 但是光照不明显的地方遮挡可能会更加模糊，并且可能不符合一些人的喜好
+# ScreenSpaceReflection
+option.SCREEN_SPACE_REFLECTION=屏幕空间反射
+option.SCREEN_SPACE_REFLECTION.comment=在光线追踪反射未命中时才会调用
+option.SCREEN_SPACE_REFLECTION_STEP=屏幕空间反射步进次数
+option.SCREEN_SPACE_REFLECTION_REFINEMENTS=屏幕空间反射精度
+
+# Shadow
+option.shadowMapResolution=阴影分辨率
+option.shadowMapResolution.comment=不会提高实际阴影的质量，能够提升用于路径追踪的体素化范围. 对性能影响极大
+option.shadowDistance=阴影范围
+option.shadowDistance.comment=以降低近处阴影质量为代价让更远的距离渲染阴影并提高远处阴影质量. 用于路径追踪的体素化范围也受此设置影响
+option.SHADOW_BIAS=阴影形变
+option.SHADOW_BIAS.comment=拉高此设置会提升近处阴影质量并降低远处阴影质量. 拉低此设置则反之
+option.sunPathRotation=太阳轨迹角度
+option.sunPathRotation.comment=太阳轨迹相较于原版的旋转角度
+option.PCSS_SAMPLES=软阴影采样数
+option.PCSS=软阴影
+option.SCREEN_SPACE_SHADOW=屏幕空间衔接阴影
+option.PATH_TRACED_CONTACT_SHADOW=路径追踪衔接阴影
+option.TRANSPARENT_SHADOW=半透明物体阴影
+option.WATER_CAUSTIC=水下焦散
+option.CLOUD_SHADOW=云影
+option.LIGHT_LEAKING_FIX=漏光修复
+option.LIGHT_LEAKING_FIX.comment=修复地底漏光的情况. 会导致较深水底没有焦散、大型建筑阴影出错等问题. 建议非必要不使用
+
+# Lighting
+option.MOD_LIGHT_DETECTION=模组光源检测
+option.MOD_LIGHT_DETECTION.comment=将所有方块光照等级为最高的表面视为光源. 可能会产生意料之外的光源
+option.SUNLIGHT_BRIGHTNESS=日光亮度
+option.NIGHT_BRIGHTNESS=夜晚亮度
+option.NIGHT_VISION_BRIGHTNESS=夜视亮度
+# LightColor
+option.LIGHT_BRIGHTNESS=光源亮度
+option.LIGHT_COLOR_R=光源颜色：红
+option.LIGHT_COLOR_G=光源颜色：绿
+option.LIGHT_COLOR_B=光源颜色：蓝
+
+# Atmosphere
+option.ATMOSPHERE_VIEW_SAMPLE=大气散射视角方向采样数
+option.VOLUMETRIC_LIGHT=体积光
+option.VOLUMETRIC_FOG=体积雾
+option.ATMOSPHERE_SCATTERING_FOG=大气散射雾
+option.ATMOSPHERE_SCATTERING_FOG.comment=与体积光或体积雾不同. 如果不喜欢刚进入黑暗室内时的蓝色雾气可以关闭此选项
+# VolumetricLight
+option.VL_STRENGTH=体积光强度
+option.VL_SAMPLES=体积光采样数
+option.MORNING_VL_STRENGTH=日出日落体积光强度
+option.NOON_VL_STRENGTH=正午半夜体积光强度
+# VolumetricFog
+option.VOLUMETRIC_FOG_AMOUNT=体积雾数量
+option.VOLUMETRIC_FOG_DENSITY=体积雾密度
+option.VOLUMETRIC_FOG_CENTER_HEIGHT=体积雾中心高度
+option.VOLUMETRIC_FOG_THICKNESS=体积雾厚度
+option.VOLUMETRIC_FOG_MORNING_DENSITY=日出日落体积雾密度
+option.VOLUMETRIC_FOG_NOON_DENSITY=正午半夜体积雾密度
+option.VOLUMETRIC_FOG_SCALE=体积雾缩放
+option.VOLUMETRIC_FOG_OCTAVES=体积雾噪声层数
+option.CLOUD_REALISTIC_OCTAVES.comment=噪声层数越多体积雾细节越多. 影响性能
+option.VOLUMETRIC_FOG_OCTAVE_SCALE=体积雾噪声每层缩放
+option.VOLUMETRIC_FOG_OCTAVE_SCALE.comment=每一层噪声相较上一层的大小缩放
+option.VOLUMETRIC_FOG_OCTAVE_FADE=体积雾噪声每层减淡
+option.VOLUMETRIC_FOG_OCTAVE_FADE.comment=每一层噪声相较上一层的权重减淡
+# CommonFog
+option.WATER_ABSORPTION_R=水雾吸收系数：红色
+option.WATER_ABSORPTION_R.comment=系数越大，水雾对该颜色的吸收越强
+option.WATER_ABSORPTION_G=水雾吸收系数：绿色
+option.WATER_ABSORPTION_G.comment=系数越大，水雾对该颜色的吸收越强
+option.WATER_ABSORPTION_B=水雾吸收系数：蓝色
+option.WATER_ABSORPTION_B.comment=系数越大，水雾对该颜色的吸收越强
+option.SNOW_FOG_DENSITY=细雪雾密度
+option.SNOW_FOG_DENSITY.comment=影响细雪内的能见度和细雪内散射的强度
+option.LAVA_FOG_DENSITY=岩浆雾密度
+option.LAVA_FOG_DENSITY.comment=影响岩浆内的能见度
+option.LAVA_FOG_BRIGHTNESS=岩浆雾亮度
+option.LAVA_FOG_BRIGHTNESS.comment=影响岩浆内雾气的亮度
+option.NETHER_FOG_DENSITY=下界雾密度
+option.NETHER_FOG_DENSITY.comment=影响下界的能见度
+option.NETHER_FOG_BRIGHTNESS=下界雾亮度
+option.NETHER_FOG_BRIGHTNESS.comment=影响下界雾气的亮度
+option.END_FOG_DENSITY=末地雾密度
+option.END_FOG_DENSITY.comment=影响末地的能见度
+option.END_FOG_BRIGHTNESS=末地雾亮度
+option.END_FOG_BRIGHTNESS.comment=影响末地雾气的亮度
+option.END_GALAXY_AMOUNT=末地星星数量
+option.END_GALAXY_BRIGHTNESS=末地星星亮度
+
+# Cloud
+option.CLOUD_TYPE=云朵类型
+value.CLOUD_TYPE.0=无
+value.CLOUD_TYPE.1=方块云
+value.CLOUD_TYPE.2=体积云
+option.CLOUD_SCALE=云朵大小
+option.CLOUD_SPEED=云朵速度
+# BlockyCloud
+option.CLOUD_BLOCKY_MAX_SAMPLES=方块云最大采样数
+option.CLOUD_BLOCKY_LIGHT_SAMPLES=方块云光照采样数
+option.CLOUD_BLOCKY_AMOUNT=方块云数量
+option.CLOUD_BLOCKY_HEIGHT=方块云高度
+option.CLOUD_BLOCKY_THICKNESS=方块云厚度
+option.CLOUD_BLOCKY_FADE_DISTANCE=方块云消散距离
+option.CLOUD_BLOCKY_FADE_SPEED=方块云消散速度
+# RealisticCloudQuality
+option.CLOUD_REALISTIC_HQ_SAMPLES=高质量体积云采样数
+option.CLOUD_REALISTIC_HQ_SAMPLES.comment=用于体积云的直接渲染及反射内渲染
+option.CLOUD_REALISTIC_LQ_SAMPLES=低质量体积云采样数
+option.CLOUD_REALISTIC_LQ_SAMPLES.comment=用于GI内体积云的渲染及云影
+option.CLOUD_REALISTIC_SHADOWLIGHT_SAMPLES=体积云阴影光照采样数
+option.CLOUD_REALISTIC_SHADOWLIGHT_SAMPLES.comment=日光与月光的光照采样数
+option.CLOUD_REALISTIC_SKYLIGHT_SAMPLES=体积云天空光照采样数
+option.CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES=体积云阴影光照噪声层数
+option.CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES.comment=计算体积云的阴影光照内对云进行采样时所用的噪声层数
+option.CLOUD_REALISTIC_SKYLIGHT_OCTAVES=体积云天空光照噪声层数
+option.CLOUD_REALISTIC_SKYLIGHT_OCTAVES.comment=计算体积云的天空光照内对云进行采样时所用的噪声层数
+# RealisticCloudShape
+option.CLOUD_REALISTIC_OCTAVES=体积云噪声层数
+option.CLOUD_REALISTIC_OCTAVES.comment=噪声层数越多体积云细节越多. 影响性能
+option.CLOUD_REALISTIC_DENSITY=体积云密度
+option.CLOUD_REALISTIC_DENSITY.comment=体积云在计算散射时的密度. 较低的密度会让体积云看起来更透明
+option.CLOUD_REALISTIC_OCTAVE_SCALE=体积云噪声每层缩放
+option.CLOUD_REALISTIC_OCTAVE_SCALE.comment=每一层噪声相较上一层的大小缩放
+option.CLOUD_REALISTIC_OCTAVE_FADE=体积云噪声每层减淡
+option.CLOUD_REALISTIC_OCTAVE_FADE.comment=每一层噪声相较上一层的权重减淡
+option.CLOUD_REALISTIC_AMOUNT=体积云数量
+option.CLOUD_REALISTIC_AMOUNT.comment=有云部分与晴朗部分的比重
+option.CLOUD_REALISTIC_RAIN_INCREAMENT=体积云雨天增量
+option.CLOUD_REALISTIC_RAIN_INCREAMENT.comment=下雨或下雪时体积云增加的量
+option.CLOUD_REALISTIC_HEIGHT=体积云底面高度
+option.CLOUD_REALISTIC_THICKNESS=体积云厚度
+option.CLOUD_REALISTIC_CENTER=体积云中央高度
+option.CLOUD_REALISTIC_CENTER.comment=体积云“最宽”的部分所处的相对高度
+option.CLOUD_REALISTIC_HARDNESS=体积云硬度
+option.CLOUD_REALISTIC_HARDNESS.comment=硬度越高，体积云边缘稀疏区域的厚度越薄
+# RealisticCloudLighting
+option.CLOUD_REALISTIC_BASIC_SHADOWLIGHT=体积云基础阴影光照
+option.CLOUD_REALISTIC_BASIC_SHADOWLIGHT.comment=用于模拟地面反射到云底的光线
+option.CLOUD_REALISTIC_BASIC_SKYLIGHT=体积云基础天空光照
+option.CLOUD_REALISTIC_BASIC_SKYLIGHT.comment=用于模拟地面反射到云底的光线
+option.CLOUD_REALISTIC_SHADOWLIGHT_STEPSCALE=体积云阴影光照采样步长缩放
+option.CLOUD_REALISTIC_SKYLIGHT_STEPSCALE=体积云天空光照采样步长缩放
+option.CLOUD_REALISTIC_FADE_DISTANCE=体积云消散距离
+
+# PostProcessing
+option.TAA=时间性抗锯齿
+option.DISTORTION_STRENGTH=畸变强度
+option.DISTORTION_STRENGTH.comment=正值会产生桶状畸变. 负值会产生枕状畸变
+option.BLOOM_INTENSITY=泛光强度
+option.VIGNETTE_STRENGTH=屏幕暗角强度
+# MotionBlur
+option.MOTION_BLUR=动态模糊
+option.MOTION_BLUR_STRENGTH=动态模糊强度
+option.MOTION_BLUR_QUALITY=动态模糊质量
+# ToneMapping
+option.TONEMAPPING=色调映射曲线
+option.TONEMAPPING.comment=不同的色调映射曲线有不同的视觉效果. 本光影默认设置基于uchimura色调映射
+option.GAMMA=伽马值
+option.SATURATION=饱和度
+option.COLOR_TEMPERATURE=色温
+# Uchimura
+option.MINIMUM_BRIGHTNESS=最小亮度
+option.BLACK_TIGHTNESS=暗部暗度
+option.CONTRAST=对比度
+# AgX
+option.AGX_LOOK=AgX风格
+value.AGX_LOOK.0=默认
+value.AGX_LOOK.1=金黄
+value.AGX_LOOK.2=简洁
+option.AGX_EV_MIN=AgX最小曝光度
+option.AGX_EV_MAX=AgX最大曝光度
+# Exposure
+option.EXPOSURE_VALUE=曝光量
+option.EXPOSURE_VALUE.comment=曝光量与实际亮度的关系为 `实际亮度 = 2 ^ 曝光量`
+option.AVERAGE_EXPOSURE_CENTER_WEIGHT=平均曝光中心权重
+option.AVERAGE_EXPOSURE_CENTER_WEIGHT.comment=平均曝光计算中屏幕中心区域的亮度权重. 更低的值会使整个屏幕的亮度权重更均匀. 更高的值会使屏幕中心区域的亮度权重更高
+option.AVERAGE_EXPOSURE_STRENGTH=平均曝光强度
+option.AVERAGE_EXPOSURE_STRENGTH.comment=平均曝光使亮度往中间值靠拢的程度. 0.0等同于禁用平均曝光. 1.0会让整体屏幕亮度恒定不变
+option.AVERAGE_EXPOSURE_TENDENCY=平均曝光倾向
+option.AVERAGE_EXPOSURE_TENDENCY.comment=画面明暗对比大时各亮度的权重. 更高的值会让明暗对比大时画面更亮. 更低的值会让明暗对比大时画面更暗
+# DepthOfField
+option.DEPTH_OF_FIELD=景深
+option.FOCUS_MODE=对焦模式
+value.FOCUS_MODE.0=自动对焦
+value.FOCUS_MODE.1=手动对焦
+option.HAND_DOF=手部景深
+option.APERTURE_CORROSION=口径蚀
+option.APERTURE_CORROSION.comment=模拟镜头口径对光线的遮挡导致景深弥散圆缺失的效果
+option.DOF_DEPTH_TEXTURE=景深深度纹理
+option.DOF_DEPTH_TEXTURE.comment=用于计算景深的深度纹理. depthtex0 包括了半透明物体的深度. depthtex1 不包括半透明物体的深度
+option.COC_SPREAD_SAMPLES=弥散圆扩散采样数
+option.DOF_SAMPLES=景深采样数
+option.FOCAL_LENGTH=镜头焦距
+option.APERTURE_DIAMETER_SCALE=光圈直径乘数
+option.CENTER_DEPTH_SMOOTHNESS=自动对焦平滑度
+option.CENTER_DEPTH_SMOOTHNESS.comment=自动对焦的平滑度，数值越高对焦越慢
+option.MANUAL_FOCUS_DEPTH=手动对焦深度
+option.MANUAL_FOCUS_DEPTH.comment=仅在手动对焦模式下有用
+option.LENS_DIAMETER_SCALE=镜头口径乘数
+option.LENS_DIAMETER_SCALE.comment=影响口径蚀起始距离和口径蚀圆的大小
+option.APERTURE_CORROSION_OFFSET=口径蚀偏移
+option.APERTURE_CORROSION_OFFSET.comment=口径蚀的偏移大小. 调至过大可能会导致屏幕边缘失去景深效果
+# ChromaticDispersion
+option.CHROMATIC_DISPERSION_R=红色色散强度
+option.CHROMATIC_DISPERSION_R.comment=较大的值会让红色向外偏
+option.CHROMATIC_DISPERSION_G=绿色色散强度
+option.CHROMATIC_DISPERSION_G.comment=较大的值会让绿色向外偏
+option.CHROMATIC_DISPERSION_B=蓝色色散强度
+option.CHROMATIC_DISPERSION_B.comment=较大的值会让蓝色向外偏
+
+# Weather
+option.RAIN_DROP_SIZE=雨滴大小
+option.RAIN_DROP_SIZE.comment=只影响雨滴宽度，不影响雨滴长度
+option.RAIN_DROP_AMOUNT=雨滴数量
+
+# ModSupport
+option.MOD_WATER_DETECTION=模组液体检测
+option.MOD_WATER_DETECTION.comment=将所有拥有顶点颜色的半透明方块视为液体. 可能会产生预期之外的液体表面
+
+# Experimental
+option.AUTHOR=作者
+option.SKYLIGHT_FIX=天空光照修复
+option.SKYLIGHT_FIX.comment=[实验性]修复1.14开始的完整方块光源周围天空光照等级下降导致的一系列问题
+option.GLOWING_OVERLAY=发光实体遮罩
+option.GLOWING_OVERLAY.comment=让拥有发光效果的实体透过其他物体渲染. 会严重影响景深（DoF）
+option.UNDERGROUND_MODE=地底模式
+option.UNDERGROUND_MODE.comment=完全禁用所有天空与阳光的渲染. 在下界与末地恒定启用
+option.SHADOW_BIAS_FIX=阴影形变补偿
+option.SHADOW_BIAS_FIX.comment=补偿光栅化导致的形变后的阴影映射内预期深度与实际深度不一致的问题. 能部分修复大尺寸表面上的阴影问题. 会影响性能
