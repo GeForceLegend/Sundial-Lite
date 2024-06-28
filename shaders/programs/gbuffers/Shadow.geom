@@ -14,13 +14,6 @@ out vec3 worldNormal;
 out vec2 texcoord;
 out vec2 shadowOffset;
 
-#include "/settings/GlobalSettings.glsl"
-#include "/libs/Uniform.glsl"
-#include "/libs/Common.glsl"
-
-const int shadowMapResolution = 4096; // [4096 8192 16384]
-const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
-
 void main() {
     #ifdef SHADOW_AND_SKY
         if (vMidTexCoord[0] == vMidTexCoord[1] && vMidTexCoord[1] == vMidTexCoord[2]) {

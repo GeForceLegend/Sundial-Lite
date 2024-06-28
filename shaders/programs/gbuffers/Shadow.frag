@@ -15,7 +15,7 @@ in vec2 shadowOffset;
 
 uniform sampler2D gaux1;
 
-const int shadowMapResolution = 4096; // [4096 8192 16384]
+const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
 const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 
 vec3 waterCaustic(vec3 mcPos, vec3 lightDir) {
@@ -63,11 +63,11 @@ void main() {
     #ifdef SHADOW_AND_SKY
         vec4 albedo = textureLod(gtexture, texcoord, 0.0);
         albedo *= color;
-        vec2 centerTexelOffset = gl_FragCoord.st - vec2(realShadowMapResolution - 1024.0) - shadowOffset;
-        if (any(greaterThan(abs(centerTexelOffset), vec2(1024.0))) || albedo.w < 0.001 || fwidth(shadowOffset.x) > 0.0) discard;
+        vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
+        if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || albedo.w < 0.001 || fwidth(shadowOffset.x) > 0.0) discard;
 
         #ifdef SHADOW_BIAS_FIX
-            vec3 shadowProjPos = vec3(centerTexelOffset / 1024.0, gl_FragCoord.z * 10.0 - 5.0);
+            vec3 shadowProjPos = vec3(centerTexelOffset / (realShadowMapResolution * 0.25), gl_FragCoord.z * 10.0 - 5.0);
             vec3 pixelWorldPos = shadowCoordToWorldPos(shadowProjPos);
             vec3 positionDiff = worldPos - pixelWorldPos;
             float pixelDistanceToFace = dot(positionDiff, worldNormal);

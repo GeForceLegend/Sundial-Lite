@@ -26,7 +26,7 @@ uniform vec3 camearPositionFract;
 #include "/libs/Uniform.glsl"
 #include "/libs/PhysicsOcean.glsl"
 
-const int shadowMapResolution = 4096; // [4096 8192 16384]
+const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
 const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 
 void main() {
@@ -52,7 +52,7 @@ void main() {
         gl_Position = gl_ProjectionMatrix * viewPos;
         float shadowBias = 1.0 - SHADOW_BIAS + length(gl_Position.xy) * SHADOW_BIAS;
         gl_Position.xy /= shadowBias;
-        gl_Position.xy = gl_Position.xy * (2048 / realShadowMapResolution) + (realShadowMapResolution - 2048) / realShadowMapResolution + vShadowOffset;
+        gl_Position.xy = gl_Position.xy * 0.5 + 0.5 + vShadowOffset;
         gl_Position.z *= 0.2;
 
         vShadowOffset *= 0.5 * realShadowMapResolution;

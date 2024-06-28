@@ -28,13 +28,15 @@ uniform vec3 viewShadowDirection;
 #include "/libs/GbufferData.glsl"
 #include "/libs/Shadow.glsl"
 
+const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
+const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0 360.0 400.0 480.0 560.0 640.0]
 
 #ifdef SHADOW_AND_SKY
     vec3 shadowSpaceSurfaceOffset(vec3 worldOffsetDir) {
         vec3 offset = mat3(shadowModelViewProjection) * worldOffsetDir;
         offset *= inversesqrt(max(1e-5, dot(offset.xy, offset.xy)));
-        offset *= clamp(inversesqrt(dot(offset, offset)) * 3.333333, 0.0, 1.0) * 0.1 / shadowDistance;
+        offset *= clamp(inversesqrt(dot(offset, offset)) * 3.333333, 0.0, 1.0) * 400.0 / shadowDistance / realShadowMapResolution;
         offset.z *= 0.25;
         return offset;
     }
@@ -44,7 +46,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         float shadowBias = 1.0 - SHADOW_BIAS + length(shadowCoord.xy) * SHADOW_BIAS;
         shadowCoord.xy /= shadowBias;
         shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
-        shadowCoord.xy = shadowCoord.xy * (1024 / realShadowMapResolution) + (realShadowMapResolution - 1024) / realShadowMapResolution;
+        shadowCoord.xy = shadowCoord.xy * 0.25 + 0.75;
         return shadowCoord.xyz;
     }
 
@@ -56,12 +58,9 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         if (weatherStrength < 0.999) {
             vec3 sssShadowCoord = worldPosToShadowCoordNoBias(worldPos);
             float normalFactor = clamp(pow(NdotL, pow2(1.0 - min(0.3, smoothness))), 0.0, 1.0);
-            worldPos += geoNormal * ((dot(worldPos, worldPos) * 4e-5 + 2e-2) * (1.0 + sqrt(1.0 - NdotL)));
+            worldPos += geoNormal * ((dot(worldPos, worldPos) * 4e-5 + 2e-2) * (1.0 + sqrt(1.0 - NdotL))) * 4096.0 / realShadowMapResolution;
             vec3 shadowCoord = worldPosToShadowCoord(worldPos);
-            if (any(greaterThan(
-                abs(shadowCoord - vec3(vec2((realShadowMapResolution - 1024) / realShadowMapResolution), 0.5)),
-                vec3(vec2(1024 / realShadowMapResolution), 0.5))
-            )) {
+            if (any(greaterThan(abs(shadowCoord - vec3(vec2(0.75), 0.5)), vec3(vec2(0.25), 0.5)))) {
                 result = vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * mix(normalFactor, 1.0 - clamp(NdotL * 5.0, 0.0, 1.0) * (1.0 - NdotL), step(64.5 / 255.0, porosity)));
             } else {
                 shadowCoord.z -= 4e-5;
@@ -110,7 +109,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         if (weatherStrength < 0.999) {
             vec3 sssShadowCoord = worldPosToShadowCoordNoBias(worldPos);
             float normalOffset = (dot(worldPos, worldPos) * 4e-5 + 2e-2) * (1.0 + sqrt(1.0 - NdotL));
-            worldPos += worldGeoNormal * normalOffset;
+            worldPos += worldGeoNormal * normalOffset * 4096.0 / realShadowMapResolution;
 
             vec3 basicShadowCoordNoBias = worldPosToShadowCoordNoBias(worldPos);
             float distortFactor = 1.0 - SHADOW_BIAS + length(basicShadowCoordNoBias.xy) * SHADOW_BIAS;
@@ -120,10 +119,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             float basicSunlight = (1.0 - sqrt(weatherStrength)) * 8.0 * SUNLIGHT_BRIGHTNESS;
             NdotL = clamp(NdotL * 5.0, 0.0, 1.0);
             result = vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * mix(normalFactor, 1.0 - NdotL * (1.0 - normalFactor), step(64.5 / 255.0, porosity)));
-            if (all(lessThan(
-                abs(basicShadowCoord - vec3(vec2((realShadowMapResolution - 1024 - 4.0) / realShadowMapResolution), 0.5)),
-                vec3(vec2(1024 / realShadowMapResolution), 0.5))
-            )) {
+            if (all(lessThan(abs(basicShadowCoord - vec3(vec2(0.75), 0.5)), vec3(vec2(0.249), 0.5)))) {
                 vec3 offsetDirection1 = cross(worldGeoNormal, shadowDirection);
                 vec3 offsetDirection2 = cross(worldGeoNormal, offsetDirection1);
                 offsetDirection1 = shadowSpaceSurfaceOffset(offsetDirection1);

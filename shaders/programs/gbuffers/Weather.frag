@@ -17,7 +17,7 @@ in vec2 texcoord;
 #include "/libs/Cloud.glsl"
 
 #ifdef SHADOW_AND_SKY
-    const int shadowMapResolution = 4096; // [4096 8192 16384]
+    const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
     const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 
     vec3 worldPosToShadowCoord(vec3 worldPos) {

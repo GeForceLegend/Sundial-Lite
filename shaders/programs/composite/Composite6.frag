@@ -130,8 +130,8 @@ void main() {
                 #endif
                 vec3 sampleShadowCoord = biaShadowCoord(sampleShadowCoordNoBias);
                 if (all(lessThan(
-                    abs(sampleShadowCoord - vec3(vec2(1.0 - 1024 / realShadowMapResolution), 0.5)),
-                    vec3(vec2(1024 / realShadowMapResolution), 0.5))
+                    abs(sampleShadowCoord - vec3(vec2(0.75), 0.5)),
+                    vec3(vec2(0.25), 0.5))
                 )) {
                     float solidShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 2.0);
                     singleLight *= vec3(solidShadowStrength);

@@ -1,6 +1,3 @@
-const int shadowMapResolution = 4096; // [4096 8192 16384]
-const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
-
 #ifdef SHADOW_AND_SKY
     vec3 worldPosToShadowCoordNoBias(vec3 worldPos) {
         vec3 shadowCoord = mat3(shadowModelViewProjection) * worldPos + shadowModelViewProjection[3].xyz;
@@ -9,8 +6,8 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
     }
 
     vec3 biaShadowCoord(vec3 shadowCoord) {
-        float shadowBias = realShadowMapResolution / 1024.0 * (1.0 - SHADOW_BIAS) + length(shadowCoord.xy) * SHADOW_BIAS * realShadowMapResolution / 1024.0;
-        shadowCoord.xy = shadowCoord.xy / shadowBias + (realShadowMapResolution - 1024) / realShadowMapResolution;
+        float shadowBias = 4.0 * (1.0 - SHADOW_BIAS) + length(shadowCoord.xy) * SHADOW_BIAS * 4.0;
+        shadowCoord.xy = shadowCoord.xy / shadowBias + 0.75;
         return shadowCoord;
     }
 
