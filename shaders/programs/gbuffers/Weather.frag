@@ -27,7 +27,7 @@ in vec2 texcoord;
         shadowCoord.xy /= shadowBias;
         shadowCoord.z *= 0.2;
         shadowCoord = shadowCoord * 0.5 + 0.5;
-        shadowCoord.xy = shadowCoord.xy * (2048 / realShadowMapResolution) + (realShadowMapResolution - 2048) / realShadowMapResolution;
+        shadowCoord.xy = shadowCoord.xy * 0.5 + 0.5;
         return shadowCoord.xyz;
     }
 #endif

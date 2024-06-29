@@ -1,3 +1,5 @@
+#extension GL_ARB_gpu_shader5 : enable
+
 layout(location = 0) out vec4 gbufferData0;
 layout(location = 1) out vec4 gbufferData1;
 layout(location = 2) out vec4 gbufferData2;
@@ -61,17 +63,8 @@ float waterWaveHeight(vec2 coord) {
 }
 
 vec2 sampleWaterNormal(vec2 coord, vec2 scale) {
+    vec4 sh = textureGather(noisetex, coord - 1.0 / 128.0, 0);
     coord = coord * 64.0 + 65535.0;
-
-    ivec2 texel00 = ivec2(coord) & 63;
-    ivec2 texel11 = (texel00 + 1) & 63;
-
-    vec4 sh = vec4(
-        texelFetch(noisetex, ivec2(texel00.x, texel11.y), 0).x,
-        texelFetch(noisetex, texel11, 0).x,
-        texelFetch(noisetex, ivec2(texel11.x, texel00.y), 0).x,
-        texelFetch(noisetex, texel00, 0).x
-    );
 
     vec2 fpc = fract(coord);
     vec2 weight = fpc * fpc * (3.0 - 2.0 * fpc);
@@ -187,7 +180,7 @@ void main() {
             rawData.normal = normalize(tbnMatrix * rawData.normal);
         }
 
-        vec3 viewDir = normalize(-viewPos.xyz);
+        vec3 viewDir = -normalize(viewPos.xyz);
         float NdotV = dot(rawData.normal, viewDir);
         if (NdotV < 1e-6) {
             vec3 edgeNormal = rawData.normal - viewDir * NdotV;

@@ -24,7 +24,6 @@ vec3 calcNormal(vec3 position) {
 
 void main() {
     GbufferData rawData;
-    vec2 texcoord = texlmcoord.st;
     vec3 viewNormal = calcNormal(viewPos);
     viewNormal *= signI(-dot(viewNormal, viewPos));
 
@@ -40,10 +39,11 @@ void main() {
     textureResolutionFixed = ivec2(1) << textureResolutionFixed;
     int maxTextureResolution = max(textureResolutionFixed.x, textureResolutionFixed.y);
     float textureResolutionInv = 1.0 / maxTextureResolution;
-    ivec2 baseCoordI = ivec2(floor(texcoord * atlasTexSize * textureResolutionInv)) * maxTextureResolution;
+    ivec2 baseCoordI = ivec2(floor(texlmcoord.st * atlasTexSize * textureResolutionInv)) * maxTextureResolution;
 
     vec3 viewDir = -normalize(viewPos);
     float parallaxOffset = 0.0;
+    vec2 texcoord = texlmcoord.st;
     #ifdef PARALLAX
         vec3 textureViewer = -viewDir * tbnMatrix;
         textureViewer.xy *= textureResolutionFixed * textureResolutionInv;

@@ -90,7 +90,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
         A = max(vec2(0.0), abs(A)) * atlasTexelSize;
 
         float c = 0.0;
-        vec2 sampleCoord = coord + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * A;
+        vec2 sampleCoord = coord + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * A + 1.0;
         vec4 albedo = vec4(vec3(0.0), textureLod(gtexture, coord, l).a);
         for (int i = 0; i < ANISOTROPIC_FILTERING_QUALITY; i++) {
             sampleCoord += A;
@@ -113,7 +113,6 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
         }
         vec4 albedo = textureLod(gtexture, sampleCoord, l);
     #endif
-
 
     return albedo;
 }

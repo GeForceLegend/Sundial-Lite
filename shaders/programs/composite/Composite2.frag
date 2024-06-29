@@ -130,7 +130,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         float thickness = projDirection.w * traceLength * 0.1 / (SCREEN_SPACE_REFLECTION_STEP * SCREEN_SPACE_REFLECTION_REFINEMENTS);
 
         bool hitSky = true;
-        for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP + 1; i++) {
+        for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
             float sampleDepth = textureLod(
                 depthtex1, sampleCoord.st
                 #ifdef TAA
