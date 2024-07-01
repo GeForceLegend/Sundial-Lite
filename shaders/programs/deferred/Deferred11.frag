@@ -114,7 +114,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             vec3 basicShadowCoordNoBias = worldPosToShadowCoordNoBias(worldPos);
             float distortFactor = 1.0 - SHADOW_BIAS + length(basicShadowCoordNoBias.xy) * SHADOW_BIAS;
             vec3 basicShadowCoord = basicShadowCoordNoBias;
-            basicShadowCoord.st = basicShadowCoord.st * (1024 / realShadowMapResolution) / distortFactor + (realShadowMapResolution - 1024) / realShadowMapResolution;
+            basicShadowCoord.st = basicShadowCoord.st * 0.25 / distortFactor + 0.75;
 
             float normalFactor = clamp(pow(NdotL, pow2(1.0 - smoothness * 0.3)), 0.0, 1.0);
             float basicSunlight = 8.0 * SUNLIGHT_BRIGHTNESS - 8.0 * SUNLIGHT_BRIGHTNESS * sqrt(weatherStrength);
