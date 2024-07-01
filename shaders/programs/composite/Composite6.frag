@@ -46,6 +46,7 @@ void main() {
     vec3 waterWorldDir = normalize(waterWorldPos - gbufferModelViewInverse[3].xyz);
 
     ivec2 texel = ivec2(gl_FragCoord.st);
+    float weatherData = texelFetch(colortex0, texel, 0).w;
     vec3 solidColor = texelFetch(colortex3, texel, 0).rgb;
     float waterViewDepthFar = waterViewDepth + step(0.999999, waterDepth) * 114514.0;
     if (isEyeInWater == 0) {
@@ -176,7 +177,7 @@ void main() {
     #endif
 
     #ifdef SHADOW_AND_SKY
-        float weatherData = texelFetch(colortex0, texel, 0).w * 2.5 - 1.5;
+        weatherData = weatherData * 2.5 - 1.5;
         float weatherLightData = abs(weatherData);
         if (weatherLightData > 0.3) {
             float sunlightStrength = 2.0 * weatherLightData - 1.0;

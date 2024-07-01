@@ -113,12 +113,13 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
             vec3 basicShadowCoordNoBias = worldPosToShadowCoordNoBias(worldPos);
             float distortFactor = 1.0 - SHADOW_BIAS + length(basicShadowCoordNoBias.xy) * SHADOW_BIAS;
-            vec3 basicShadowCoord = biaShadowCoord(basicShadowCoordNoBias);
+            vec3 basicShadowCoord = basicShadowCoordNoBias;
+            basicShadowCoord.st = basicShadowCoord.st * (1024 / realShadowMapResolution) / distortFactor + (realShadowMapResolution - 1024) / realShadowMapResolution;
 
             float normalFactor = clamp(pow(NdotL, pow2(1.0 - smoothness * 0.3)), 0.0, 1.0);
-            float basicSunlight = (1.0 - sqrt(weatherStrength)) * 8.0 * SUNLIGHT_BRIGHTNESS;
+            float basicSunlight = 8.0 * SUNLIGHT_BRIGHTNESS - 8.0 * SUNLIGHT_BRIGHTNESS * sqrt(weatherStrength);
             NdotL = clamp(NdotL * 5.0, 0.0, 1.0);
-            result = vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * mix(normalFactor, 1.0 - NdotL * (1.0 - normalFactor), step(64.5 / 255.0, porosity)));
+            result = vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * mix(normalFactor, 1.0 - NdotL + NdotL * normalFactor, step(64.5 / 255.0, porosity)));
             if (all(lessThan(abs(basicShadowCoord - vec3(vec2(0.75), 0.5)), vec3(vec2(0.249), 0.5)))) {
                 vec3 offsetDirection1 = cross(worldGeoNormal, shadowDirection);
                 vec3 offsetDirection2 = cross(worldGeoNormal, offsetDirection1);

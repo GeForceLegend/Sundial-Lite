@@ -23,15 +23,15 @@ vec3 calculateBloomBase(vec2 coord) {
         float lod = level.x;
         float expLevel = exp2(lod);
         vec2 levelOffset = vec2(1.0 - 2.0 / expLevel);
-        vec2 bloomTexel = texelSize * expLevel;
+        vec2 bloomTexel = texelSize * expLevel * 0.5;
         vec2 centerCoord = (coord - levelOffset) * expLevel;
         lod -= 1.0;
 
         vec3 bloomColor = textureLod(colortex3, centerCoord, lod).rgb * 4.0;
-        bloomColor += textureLod(colortex3, centerCoord + vec2(-0.5, 0.5) * bloomTexel, lod).rgb;
-        bloomColor += textureLod(colortex3, centerCoord + vec2(-0.5,-0.5) * bloomTexel, lod).rgb;
-        bloomColor += textureLod(colortex3, centerCoord + vec2( 0.5, 0.5) * bloomTexel, lod).rgb;
-        bloomColor += textureLod(colortex3, centerCoord + vec2( 0.5,-0.5) * bloomTexel, lod).rgb;
+        bloomColor += textureLod(colortex3, centerCoord + vec2(-1.0, 1.0) * bloomTexel, lod).rgb;
+        bloomColor += textureLod(colortex3, centerCoord + vec2(-1.0,-1.0) * bloomTexel, lod).rgb;
+        bloomColor += textureLod(colortex3, centerCoord + vec2( 1.0, 1.0) * bloomTexel, lod).rgb;
+        bloomColor += textureLod(colortex3, centerCoord + vec2( 1.0,-1.0) * bloomTexel, lod).rgb;
         result = bloomColor * 0.125;
     }
     return result;

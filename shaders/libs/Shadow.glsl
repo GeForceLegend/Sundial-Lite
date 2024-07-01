@@ -13,7 +13,7 @@
 
     float waterShadowHeight(vec2 waterShadowCoord, float lod) {
         vec2 depthData = textureLod(shadowcolor1, waterShadowCoord, lod).zw;
-        float waterHeight = (1.0 - depthData.y) * 510.0 - 128.0 + mod(depthData.x, 128.0 / 255.0) * 4.0;
+        float waterHeight = (1.0 - depthData.y) * 510.0 - 128.0 + depthData.x * 2.0;
         return waterHeight;
     }
 
