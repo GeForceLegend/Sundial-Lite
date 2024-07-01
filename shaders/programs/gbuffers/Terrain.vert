@@ -35,26 +35,29 @@ void main() {
         // Used for MOD_LIGHT_DETECTION
         materialID = 0;
     }
-    if (mc_Entity.x == 2) {
-        materialID = MAT_LEAVES;
-    }
-    if (mc_Entity.x == 119) {
-        materialID = MAT_CAULDRON;
-    }
-    if (abs(mc_Entity.x - 188.5) < 1.0 || mc_Entity.x == 265) {
-        materialID = MAT_GRASS;
-    }
-    if (mc_Entity.x == 513 || abs(mc_Entity.x - 669) < 5.5) {
-        materialID = MAT_TORCH;
-    }
-    if (mc_Entity.x == 630) {
-        materialID = MAT_LAVA_CAULDRON;
-    }
-    if (abs(mc_Entity.x - 681.5) < 1.0) {
-        materialID = MAT_BREWING_STAND;
-    }
-    if (abs(mc_Entity.x - 702.5) < 3.5) {
-        materialID = MAT_GLOWING_BERRIES;
+    // Early break for common blocks
+    else if (mc_Entity.x > 1) {
+        if (abs(mc_Entity.x - 188.5) < 1.0 || mc_Entity.x == 265) {
+            materialID = MAT_GRASS;
+        }
+        else if (mc_Entity.x == 2) {
+            materialID = MAT_LEAVES;
+        }
+        else if (mc_Entity.x == 119) {
+            materialID = MAT_CAULDRON;
+        }
+        else if (mc_Entity.x == 513 || abs(mc_Entity.x - 669) < 5.5) {
+            materialID = MAT_TORCH;
+        }
+        else if (mc_Entity.x == 630) {
+            materialID = MAT_LAVA_CAULDRON;
+        }
+        else if (abs(mc_Entity.x - 681.5) < 1.0) {
+            materialID = MAT_BREWING_STAND;
+        }
+        else if (abs(mc_Entity.x - 702.5) < 3.5) {
+            materialID = MAT_GLOWING_BERRIES;
+        }
     }
 
     #ifdef MOD_MATERIAL_DETECTION

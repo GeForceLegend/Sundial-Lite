@@ -108,10 +108,11 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec3 result = vec3(0.0);
         if (weatherStrength < 0.999) {
             vec3 sssShadowCoord = worldPosToShadowCoordNoBias(worldPos);
-            float normalOffset = (dot(worldPos, worldPos) * 4e-5 + 2e-2) * (1.0 + sqrt(1.0 - NdotL));
-            worldPos += worldGeoNormal * normalOffset * 4096.0 / realShadowMapResolution;
+            float normalOffsetLen = (dot(worldPos, worldPos) * 4e-5 + 2e-2) * (1.0 + sqrt(1.0 - NdotL));
+            vec3 normalOffset = mat3(shadowModelViewProjection) * (worldGeoNormal * normalOffsetLen * 4096.0 / realShadowMapResolution);
+            normalOffset.z *= 0.1;
 
-            vec3 basicShadowCoordNoBias = worldPosToShadowCoordNoBias(worldPos);
+            vec3 basicShadowCoordNoBias = sssShadowCoord + normalOffset;
             float distortFactor = 1.0 - SHADOW_BIAS + length(basicShadowCoordNoBias.xy) * SHADOW_BIAS;
             vec3 basicShadowCoord = basicShadowCoordNoBias;
             basicShadowCoord.st = basicShadowCoord.st * 0.25 / distortFactor + 0.75;
@@ -240,15 +241,15 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
     float screenSpaceShadow(vec3 viewPos, vec3 viewDir, vec3 viewNormal, vec3 viewGeoNormal, vec3 lightDir, float porosity, vec2 noise) {
         float fov = 2.0 * atanSimple(1.0 / gbufferProjection[1][1]) * 180.0 / 3.14159265;
-        float depth = length(viewPos);
+        float viewLength = length(viewPos);
         float screenScale = max(texelSize.x, texelSize.y);
 
         vec3 rayPos = viewPos;
-        float stepLength = (2e-5 * depth + 5e-5) * fov;
+        float stepLength = (2e-5 * viewLength + 5e-5) * fov;
         vec3 rayDir = stepLength * lightDir;
         rayPos +=
             (4e2 * screenScale / max(dot(viewGeoNormal, -viewDir), 0.1) + noise.x * 3.0) * rayDir +
-            (1e-2 * depth * screenScale / max(pow2(dot(viewGeoNormal, lightDir)), 0.01)) * viewGeoNormal;
+            (1e-2 * viewLength * screenScale / max(pow2(dot(viewGeoNormal, lightDir)), 0.01)) * viewGeoNormal;
         vec3 finalPos = rayPos + rayDir * 25.2;
 
         vec4 projRayPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayPos, -rayPos.z);
@@ -265,8 +266,8 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         rayDir *= porosityScale;
         float absorption = exp2(absorptionBeta * porosityScale * stepLength * 10.0) * step(0.25, porosity) * (1.0 - clamp(NdotL * 10.0, 0.0, 1.0) * porosityScale);
 
-        float maximumThickness = 0.025 + 0.0125 * depth;
-        float shadowWeight = clamp(-NdotL * 10.0, 0.0, 1.0) * clamp(1.0 - depth / shadowDistance, 0.0, 1.0);
+        float maximumThickness = 0.025 + 0.0125 * viewLength;
+        float shadowWeight = clamp(-NdotL * 10.0, 0.0, 1.0) * clamp(1.0 - viewLength / shadowDistance, 0.0, 1.0);
 
         vec2 offset = vec2(0.5);
         #ifdef TAA
@@ -353,7 +354,9 @@ void main() {
         #endif
         finalColor.rgb = vec3(BASIC_LIGHT + NIGHT_VISION_BRIGHTNESS * nightVision);
         finalColor.rgb += pow(gbufferData.lightmap.x, 4.4) * lightColor;
-        finalColor.rgb += pow(gbufferData.lightmap.y, 2.2) * skyColorUp * (worldNormal.y * 0.3 + 0.4);
+        #ifdef SHADOW_AND_SKY
+            finalColor.rgb += pow(gbufferData.lightmap.y, 2.2) * skyColorUp * (worldNormal.y * 0.3 + 0.4);
+        #endif
         float NdotV = clamp(dot(viewDir, -gbufferData.geoNormal), 0.0, 1.0);
         vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
         finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;

@@ -77,7 +77,8 @@ void main() {
         #endif
 
         vec3 mcPos = worldPos + cameraPosition;
-        float floorMcHeight = floor((mcPos.y + 128.0) / 2.0);
+        mcPos.y += 128.0;
+        float floorMcHeight = floor(mcPos.y / 2.0);
         shadowColor1 = vec4(1.0, 1.0, mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0);
         if (shadowOffset.y < -0.5) {
             vec3 caustic = waterCaustic(mcPos, shadowDirection);

@@ -429,8 +429,8 @@ float cloudShadowRealistic(vec3 worldPos, vec3 shadowDir) {
 
         float cloudTransmittance = pow2(clamp(1.0 - density * 1.4, 0.0, 1.0));
 
-        const float fadeFactor = 1.44269502 * 5.0 / CLOUD_REALISTIC_FADE_DISTANCE;
-        cloudTransmittance = mix(1.0, cloudTransmittance, exp2(-max(0.0, startIntersection * fadeFactor - 0.5 * CLOUD_REALISTIC_FADE_DISTANCE * fadeFactor)));
+        const float fadeFactor = -1.44269502 * 5.0;
+        cloudTransmittance = mix(1.0, cloudTransmittance, exp2(min(0.0, startIntersection * fadeFactor / CLOUD_REALISTIC_FADE_DISTANCE - 0.5 * fadeFactor)));
         result = cloudTransmittance;
     }
     return result;
