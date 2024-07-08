@@ -26,6 +26,7 @@ screen.VolumetricFog=体积雾
 screen.CommonFog=普通雾气
 screen.Cloud=云
 screen.BlockyCloud=方块云
+screen.PlaneCloud=平面云
 screen.RealisticCloudQuality=体积云质量
 screen.RealisticCloudShape=体积云形状
 screen.RealisticCloudLighting=体积云光照
@@ -241,6 +242,17 @@ option.CLOUD_BLOCKY_HEIGHT=方块云高度
 option.CLOUD_BLOCKY_THICKNESS=方块云厚度
 option.CLOUD_BLOCKY_FADE_DISTANCE=方块云消散距离
 option.CLOUD_BLOCKY_FADE_SPEED=方块云消散速度
+# PlaneCloud
+option.PLANE_CLOUD=平面云
+option.PLANE_CLOUD_SPEED=平面云速度
+option.PLANE_CLOUD_SCALE=平面云缩放
+option.PLANE_CLOUD_DENSITY=平面云密度
+option.PLANE_CLOUD_AMOUNT=平面云数量
+option.PLANE_CLOUD_OCTAVES=平面云噪声层数
+option.PLANE_CLOUD_HEIGHT=平面云高度
+option.PLANE_CLOUD_FADE_DISTANCE=平面云消散距离
+option.PLANE_CLOUD_OCTAVE_SCALE=平面云噪声每层缩放
+option.PLANE_CLOUD_OCTAVE_FADE=平面云噪声每层减淡
 # RealisticCloudQuality
 option.CLOUD_REALISTIC_HQ_SAMPLES=高质量体积云采样数
 option.CLOUD_REALISTIC_HQ_SAMPLES.comment=用于体积云的直接渲染及反射内渲染

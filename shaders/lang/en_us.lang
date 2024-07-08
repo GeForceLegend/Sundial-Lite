@@ -21,6 +21,7 @@ screen.VolumetricFog=Volumetric fog
 screen.CommonFog=Common fog
 screen.Cloud=Cloud
 screen.BlockyCloud=Blocky cloud
+screen.PlaneCloud=Plane cloud
 screen.RealisticCloudQuality=Realistic cloud quality
 screen.RealisticCloudShape=Realistic cloud shape
 screen.RealisticCloudLighting=Realistic cloud lighting
@@ -219,6 +220,17 @@ option.CLOUD_BLOCKY_HEIGHT=Blocky cloud height
 option.CLOUD_BLOCKY_THICKNESS=Blocky cloud thickness
 option.CLOUD_BLOCKY_FADE_DISTANCE=Blocky cloud fade distance
 option.CLOUD_BLOCKY_FADE_SPEED=Blocky cloud fade speed
+# PlaneCloud
+option.PLANE_CLOUD=Plane cloud
+option.PLANE_CLOUD_SPEED=Plane cloud speed
+option.PLANE_CLOUD_SCALE=Plane cloud scale
+option.PLANE_CLOUD_DENSITY=Plane cloud density
+option.PLANE_CLOUD_AMOUNT=Plane cloud amount
+option.PLANE_CLOUD_OCTAVES=Plane cloud octaves
+option.PLANE_CLOUD_HEIGHT=Plane cloud height
+option.PLANE_CLOUD_FADE_DISTANCE=Plane cloud fade distance
+option.PLANE_CLOUD_OCTAVE_SCALE=Plane cloud octaves scale
+option.PLANE_CLOUD_OCTAVE_FADE=Plane cloud octaves fade
 # RealisticCloudQuality
 option.CLOUD_REALISTIC_HQ_SAMPLES=High quality realistic cloud samples
 option.CLOUD_REALISTIC_HQ_SAMPLES.comment=Used in direct rendering and reflection

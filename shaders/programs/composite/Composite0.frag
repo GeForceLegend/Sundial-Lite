@@ -180,12 +180,24 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
             #ifdef SHADOW_AND_SKY
                 vec3 skylightColor = vec3(0.0);
                 vec3 atmosphere;
-                skylightColor = singleAtmosphereScattering(vec3(0.0), rayDir, sunDirection, 30.0, atmosphere);
+                vec3 worldPos = viewToWorldPos(viewPos);
+                vec3 intersectionData = planetIntersectionData(worldPos, rayDir);
+                skylightColor = singleAtmosphereScattering(vec3(0.0), worldPos, rayDir, sunDirection, intersectionData, 30.0, atmosphere);
+                vec4 planeCloud = vec4(0.0);
+                #ifdef PLANE_CLOUD
+                    planeCloud = planeClouds(worldPos, rayDir, sunDirection, skyColorUp, intersectionData);
+                    if (worldPos.y + cameraPosition.y < PLANE_CLOUD_HEIGHT) {
+                        skylightColor = mix(skylightColor, planeCloud.rgb, planeCloud.a);
+                        atmosphere = mix(atmosphere, planeCloud.rgb, planeCloud.a);
+                    }
+                #endif
                 #ifdef CLOUD_IN_REFLECTION
                     float cloudDepth;
-                    vec3 worldPos = viewToWorldPos(viewPos);
-                    skylightColor = sampleClouds(skylightColor, atmosphere, worldPos, rayDir, shadowDirection, sunDirection, skyColorUp, 0.0, cloudDepth).rgb;
+                    skylightColor = sampleClouds(skylightColor, atmosphere, worldPos, rayDir, shadowDirection, sunDirection, skyColorUp, intersectionData, 0.0, cloudDepth).rgb;
                 #endif
+                if (worldPos.y + cameraPosition.y >= PLANE_CLOUD_HEIGHT) {
+                    skylightColor = mix(skylightColor, planeCloud.rgb, planeCloud.a);
+                }
                 #ifdef LIGHT_LEAKING_FIX
                     skylightColor *= clamp(eyeBrightnessSmooth.y / 16.0, 0.0, 1.0);
                 #endif

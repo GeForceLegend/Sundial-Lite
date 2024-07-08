@@ -83,6 +83,18 @@ float bayer64Temporal(vec2 a) {
     return bayer;
 }
 
+float smooth2DNoise(vec2 coord) {
+    coord = coord;
+
+    vec2 whole = floor(coord);
+    vec2 part = coord - whole;
+
+    part *= part * (3.0 / 64.0 - 2.0 / 64.0 * part);
+    coord = whole / 64.0 + part - 1.0 / 128.0;
+
+    return textureLod(noisetex, coord, 0.0).x;
+}
+
 float smooth3DNoise(vec3 position) {
     position *= 64.0;
 

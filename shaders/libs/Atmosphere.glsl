@@ -14,6 +14,16 @@ const float atmosphereHeight = earthRadius + 100000.0;
 const float sunRadius = 0.02;
 const vec2 earthScaledHeight = 1.44269502 * earthRadius / scaledHeight;
 
+vec3 planetIntersectionData(vec3 worldPos, vec3 worldDir) {
+    worldPos.y += max(300.0 + earthRadius, cameraPosition.y + 500.0 + earthRadius);
+    float R2 = dot(worldPos, worldPos);
+    float RdotP = dot(worldPos, worldDir);
+    float RdotP2 = RdotP * RdotP - R2;
+    float d = sqrt(RdotP2 + earthRadius * earthRadius);
+    float intersection = max(-1.0, -RdotP - d);
+    return vec3(RdotP, RdotP2, intersection);
+}
+
 float rayleighPhase(float cosAngle) {
     return (1.0 / (4.0 * PI)) * (8.0 / 10.0) * (7.0 / 5.0 + (0.5 * cosAngle));
 }
@@ -72,21 +82,21 @@ void sampleInScatteringDoubleSide(float originHeight, vec2 c, vec2 cExpH, float 
     moonInScattering = exp2(-moonOpticalDepth.x * rayLeighBeta - moonOpticalDepth.y * rainyMieBeta);
 }
 
-vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldDir, vec3 lightDir, float sunLightStrength, out vec3 atmosphere) {
-
-    float playerHeight = max(cameraPosition.y + 500.0 + earthRadius, 300.0 + earthRadius);
-    vec3 originPos = vec3(0.0, playerHeight, 0.0);
-
-    float b = playerHeight * worldDir.y;
-    float deltaAtmos = b * b - playerHeight * playerHeight + atmosphereHeight * atmosphereHeight;
-    float d = deltaAtmos * inversesqrt(deltaAtmos);
-    float atmosphereLength = -b + d;
-
+vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir, vec3 sunDir, vec3 intersectionData, float sunLightStrength, out vec3 atmosphere) {
     atmosphere = vec3(0.0);
     vec3 result = skyLightColor;
-    if (min(atmosphereLength, deltaAtmos) > 0.0) {
-        float deltaGround = deltaAtmos - atmosphereHeight * atmosphereHeight + earthRadius * earthRadius;
-        float groundLength = max(-1.0, -b - deltaGround * inversesqrt(deltaGround));
+
+    if (intersectionData.y > -atmosphereHeight * atmosphereHeight) {
+        vec3 originPos = worldPos;
+        originPos.y += max(cameraPosition.y + 500.0 + earthRadius, 300.0 + earthRadius);
+
+        float b = intersectionData.x;
+        float deltaAtmos = intersectionData.y + atmosphereHeight * atmosphereHeight;
+        float d = deltaAtmos * inversesqrt(deltaAtmos);
+        float atmosphereLength = -b + d;
+
+        float deltaGround = intersectionData.y + earthRadius * earthRadius;
+        float groundLength = intersectionData.z;
         float hitSky = clamp(-1e+10 * groundLength, 0.0, 1.0);
         atmosphereLength = mix(groundLength, atmosphereLength, hitSky);
         b += d;
@@ -106,7 +116,7 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldDir, vec3 lightDir
         vec3 atmosphereAbsorption = sampleInScattering(originHeight, c, cExpH, dot(worldDir, samplePosition) * originHeightInv);
         result *= atmosphereAbsorption;
 
-        float originRdotP = dot(lightDir, samplePosition) * originHeightInv;
+        float originRdotP = dot(sunDir, samplePosition) * originHeightInv;
         vec3 originSunInScattering, originMoonInScattering;
         sampleInScatteringDoubleSide(originHeight, c, cExpH, originRdotP, originSunInScattering, originMoonInScattering);
         vec3 prevSunRayleighInScattering = originSunInScattering * prevRelativeDensity.x;
@@ -130,7 +140,7 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldDir, vec3 lightDir
             float sampleHeight2 = dot(samplePosition, samplePosition);
 
             float sampleHeightInv = inversesqrt(sampleHeight2);
-            float sampleRdotP = dot(lightDir, samplePosition) * sampleHeightInv;
+            float sampleRdotP = dot(sunDir, samplePosition) * sampleHeightInv;
             float sampleHeight = sampleHeight2 * sampleHeightInv * 1.44269502;
             vec2 c = inversesqrt(sampleHeightInv) * inversesqrt(scaledHeight);
             vec2 currRelativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight);
@@ -161,7 +171,7 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldDir, vec3 lightDir
             prevMoonMieInScattering = currMoonMieInScattering;
         }
 
-        float sunCosAngle = dot(worldDir, lightDir);
+        float sunCosAngle = dot(worldDir, sunDir);
         totalSunRayleighInScattering *= rayleighPhase(sunCosAngle);
         totalSunMieInScattering *= miePhase(sunCosAngle);
         totalMoonRayleighInScattering *= rayleighPhase(-sunCosAngle) * nightBrightness;

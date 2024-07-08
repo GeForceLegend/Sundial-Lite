@@ -50,7 +50,9 @@ void main() {
     #ifdef SHADOW_AND_SKY
         vec3 shadowCoord = worldPosToShadowCoord(worldPos);
         sunlightStrength = texture(shadowtex0, shadowCoord) * (1.0 - sqrt(weatherStrength));
-        sunlightStrength *= cloudShadow(worldPos, shadowDirection);
+        #ifdef CLOUD_SHADOW
+            sunlightStrength *= cloudShadow(worldPos, shadowDirection);
+        #endif
     #endif
 
     float lightData = 0.5 + sunlightStrength * 0.5;

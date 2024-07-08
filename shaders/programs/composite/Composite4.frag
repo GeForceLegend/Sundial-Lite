@@ -26,11 +26,13 @@ void main() {
     vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
     float worldDepth = inversesqrt(dot(worldPos, worldPos));
     vec3 worldDir = worldPos * worldDepth;
+    vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, worldDir);
 
     vec4 solidColor = texelFetch(colortex3, texel, 0);
 
     float backDepth;
     vec3 backColor;
+    vec4 planeCloud = vec4(0.0);
     if (depth < 0.999999) {
         if (texelFetch(depthtex0, texel, 0).r == depth) {
             solidColor.rgb += texelFetch(colortex4, texel, 0).rgb;
@@ -41,10 +43,23 @@ void main() {
     #ifdef SHADOW_AND_SKY
         else {
             backDepth = 0.0;
-            solidColor.rgb = singleAtmosphereScattering(solidColor.rgb, worldDir, sunDirection, (30.0), backColor);
+            solidColor.rgb = singleAtmosphereScattering(solidColor.rgb, gbufferModelViewInverse[3].xyz, worldDir, sunDirection, intersectionData, (30.0), backColor);
+            #ifdef PLANE_CLOUD
+                planeCloud = planeClouds(gbufferModelViewInverse[3].xyz, worldDir, sunDirection, skyColorUp, intersectionData);
+            #endif
+            if (gbufferModelViewInverse[3].y + cameraPosition.y < PLANE_CLOUD_HEIGHT) {
+                solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
+                backColor.rgb = mix(backColor.rgb, planeCloud.rgb, planeCloud.a);
+            }
         }
         float cloudDepth;
-        solidColor = sampleClouds(solidColor.rgb, backColor, gbufferModelViewInverse[3].xyz, worldDir, shadowDirection, sunDirection, skyColorUp, backDepth, cloudDepth);
+        solidColor = sampleClouds(
+            solidColor.rgb, backColor, gbufferModelViewInverse[3].xyz, worldDir, shadowDirection, sunDirection, skyColorUp, intersectionData, backDepth, cloudDepth
+        );
+
+        if (gbufferModelViewInverse[3].y + cameraPosition.y >= PLANE_CLOUD_HEIGHT) {
+            solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
+        }
 
         float transparentDensity = 1.0;
         if (cloudDepth > -0.5) {

@@ -46,16 +46,16 @@ float waterWaveHeight(vec2 coord) {
     const mat2 rotation1 = mat2(cos(-0.2), sin(-0.2), -sin(-0.2), cos(-0.2));
     const vec2 scale1 = vec2(0.8, 0.4) * 64.0;
     vec2 speed = vec2(0.03, 0.01) * frameTimeCounter * WATER_WAVE_SPEED;
-    totalHeight += sampleWaterHeight(rotation1 * (coord + speed) * scale1);
+    totalHeight += smooth2DNoise(rotation1 * (coord + speed) * scale1);
 
     const mat2 rotation2 = mat2(cos(0.2), sin(0.2), -sin(0.2), cos(0.2));
     const vec2 scale2 = vec2(1.2, 0.6) * 64.0;
     speed = -0.75 * vec2(0.03, -0.01) * frameTimeCounter * WATER_WAVE_SPEED;
-    totalHeight += sampleWaterHeight(rotation2 * (coord + speed) * scale2) * 0.4;
+    totalHeight += smooth2DNoise(rotation2 * (coord + speed) * scale2) * 0.4;
 
     const vec2 scale3 = vec2(1.5, 2.0) * 64.0;
     speed = 0.3 * vec2(0.01, -0.05) * frameTimeCounter * WATER_WAVE_SPEED;
-    totalHeight += sampleWaterHeight((coord + speed) * scale3) * 0.2;
+    totalHeight += smooth2DNoise((coord + speed) * scale3) * 0.2;
 
     totalHeight /= 1.0 + 0.4 + 0.2;
 
