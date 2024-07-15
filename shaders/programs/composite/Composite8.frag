@@ -47,16 +47,32 @@ float getFarthestPrevDepth(vec2 coord) {
 }
 
 float getClosestDepth(vec2 coord) {
-    float closest = 1.0;
+    float closest = 2.0;
 
     vec4 samples = textureGather(depthtex0, coord - vec2(0.5) * texelSize, 0);
+    #ifdef DISTANT_HORIZONS
+        samples += step(1.0, samples) * textureGather(dhDepthTex0, coord - vec2(0.5) * texelSize, 0);
+    #endif
     closest = min(min(samples.x, samples.y), min(samples.z, samples.w));
 
     samples = textureGather(depthtex0, coord + vec2(0.5) * texelSize, 0);
+    #ifdef DISTANT_HORIZONS
+        samples += step(1.0, samples) * textureGather(dhDepthTex0, coord + vec2(0.5) * texelSize, 0);
+    #endif
     closest = min(min(samples.x, samples.y), min(samples.z, closest));
 
-    closest = min(closest, textureLod(depthtex0, coord + vec2( texelSize.x, -texelSize.y), 0.0).r);
-    closest = min(closest, textureLod(depthtex0, coord + vec2(-texelSize.x,  texelSize.y), 0.0).r);
+    samples.xy = vec2(
+        textureLod(depthtex0, coord + vec2( texelSize.x, -texelSize.y), 0.0).r,
+        textureLod(depthtex0, coord + vec2(-texelSize.x,  texelSize.y), 0.0).r
+    );
+    #ifdef DISTANT_HORIZONS
+        samples.xy += step(vec2(1.0), samples.xy) * vec2(
+            textureLod(dhDepthTex0, coord + vec2( texelSize.x, -texelSize.y), 0.0).r,
+            textureLod(dhDepthTex0, coord + vec2(-texelSize.x,  texelSize.y), 0.0).r
+        );
+    #endif
+
+    closest = min(closest, min(samples.x, samples.y));
 
     return closest;
 }
@@ -67,17 +83,42 @@ vec3 calculateVelocity(in vec3 coord, float materialID) {
     float parallaxOffset = unpack16Bit(texelFetch(colortex2, texel, 0).w).y * PARALLAX_DEPTH * 0.2;
     vec3 geoNormal = decodeNormal(texelFetch(colortex1, texel, 0).zw);
     if (materialID == MAT_HAND) {
-        view = projectionToViewPos(coord * 2.0 - 1.0);
+        #ifdef DISTANT_HORIZONS
+            if (coord.z > 1.0) {
+                view.z -= 1.0;
+                view = projectionToViewPosDH(view * 2.0 - 1.0);
+            } else
+        #endif
+        {
+            view = projectionToViewPos(view * 2.0 - 1.0);
+        }
         view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
         view -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
         view += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
 
         view -= view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
-        view = viewToProjectionPos(view);
-        view = view * 0.5 + 0.5;
+        #ifdef DISTANT_HORIZONS
+            if (coord.z > 1.0) {
+                view = viewToProjectionPosDH(view);
+                view = view * 0.5 + 0.5;
+                view.z += 1.0;
+            } else
+        #endif
+        {
+            view = viewToProjectionPos(view);
+            view = view * 0.5 + 0.5;
+        }
     } else if (coord.z > 0.7) {
-        view = projectionToViewPos(coord * 2.0 - 1.0);
-        if (coord.z < 1.0 && materialID != MAT_END_PORTAL) {
+        #ifdef DISTANT_HORIZONS
+            if (coord.z > 1.0) {
+                view.z -= 1.0;
+                view = projectionToViewPosDH(view * 2.0 - 1.0);
+            } else
+        #endif
+        {
+            view = projectionToViewPos(view * 2.0 - 1.0);
+        }
+        if (coord.z - float(coord.z > 1.0) < 1.0 && materialID != MAT_END_PORTAL) {
             view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
             view = viewToWorldPos(view);
             view += cameraMovement;
@@ -90,8 +131,17 @@ vec3 calculateVelocity(in vec3 coord, float materialID) {
             view = mat3(gbufferModelViewInverse) * view;
             view = mat3(gbufferPreviousModelView) * view;
         }
-        view = prevViewToProjectionPos(view);
-        view = view * 0.5 + 0.5;
+        #ifdef DISTANT_HORIZONS
+            if (coord.z > 1.0) {
+                view = prevViewToProjectionPosDH(view);
+                view = view * 0.5 + 0.5;
+                view.z += 1.0;
+            } else
+        #endif
+        {
+            view = prevViewToProjectionPos(view);
+            view = view * 0.5 + 0.5;
+        }
     }
     vec3 velocity = view - coord;
     return velocity;
@@ -214,7 +264,7 @@ void main() {
 
     float materialID = round(unpack16Bit(texelFetch(colortex2, texel, 0).a).x * 255.0);
     vec3 velocity = calculateVelocity(closest, materialID);
-    velocity = velocity * clamp(0.5 * inversesqrt(dot(velocity, velocity) + 1e-7), 0.0, 1.0);
+    velocity = velocity * clamp(0.5 * inversesqrt(dot(velocity.st, velocity.st) + 1e-7), 0.0, 1.0);
 
     float blendWeight = 1.0;
     #ifdef TAA
@@ -223,7 +273,7 @@ void main() {
 
         blendWeight *= 0.95 - min(0.7, 4.0 * pow(dot(velocity.xy, velocity.xy), 0.25)) * step(closest.z, 0.999999);
         blendWeight *= step(abs(floor(reprojectCoord.x)) + abs(floor(reprojectCoord.y)), 0.5);
-        blendWeight *= depthDiffFactor;
+        // blendWeight *= depthDiffFactor;
     #endif
 
     texBuffer1 = vec4(velocity.st * 0.5 + 0.5, 0.0, blendWeight);

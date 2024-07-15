@@ -40,7 +40,17 @@ float volumetricFogDensity(vec3 position) {
 
 void main() {
     float waterDepth = textureLod(depthtex0, texcoord, 0.0).r;
-    vec3 waterViewPos = screenToViewPos(texcoord, waterDepth);
+    vec3 waterViewPos;
+    #ifdef DISTANT_HORIZONS
+        if (waterDepth == 1.0) {
+            waterDepth = textureLod(dhDepthTex0, texcoord, 0.0).r;
+            waterViewPos = screenToViewPosDH(texcoord, waterDepth);
+            waterDepth += 1.0;
+        } else
+    #endif
+    {
+        waterViewPos = screenToViewPos(texcoord, waterDepth);
+    }
     float waterViewDepth = length(waterViewPos);
     vec3 waterWorldPos = viewToWorldPos(waterViewPos);
     vec3 waterWorldDir = normalize(waterWorldPos - gbufferModelViewInverse[3].xyz);
@@ -48,7 +58,9 @@ void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
     float weatherData = texelFetch(colortex0, texel, 0).w;
     vec3 solidColor = texelFetch(colortex3, texel, 0).rgb;
-    float waterViewDepthFar = waterViewDepth + step(0.999999, waterDepth) * 114514.0;
+    waterDepth -= float(waterDepth > 1.0);
+    vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, waterWorldDir);
+    float waterViewDepthFar = mix(waterViewDepth, 500.0 + 500.0 * float(intersectionData.z > 0.0), step(0.999999, waterDepth));
     if (isEyeInWater == 0) {
         #ifdef NETHER
             solidColor *= vec3(netherFogAbsorption(waterViewDepthFar));
@@ -63,7 +75,7 @@ void main() {
             solidColor *= vec3(airAbsorption(waterViewDepthFar));
             #ifdef SHADOW_AND_SKY
                 #ifdef ATMOSPHERE_SCATTERING_FOG
-                    solidColor = solidAtmosphereScattering(solidColor, waterWorldDir, skyColorUp, waterViewDepth, eyeBrightnessSmooth.y / 240.0);
+                    solidColor = solidAtmosphereScattering(solidColor, waterWorldDir, skyColorUp, waterViewDepthFar, eyeBrightnessSmooth.y / 240.0);
                 #endif
             #endif
         #endif
@@ -85,22 +97,8 @@ void main() {
         #ifdef VOLUMETRIC_LIGHT
             if (isEyeInWater < 2) {
                 float waterWorldDistance = dot(waterViewPos, waterViewPos);
-
-                float noise = bayer64Temporal(gl_FragCoord.xy);
-                float maxAllowedDistance = pow2(far + 32.0) / (1.0 - min(waterWorldDir.y * waterWorldDir.y, 0.5)) * exp(-8.0 * blindnessFactor);
-
-                vec3 origin = gbufferModelViewInverse[3].xyz;
-                vec3 originShadowCoordNoBias = worldPosToShadowCoordNoBias(origin);
-                vec3 target = (waterWorldPos - origin) * sqrt(min(waterWorldDistance, maxAllowedDistance) / (waterWorldDistance + 1e-5));
-                vec3 targetShadowCoordNoBias = worldPosToShadowCoordNoBias(target + origin);
-                vec3 stepSize = target / (VL_SAMPLES + 1.0);
-                vec3 shadowCoordStepSize = (targetShadowCoordNoBias - originShadowCoordNoBias) / (VL_SAMPLES + 1.0);
-                vec3 samplePos = origin + stepSize * noise;
-                vec3 sampleShadowCoordNoBias = originShadowCoordNoBias + shadowCoordStepSize * noise;
-                float stepLength = length(stepSize);
-
-                float basicWeight = stepLength;
-                vec3 absorptionBeta = vec3(blindnessFactor);
+                float basicWeight = 1.0;
+                vec3 absorptionBeta = vec3(blindnessFactor + 0.003);
                 float LdotV = dot(waterWorldDir, shadowDirection);
                 float volumetricFogScattering = 0.0;
                 float airScattering = VL_STRENGTH;
@@ -117,13 +115,32 @@ void main() {
 
                     volumetricFogScattering = VOLUMETRIC_FOG_DENSITY * (timeStrength * (VOLUMETRIC_FOG_MORNING_DENSITY - VOLUMETRIC_FOG_NOON_DENSITY) + VOLUMETRIC_FOG_NOON_DENSITY);
                 }
+
+                float noise = bayer64Temporal(gl_FragCoord.xy);
+                float maxAllowedDistance = far;
+                #ifdef DISTANT_HORIZONS
+                    maxAllowedDistance = dhFarPlane;
+                #endif
+                maxAllowedDistance = pow2(maxAllowedDistance + 32.0) / (1.0 - min(waterWorldDir.y * waterWorldDir.y, 0.5)) * exp(-12.0 * length(absorptionBeta));
+
+                vec3 origin = gbufferModelViewInverse[3].xyz;
+                vec3 originShadowCoordNoBias = worldPosToShadowCoordNoBias(origin);
+                vec3 target = (waterWorldPos - origin) * sqrt(min(waterWorldDistance, maxAllowedDistance) / (waterWorldDistance + 1e-5));
+                vec3 targetShadowCoordNoBias = worldPosToShadowCoordNoBias(target + origin);
+                vec3 stepSize = target / (VL_SAMPLES + 1.0);
+                vec3 shadowCoordStepSize = (targetShadowCoordNoBias - originShadowCoordNoBias) / (VL_SAMPLES + 1.0);
+                vec3 samplePos = origin + stepSize * noise;
+                vec3 sampleShadowCoordNoBias = originShadowCoordNoBias + shadowCoordStepSize * noise;
+                float stepLength = length(stepSize);
+
+                basicWeight *= stepLength;
                 absorptionBeta *= stepLength * 1.44269502;
                 vec3 rayAbsorption = exp2(-absorptionBeta * noise);
                 vec3 stepAbsorption = exp2(-absorptionBeta);
                 vec3 skyScattering = (sunColor * 2.0 + skyColorUp) * eyeBrightnessSmooth.y / 1000.0;
                 stepLength *= -0.02 * 1.44269502;
 
-                float absorption = 1.0;
+                vec3 absorption = vec3(1.0);
                 vec3 volumetricLight = vec3(0.0);
                 for (int i = 0; i < VL_SAMPLES; i++) {
                     vec3 singleLight = vec3(1.0);
@@ -163,7 +180,7 @@ void main() {
                     #endif
                     singleLight *= rayAbsorption;
                     #ifdef VOLUMETRIC_FOG
-                        float volumetricFogAbsorption = exp2(stepLength * sampleVolumetricFogDensity);
+                        vec3 volumetricFogAbsorption = exp2(stepLength * sampleVolumetricFogDensity * rayAbsorption);
                         rayAbsorption *= volumetricFogAbsorption;
                         absorption *= volumetricFogAbsorption;
                     #endif

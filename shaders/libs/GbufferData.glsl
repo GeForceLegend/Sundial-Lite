@@ -87,7 +87,7 @@ void BedrockRTX(inout GbufferData dataSet, vec4 specularData) {
 
 vec3 LabPBR(vec3 rawNormal) {
     vec3 normal = rawNormal * 2.0 - 1.0;
-    normal.z = sqrt(1.0 - clamp(dot(normal.xy, normal.xy), 0.0, 1.0));
+    normal.z = sqrt(clamp(1.0 - dot(normal.xy, normal.xy), 0.0, 1.0));
     normal.xy = uintBitsToFloat(floatBitsToUint(clamp(abs(normal.xy) - 1.0 / 255.0, 0.0, 1.0)) ^ (floatBitsToUint(normal.xy) & 0x80000000u));
     return normal;
 }
@@ -215,3 +215,39 @@ float viewToScreenDepth(float depth) {
     depth = (1.0 / depth - gbufferProjectionInverse[3].w) / gbufferProjectionInverse[2].w;
     return depth * 0.5 + 0.5;
 }
+
+#ifdef DISTANT_HORIZONS
+    vec3 screenToViewPosDH(vec2 coord, float depth) {
+        vec3 projPos = vec3(coord.xy, depth) * 2.0 - 1.0;
+        #ifdef TAA
+            projPos.xy -= taaOffset;
+        #endif
+        vec4 viewPos = vec4(dhProjectionInverse[0].x, dhProjectionInverse[1].y, dhProjectionInverse[2].zw) * projPos.xyzz + dhProjectionInverse[3];
+        return viewPos.xyz / viewPos.w;
+    }
+
+    vec3 projectionToViewPosDH(vec3 projPos) {
+        vec4 viewPos = vec4(dhProjectionInverse[0].x, dhProjectionInverse[1].y, dhProjectionInverse[2].zw) * projPos.xyzz + dhProjectionInverse[3];
+        return viewPos.xyz / viewPos.w;
+    }
+
+    vec3 viewToProjectionPosDH(vec3 viewPos) {
+        return -(vec3(dhProjection[0].x, dhProjection[1].y, dhProjection[2].z) * viewPos + dhProjection[3].xyz) / viewPos.z;
+    }
+
+    vec3 prevProjectionToViewPosDH(vec3 projPos) {
+        projPos.x /= dhPreviousProjection[0].x;
+        projPos.y /= dhPreviousProjection[1].y;
+        projPos.z = dhPreviousProjection[3].z / (projPos.z + dhPreviousProjection[2].z);
+        return vec3(projPos.xy * projPos.z, -projPos.z);
+    }
+
+    vec3 prevViewToProjectionPosDH(vec3 viewPos) {
+        return -(vec3(dhPreviousProjection[0].x, dhPreviousProjection[1].y, dhPreviousProjection[2].z) * viewPos + dhPreviousProjection[3].xyz) / viewPos.z;
+    }
+
+    float screenToViewDepthDH(float depth) {
+        depth = depth * 2.0 - 1.0;
+        return 1.0 / (depth * dhProjectionInverse[2].w + dhProjectionInverse[3].w);
+    }
+#endif

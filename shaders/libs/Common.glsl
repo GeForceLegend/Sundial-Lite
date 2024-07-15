@@ -78,7 +78,7 @@ float bayer64(vec2 a) {
 float bayer64Temporal(vec2 a) {
     float bayer = bayer64(a);
     #ifdef TAA
-        bayer = fract(bayer + (frameCounter & 63) * (41.0 / 64.0));
+        bayer = fract(bayer + (frameCounter & 63) * sqrt(0.4));
     #endif
     return bayer;
 }

@@ -22,7 +22,17 @@ void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
 
     float depth = texelFetch(depthtex1, texel, 0).r;
-    vec3 viewPos = screenToViewPos(texcoord, depth);
+    vec3 viewPos;
+    #ifdef DISTANT_HORIZONS
+        if (depth == 1.0) {
+            depth = textureLod(dhDepthTex1, texcoord, 0.0).r;
+            viewPos = screenToViewPosDH(texcoord, depth);
+            depth = -depth;
+        } else
+    #endif
+    {
+        viewPos = screenToViewPos(texcoord, depth);
+    }
     vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
     float worldDepth = inversesqrt(dot(worldPos, worldPos));
     vec3 worldDir = worldPos * worldDepth;
@@ -33,7 +43,7 @@ void main() {
     float backDepth;
     vec3 backColor;
     vec4 planeCloud = vec4(0.0);
-    if (depth < 0.999999) {
+    if (abs(depth) < 0.999999) {
         if (texelFetch(depthtex0, texel, 0).r == depth) {
             solidColor.rgb += texelFetch(colortex4, texel, 0).rgb;
         }

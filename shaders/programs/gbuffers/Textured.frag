@@ -129,7 +129,7 @@ void main() {
     #else
         textureScale = calcTextureScale(texGradX, texGradY, viewPos.xyz);
     #endif
-    vec3 viewDir = normalize(-viewPos.xyz);
+    vec3 viewDir = viewPos.xyz * (-inversesqrt(dot(viewPos.xyz, viewPos.xyz)));
 
     rawData.lightmap = texlmcoord.pq;
     rawData.geoNormal = viewNormal;
@@ -338,21 +338,23 @@ void main() {
             rawData.emissive += step(rawData.emissive, 1e-3);
         #endif
 
-        float porosity = rawData.porosity * 255.0 / 64.0;
-        porosity *= step(porosity, 1.0);
-        float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
+        if (rainyStrength > 0.0) {
+            float porosity = rawData.porosity * 255.0 / 64.0;
+            porosity *= step(porosity, 1.0);
+            float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
 
-        float porosityDarkness = porosity * outdoor * rainyStrength;
-        rawData.albedo.rgb = pow(rawData.albedo.rgb, vec3(1.0 + porosityDarkness)) * (1.0 - 0.2 * porosityDarkness);
+            float porosityDarkness = porosity * outdoor * rainyStrength;
+            rawData.albedo.rgb = pow(rawData.albedo.rgb, vec3(1.0 + porosityDarkness)) * (1.0 - 0.2 * porosityDarkness);
 
-        vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
-        #if RAIN_WET == 0 || !defined USE_RAIN_WET
-        #elif RAIN_WET == 1
-            float rainWetness = clamp(worldNormal.y * 10.0 + 0.5, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);
-            rawData.smoothness += (1.0 - rawData.metalness) * (1.0 - rawData.smoothness) * clamp(rainWetness, 0.0, 1.0);
-        #elif RAIN_WET == 2
-            rawData.smoothness = groundWetSmoothness(mcPos, worldNormal.y, rawData.smoothness, rawData.metalness, porosity, outdoor);
-        #endif
+            vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
+            #if RAIN_WET == 0 || !defined USE_RAIN_WET
+            #elif RAIN_WET == 1
+                float rainWetness = clamp(worldNormal.y * 10.0 + 0.5, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);
+                rawData.smoothness += (1.0 - rawData.metalness) * (1.0 - rawData.smoothness) * clamp(rainWetness, 0.0, 1.0);
+            #elif RAIN_WET == 2
+                rawData.smoothness = groundWetSmoothness(mcPos, worldNormal.y, rawData.smoothness, rawData.metalness, porosity, outdoor);
+            #endif
+        }
 
         #ifdef PARTICLE
             if (noCoord) {

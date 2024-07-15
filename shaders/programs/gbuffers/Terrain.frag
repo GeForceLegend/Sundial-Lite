@@ -15,17 +15,12 @@ flat in vec4 worldTangent;
 #include "/libs/Common.glsl"
 #include "/libs/Parallax.glsl"
 
-vec3 calcNormal(vec3 position) {
-    vec3 dPosDX = dFdx(position);
-    vec3 dPosDY = dFdy(position);
-
-    return normalize(cross(dPosDX, dPosDY));
-}
-
 void main() {
     GbufferData rawData;
-    vec3 viewNormal = calcNormal(viewPos);
-    viewNormal *= signI(-dot(viewNormal, viewPos));
+    vec3 dPosDX = dFdx(viewPos);
+    vec3 dPosDY = dFdy(viewPos);
+    vec3 viewNormal = cross(dPosDX, dPosDY);
+    viewNormal *= signMul(inversesqrt(dot(viewNormal, viewNormal)), -dot(viewNormal, viewPos));
 
     vec2 atlasTexSize = vec2(atlasSize);
     float tangentLenInv = inversesqrt(dot(worldTangent.xyz, worldTangent.xyz));
@@ -34,14 +29,14 @@ void main() {
     mat3 tbnMatrix = mat3(tangent, bitangent, viewNormal);
 
     vec2 atlasTexelSize = 1.0 / atlasTexSize;
-    ivec2 textureResolutionFixed = (floatBitsToInt(vec2(tangentLenInv, abs(worldTangent.w)) * atlasTexelSize) & 0x7FC00000) >> 22;
-    textureResolutionFixed = 0x0000007F - ((textureResolutionFixed >> 1) + (textureResolutionFixed & 1));
+    ivec2 textureResolutionFixed = ((floatBitsToInt(vec2(tangentLenInv, abs(worldTangent.w)) * atlasTexelSize) & 0x7FC00000) + (1 << 22)) >> 23;
+    textureResolutionFixed = 0x0000007F - textureResolutionFixed;
     textureResolutionFixed = ivec2(1) << textureResolutionFixed;
     int maxTextureResolution = max(textureResolutionFixed.x, textureResolutionFixed.y);
     float textureResolutionInv = 1.0 / maxTextureResolution;
     ivec2 baseCoordI = ivec2(floor(texlmcoord.st * atlasTexSize * textureResolutionInv)) * maxTextureResolution;
 
-    vec3 viewDir = -normalize(viewPos);
+    vec3 viewDir = viewPos * (-inversesqrt(dot(viewPos, viewPos)));
     float parallaxOffset = 0.0;
     vec2 texcoord = texlmcoord.st;
     #ifdef PARALLAX
@@ -184,20 +179,22 @@ void main() {
         (1.0 - clamp(rawData.porosity * 1e+3, 0.0, 1.0)) *
         (0.5 * float(rawData.materialID == MAT_GRASS) + 0.7 * float(rawData.materialID == MAT_LEAVES || rawData.materialID == MAT_GLOWING_BERRIES));
 
-    float porosity = rawData.porosity * 255.0 / 64.0;
-    porosity *= step(porosity, 1.0);
-    float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
+    if (rainyStrength > 0.0) {
+        float porosity = rawData.porosity * 255.0 / 64.0;
+        porosity *= step(porosity, 1.0);
+        float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
 
-    float porosityDarkness = porosity * outdoor * rainyStrength;
-    rawData.albedo.rgb = pow(rawData.albedo.rgb, vec3(1.0 + porosityDarkness)) * (1.0 - 0.2 * porosityDarkness);
+        float porosityDarkness = porosity * outdoor * rainyStrength;
+        rawData.albedo.rgb = pow(rawData.albedo.rgb, vec3(1.0 + porosityDarkness)) * (1.0 - 0.2 * porosityDarkness);
 
-    vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
-    #if RAIN_WET == 1
-        float rainWetness = clamp(worldNormal.y * 10.0 + 0.5, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);
-        rawData.smoothness += (1.0 - rawData.metalness) * (1.0 - rawData.smoothness) * rainWetness;
-    #elif RAIN_WET == 2
-        rawData.smoothness = groundWetSmoothness(mcPos, worldNormal.y, rawData.smoothness, rawData.metalness, porosity, outdoor);
-    #endif
+        vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
+        #if RAIN_WET == 1
+            float rainWetness = clamp(worldNormal.y * 10.0 + 0.5, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);
+            rawData.smoothness += (1.0 - rawData.metalness) * (1.0 - rawData.smoothness) * rainWetness;
+        #elif RAIN_WET == 2
+            rawData.smoothness = groundWetSmoothness(mcPos, worldNormal.y, rawData.smoothness, rawData.metalness, porosity, outdoor);
+        #endif
+    }
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);
 }

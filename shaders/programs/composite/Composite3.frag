@@ -18,7 +18,11 @@ void main() {
     vec3 reflectionColor = vec3(0.0);
 
     #ifdef REFLECTION
-        if (waterDepth < 1.0) {
+        bool isTerrain = waterDepth < 1.0;
+        #ifdef DISTANT_HORIZONS
+            isTerrain = isTerrain || texelFetch(dhDepthTex0, texel, 0).r < 1.0;
+        #endif
+        if (isTerrain) {
             GbufferData gbufferData = getGbufferData(texel, texcoord);
             vec4 originData = texelFetch(colortex4, texel, 0);
 

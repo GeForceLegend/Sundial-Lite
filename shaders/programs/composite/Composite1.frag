@@ -9,7 +9,7 @@ in vec2 texcoord;
 #include "/libs/ReflectionFilter.glsl"
 
 void main() {
-    texBuffer4 = vec4(0.0);
+    texBuffer4 = texture(colortex4, texcoord, 0.0);
     if (getWaterDepth(texcoord) < 1.0)
         texBuffer4 = reflectionFilter(6.0, false);
 }

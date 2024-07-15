@@ -249,7 +249,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec3 rayDir = stepLength * lightDir;
         rayPos +=
             (4e2 * screenScale / max(dot(viewGeoNormal, -viewDir), 0.1) + noise.x * 3.0) * rayDir +
-            (1e-2 * viewLength * screenScale / max(pow2(dot(viewGeoNormal, lightDir)), 0.01)) * viewGeoNormal;
+            (0.1 * viewLength * screenScale / max(pow2(dot(viewGeoNormal, lightDir)), 0.01)) * viewGeoNormal;
         vec3 finalPos = rayPos + rayDir * 25.2;
 
         vec4 projRayPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayPos, -rayPos.z);
@@ -264,7 +264,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
         float absorptionBeta = -0.5 / max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5);
         rayDir *= porosityScale;
-        float absorption = exp2(absorptionBeta * porosityScale * stepLength * 10.0) * step(0.25, porosity) * (1.0 - clamp(NdotL * 10.0, 0.0, 1.0) * porosityScale);
+        float absorption = exp2(absorptionBeta * porosityScale * stepLength * 20.0) * step(0.25, porosity) * (1.0 - clamp(NdotL * 10.0, 0.0, 1.0) * porosityScale);
 
         float maximumThickness = 0.025 + 0.0125 * viewLength;
         float shadowWeight = clamp(-NdotL * 10.0, 0.0, 1.0) * clamp(1.0 - viewLength / shadowDistance, 0.0, 1.0);
@@ -286,7 +286,16 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             sampleCoord.st += offset;
             float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).r;
             float sampleparallaxOffset = textureLod(colortex3, sampleCoord.st, 0.0).w;
-            float sampleViewDepth = screenToViewDepth(sampleDepth);
+            float sampleViewDepth;
+            #ifdef DISTANT_HORIZONS
+                if (sampleDepth == 1.0) {
+                    sampleDepth = textureLod(dhDepthTex0, sampleCoord.st, 0.0).r;
+                    sampleViewDepth = screenToViewDepthDH(sampleDepth);
+                } else
+            #endif
+            {
+                sampleViewDepth = screenToViewDepth(sampleDepth);
+            }
             float depthDiff = projRayPos.w - sampleViewDepth - sampleparallaxOffset;
 
             if (abs(depthDiff - maximumThickness) < maximumThickness) {
@@ -327,7 +336,17 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
     GbufferData gbufferData = getGbufferData(texel, texcoord);
-    vec3 viewPos = screenToViewPos(texcoord, gbufferData.depth);
+    vec3 viewPos;
+    #ifdef DISTANT_HORIZONS
+        if (gbufferData.depth == 1.0) {
+            gbufferData.depth = textureLod(dhDepthTex0, texcoord, 0.0).r;
+            viewPos = screenToViewPosDH(texcoord, gbufferData.depth);
+            gbufferData.depth = -gbufferData.depth;
+        } else
+    #endif
+    {
+        viewPos = screenToViewPos(texcoord, gbufferData.depth);
+    }
     vec3 worldPosNoPOM = viewToWorldPos(viewPos);
     vec3 worldDir = normalize(worldPosNoPOM - gbufferModelViewInverse[3].xyz);
 
@@ -368,7 +387,7 @@ void main() {
             float shadowLightFactor = 1.0;
             float NdotL = clamp(dot(worldNormal, shadowDirection), 0.0, 1.0);
             #ifdef LIGHT_LEAKING_FIX
-                shadowLightFactor = clamp(gbufferData.lightmap.y * 10.0, 0.0, 1.0);
+                shadowLightFactor = clamp(gbufferData.lightmap.y * 10.0 + float(isEyeInWater != 0), 0.0, 1.0);
             #endif
             shadow *=
                 gbufferData.albedo.rgb * diffuseAbsorption +
@@ -399,7 +418,7 @@ void main() {
     }
     #ifdef SHADOW_AND_SKY
         else {
-            finalColor.rgb = renderSun(worldDir, sunDirection, vec3(30.0)) * (1.0 - sqrt(weatherStrength)) + gbufferData.albedo.rgb * 2.0;
+            finalColor.rgb = renderSun(worldDir, sunDirection, vec3(30.0)) + gbufferData.albedo.rgb * 2.0;
         }
     #endif
 

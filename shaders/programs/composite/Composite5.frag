@@ -30,8 +30,28 @@ void main() {
     float waterDepth = textureLod(depthtex0, texcoord, 0.0).r;
     float solidDepth = gbufferData.depth;
     vec4 solidColor = texelFetch(colortex3, texel, 0);
-    vec3 viewPos = screenToViewPos(texcoord, solidDepth);
+    vec3 viewPos;
+    #ifdef DISTANT_HORIZONS
+        if (solidDepth == 1.0) {
+            solidDepth = textureLod(dhDepthTex1, texcoord, 0.0).r;
+            viewPos = screenToViewPosDH(texcoord, solidDepth);
+            solidDepth += 1.0;
+        } else
+    #endif
+    {
+        viewPos = screenToViewPos(texcoord, solidDepth);
+    }
     vec3 waterViewPos = screenToViewPos(texcoord, waterDepth);
+    #ifdef DISTANT_HORIZONS
+        if (waterDepth == 1.0) {
+            waterDepth = textureLod(dhDepthTex0, texcoord, 0.0).r;
+            waterViewPos = screenToViewPosDH(texcoord, waterDepth);
+            waterDepth += 1.0;
+        } else
+    #endif
+    {
+        waterViewPos = screenToViewPos(texcoord, waterDepth);
+    }
     vec3 worldPos = viewToWorldPos(viewPos);
     vec3 waterWorldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
 
@@ -55,10 +75,21 @@ void main() {
 
             vec2 refractionTarget = texcoord - refractionOffset;
             float targetSolidDepth = textureLod(depthtex1, refractionTarget, 0.0).r;
+            #ifdef DISTANT_HORIZONS
+                targetSolidDepth += float(targetSolidDepth == 1.0) * textureLod(dhDepthTex1, refractionTarget, 0.0).r;
+            #endif
             if (waterDepth < targetSolidDepth) {
                 solidDepth = targetSolidDepth;
                 solidColor.rgb = textureLod(colortex3, refractionTarget, 0.0).rgb;
-                vec3 viewPos = screenToViewPos(refractionTarget, targetSolidDepth);
+                vec3 viewPos;
+                #ifdef DISTANT_HORIZONS
+                    if (targetSolidDepth > 1.0) {
+                        viewPos = screenToViewPosDH(refractionTarget, targetSolidDepth - 1.0);
+                    } else
+                #endif
+                {
+                    viewPos = screenToViewPos(refractionTarget, targetSolidDepth);
+                }
                 solidViewDepth = length(viewPos);
                 worldPos = viewToWorldPos(viewPos);
                 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
@@ -95,7 +126,7 @@ void main() {
                     solidColor.rgb = netherFogTotal(solidColor.rgb, waterDistance);
                 #elif defined THE_END
                     solidColor.rgb = endFogTotal(solidColor.rgb, waterDistance);
-                    if (solidDepth > 0.999999)
+                    if (solidDepth - float(solidDepth > 1.0) > 0.999999)
                         solidColor.rgb += endStars(worldDir);
                 #else
                     solidColor.rgb *= airAbsorption(waterDistance);

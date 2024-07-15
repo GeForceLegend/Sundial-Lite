@@ -10,10 +10,14 @@ vec3 viewToWorldPos(vec3 viewPos) {
 }
 
 void main() {
-    vec4 viewPos = gl_ModelViewMatrix * gl_Vertex;
+    vec4 vertexPosition = gl_Vertex;
+    vec2 playerSpeed = cameraMovement.xz / frameTime;
+    vertexPosition.xz += gl_Vertex.y * playerSpeed * 0.05;
+
+    vec4 viewPos = gl_ModelViewMatrix * vertexPosition;
     worldPos = viewToWorldPos(viewPos.xyz);
 
-    gl_Position = ftransform();
+    gl_Position = gl_ProjectionMatrix * viewPos;
     color = gl_Color;
     texcoord = vec2(gl_TextureMatrix[0] * gl_MultiTexCoord0);
 

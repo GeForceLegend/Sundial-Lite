@@ -53,6 +53,17 @@ uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferPreviousModelView;
 uniform mat4 gbufferPreviousProjection;
 
+#ifdef DISTANT_HORIZONS
+    uniform sampler2D dhDepthTex0;
+    uniform sampler2D dhDepthTex1;
+
+    uniform mat4 dhProjection;
+    uniform mat4 dhProjectionInverse;
+    uniform mat4 dhPreviousProjection;
+
+    uniform float dhFarPlane;
+#endif
+
 const float PI = 3.1415926535897;
 
 #ifdef SETTINGS

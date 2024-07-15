@@ -81,16 +81,29 @@ vec3 directionDistributionFast(vec2 noise, vec3 normal, vec3 viewDir, float roug
 
 vec2 projIntersection(vec4 origin, vec4 direction, vec2 targetCoord) {
     vec2 intersection = (targetCoord * origin.ww - origin.xy) / (direction.xy - targetCoord * direction.ww);
-    intersection = mix(intersection, vec2(far + 32.0), step(intersection, vec2(0.0)));
+    float depthLimit = far;
+    #ifdef DISTANT_HORIZONS
+        depthLimit = dhFarPlane;
+    #endif
+    intersection = mix(intersection, vec2(depthLimit + 32.0), step(intersection, vec2(0.0)));
     return intersection;
 }
 
 vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float firstWeight) {
-    vec3 viewPos = screenToViewPos(texcoord, gbufferData.depth);
+    vec3 viewPos;
+    #ifdef DISTANT_HORIZONS
+        if (gbufferData.depth > 1.0) {
+            viewPos = screenToViewPosDH(texcoord, gbufferData.depth - 1.0);
+        } else
+    #endif
+    {
+        viewPos = screenToViewPos(texcoord, gbufferData.depth);
+    }
     vec3 viewDir = normalize(viewPos);
     float NdotV = max(dot(viewPos, -gbufferData.geoNormal), 1e-6);
     gbufferData.parallaxOffset *= PARALLAX_DEPTH;
     viewPos += gbufferData.parallaxOffset * viewPos * 0.2 / NdotV;
+    viewPos += gbufferData.geoNormal * 0.01;
 
     NoiseGenerator noiseGenerator = initNoiseGenerator(uvec2(gl_FragCoord.st), uint(frameCounter));
 
@@ -124,54 +137,102 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         vec4 targetProjPos = originProjPos + projDirection * traceLength;
         vec3 targetCoord = targetProjPos.xyz / targetProjPos.w * 0.5 + 0.5;
 
-        vec3 sampleCoord = vec3(texcoord, gbufferData.depth);
+        vec3 sampleCoord = originProjPos.xyz / originProjPos.w * 0.5 + 0.5;
+        float noise = blueNoiseTemporal(texcoord).x + 0.1;
         vec3 stepSize = (targetCoord - sampleCoord) / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
-        sampleCoord += (blueNoiseTemporal(texcoord).x + 0.1) * stepSize;
+        sampleCoord += noise * stepSize;
+        #ifdef TAA
+            sampleCoord.st += taaOffset * 0.5;
+        #endif
+
+        #ifdef DISTANT_HORIZONS
+            vec4 originProjPosDH = vec4(vec3(dhProjection[0].x, dhProjection[1].y, dhProjection[2].z) * viewPos + dhProjection[3].xyz, -viewPos.z);
+            projDirection.z *= dhProjection[2].z / gbufferProjection[2].z;
+            vec4 targetProjPosDH = originProjPosDH + projDirection * traceLength;
+            vec3 sampleCoordDH = originProjPosDH.xyz / originProjPosDH.w * 0.5 + 0.5;
+            vec3 targetCoordDH = targetProjPosDH.xyz / targetProjPosDH.w * 0.5 + 0.5;
+            vec3 stepSizeDH = (targetCoordDH - sampleCoordDH) / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
+            sampleCoordDH += noise * stepSizeDH;
+            #ifdef TAA
+                sampleCoordDH.st += taaOffset * 0.5;
+            #endif
+        #endif
 
         bool hitSky = true;
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
-            float sampleDepth = textureLod(
-                depthtex1, sampleCoord.st
-                #ifdef TAA
-                + taaOffset * 0.5
-                #endif
-            , 0.0).x;
-            if (sampleCoord.z > sampleDepth) {
+            float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).x;
+            bool hitCheck = sampleCoord.z > sampleDepth;
+            #ifdef DISTANT_HORIZONS
+                float sampleDepthDH = textureLod(dhDepthTex1, sampleCoordDH.st, 0.0).x;
+                hitCheck = hitCheck || (sampleDepth == 1.0 && sampleCoordDH.z > sampleDepthDH);
+            #endif
+            if (hitCheck) {
                 float stepScale = 0.5;
                 vec3 refinementCoord = sampleCoord;
+                #ifdef DISTANT_HORIZONS
+                    vec3 refinementCoordDH = sampleCoordDH;
+                #endif
                 for (int j = 0; j < SCREEN_SPACE_REFLECTION_REFINEMENTS; j++) {
-                    refinementCoord += signMul(stepScale, sampleDepth - refinementCoord.z) * stepSize;
-                    sampleDepth = textureLod(
-                        depthtex2, refinementCoord.st
-                        #ifdef TAA
-                        + taaOffset * 0.5
-                        #endif
-                    , 0.0).x;
+                    float stepDirection = sampleDepth - refinementCoord.z;
+                    #ifdef DISTANT_HORIZONS
+                        float stepDirectionDH = sampleDepthDH - refinementCoordDH.z;
+                        stepDirection = mix(stepDirection, stepDirectionDH, float(sampleDepth == 1.0));
+                        refinementCoordDH += signMul(stepScale, stepDirection) * stepSizeDH;
+                        sampleDepthDH = textureLod(dhDepthTex1, refinementCoordDH.st, 0.0).x;
+                    #endif
+                    refinementCoord += signMul(stepScale, stepDirection) * stepSize;
+                    sampleDepth = textureLod(depthtex2, refinementCoord.st, 0.0).x;
                     stepScale *= 0.5;
                 }
 
-                if (abs(refinementCoord.z - sampleDepth) < 4e-4 && clamp(refinementCoord.st, 0.0, 1.0) == refinementCoord.st && sampleDepth < 1.0) {
+                bool hitTerrain = abs(refinementCoord.z - sampleDepth) < 4e-4 && sampleDepth < 1.0;
+                #ifdef DISTANT_HORIZONS
+                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoordDH.z - sampleDepthDH) < 4e-3 && sampleDepthDH < 1.0);
+                #endif
+                if (hitTerrain && clamp(refinementCoord.st, 0.0, 1.0) == refinementCoord.st) {
                     sampleCoord = refinementCoord;
+                    #ifdef DISTANT_HORIZONS
+                        sampleCoordDH = refinementCoordDH;
+                    #endif
                     hitSky = false;
                     break;
                 }
             }
-            if (clamp(sampleCoord, 0.0, 1.0) != sampleCoord) break;
+            #ifdef DISTANT_HORIZONS
+                if (clamp(sampleCoordDH.st, 0.0, 1.0) != sampleCoordDH.st) break;
+                sampleCoordDH += stepSizeDH;
+            #else
+                if (clamp(sampleCoord.st, 0.0, 1.0) != sampleCoord.st) break;
+            #endif
             sampleCoord += stepSize;
         }
         rayDir = mat3(gbufferModelViewInverse) * rayDir;
+        vec3 worldPos = viewToWorldPos(viewPos);
+        vec3 intersectionData = planetIntersectionData(worldPos, rayDir);
         if (!hitSky) {
-            vec3 sampleProjPos = sampleCoord * 2.0 - 1.0;
-            sampleProjPos.xy /= vec2(gbufferProjection[0].x, gbufferProjection[1].y);
-            float projectionScale = gbufferProjection[3].z / (sampleProjPos.z + gbufferProjection[2].z);
-            vec3 sampleViewPos = vec3(sampleProjPos.xy * projectionScale, -projectionScale);
-            float rayLength = distance(viewPos, sampleViewPos);
-            vec3 sampleLight = textureLod(
-                colortex3, sampleCoord.xy
+            vec3 sampleViewPos;
+            #ifdef DISTANT_HORIZONS
+                if (sampleCoord.z >= 1.0) {
+                    vec3 sampleProjPos = sampleCoordDH * 2.0 - 1.0;
+                    #ifdef TAA
+                        sampleProjPos.st -= taaOffset;
+                    #endif
+                    sampleProjPos.xy /= vec2(dhProjection[0].x, dhProjection[1].y);
+                    float projectionScale = dhProjection[3].z / (sampleProjPos.z + dhProjection[2].z);
+                    sampleViewPos = vec3(sampleProjPos.xy * projectionScale, -projectionScale);
+                } else
+            #endif
+            {
+                vec3 sampleProjPos = sampleCoord * 2.0 - 1.0;
                 #ifdef TAA
-                + taaOffset * 0.5
+                    sampleProjPos.st -= taaOffset;
                 #endif
-            , 0.0).rgb;
+                sampleProjPos.xy /= vec2(gbufferProjection[0].x, gbufferProjection[1].y);
+                float projectionScale = gbufferProjection[3].z / (sampleProjPos.z + gbufferProjection[2].z);
+                sampleViewPos = vec3(sampleProjPos.xy * projectionScale, -projectionScale);
+            }
+            float rayLength = distance(viewPos, sampleViewPos);
+            vec3 sampleLight = textureLod(colortex3, sampleCoord.xy, 0.0).rgb;
             reflectionColor = vec4(sampleLight, rayLength);
         }
         else {
@@ -180,16 +241,11 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
             #ifdef SHADOW_AND_SKY
                 vec3 skylightColor = vec3(0.0);
                 vec3 atmosphere;
-                vec3 worldPos = viewToWorldPos(viewPos);
-                vec3 intersectionData = planetIntersectionData(worldPos, rayDir);
                 skylightColor = singleAtmosphereScattering(vec3(0.0), worldPos, rayDir, sunDirection, intersectionData, 30.0, atmosphere);
                 vec4 planeCloud = vec4(0.0);
                 #ifdef PLANE_CLOUD
                     planeCloud = planeClouds(worldPos, rayDir, sunDirection, skyColorUp, intersectionData);
-                    if (worldPos.y + cameraPosition.y < PLANE_CLOUD_HEIGHT) {
-                        skylightColor = mix(skylightColor, planeCloud.rgb, planeCloud.a);
-                        atmosphere = mix(atmosphere, planeCloud.rgb, planeCloud.a);
-                    }
+                    skylightColor = mix(skylightColor, planeCloud.rgb, planeCloud.a * float(worldPos.y + cameraPosition.y < PLANE_CLOUD_HEIGHT));
                 #endif
                 #ifdef CLOUD_IN_REFLECTION
                     float cloudDepth;
@@ -214,6 +270,10 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                 reflectionColor.rgb = netherFogTotal(reflectionColor.rgb, reflectionColor.w);
             #else
                 reflectionColor.rgb *= airAbsorption(reflectionColor.w);
+                #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
+                    float atmosphereLength = mix(reflectionColor.w, 500.0 + 500.0 * float(intersectionData.z > 0.0), float(hitSky));
+                    reflectionColor.rgb = solidAtmosphereScattering(reflectionColor.rgb, rayDir, skyColorUp, atmosphereLength, gbufferData.lightmap.y);
+                #endif
             #endif
         }
         else if (isEyeInWater == 1) {
@@ -235,11 +295,15 @@ void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
     float waterDepth = textureLod(depthtex0, texcoord, 0.0).r;
     float solidDepth = textureLod(depthtex1, texcoord, 0.0).r;
+    #ifdef DISTANT_HORIZONS
+        waterDepth += float(waterDepth == 1.0) * textureLod(dhDepthTex0, texcoord, 0.0).r;
+        solidDepth += float(solidDepth == 1.0) * textureLod(dhDepthTex1, texcoord, 0.0).r;
+    #endif
     texBuffer0 = vec4(vec3(0.0), texelFetch(colortex4, texel, 0).w);
 
     vec4 reflectionColor = vec4(0.0);
     #ifdef REFLECTION
-        if (waterDepth < 1.0) {
+        if (waterDepth - float(waterDepth > 1.0) < 1.0) {
             GbufferData gbufferData = getGbufferData(texel, texcoord);
             vec3 n = vec3(1.5);
             vec3 k = vec3(0.0);
