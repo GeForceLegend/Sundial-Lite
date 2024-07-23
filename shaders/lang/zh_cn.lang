@@ -9,14 +9,7 @@ screen.Parallax=视差
 screen.Parallax.comment=使用纹理包提供的高度图制造凹凸的效果
 screen.Specular=PBR
 screen.Specular.comment=使用纹理包提供的PBR纹理赋予表面不同的物理特性
-screen.PathTrace=路径追踪
-screen.PathTrace.comment=路径追踪系统、全局光照与反射
-screen.GlobalIllumination=全局光照
-screen.GlobalIllumination.comment=全局光照与辐照度缓存
-screen.GIDenoiser=全局光照降噪器
-screen.GIDenoiser.comment=全局光照的降噪器的相关设置
 screen.Reflection=反射
-screen.ScreenSpaceReflection=屏幕空间反射
 screen.Shadow=阴影
 screen.Lighting=光照
 screen.Atmosphere=大气效果
@@ -46,7 +39,7 @@ screen.Experimental=实验性效果
 
 # Texture
 option.TEXTURE_RESOLUTION=纹理分辨率
-option.TEXTURE_RESOLUTION.comment=将此选项调整为当前资源包的分辨率或者自动检测. 影响视差、路径追踪、反射和各向异性过滤的渲染
+option.TEXTURE_RESOLUTION.comment=将此选项调整为当前资源包的分辨率或者自动检测. 影响视差和各向异性过滤的渲染
 value.TEXTURE_RESOLUTION.0=自动检测
 option.ENTITY_TEXTURE_RESOLUTION=实体纹理分辨率
 option.ENTITY_TEXTURE_RESOLUTION.comment=将此选项调整为当前资源包的分辨率. 无法自动检测实体的纹理分辨率. 影响视差和各向异性过滤的渲染
@@ -109,47 +102,18 @@ option.WATER_WAVE_SCALE=水波缩放
 option.WATER_WAVE_HEIGHT=水波高度
 option.WATER_WAVE_SPEED=水波速度
 
-# PathTrace
-option.PATH_TRACE_GEOMETRY_QUALITY=路径追踪几何体质量
-option.PATH_TRACE_GEOMETRY_QUALITY.comment=较低的质量会忽略一部分硬编码几何形状的计算
-option.QUALITY_CUTOUT_TRACE=高质量半透明计算
-option.QUALITY_CUTOUT_TRACE.comment=开启时会考虑铁栏杆、玻璃板等方块的所有面. 关闭后只会在距离玩家最近的面上采样纹理
-option.HIGH_PRECISION_VOXEL_TEXCOORD=高精度体素纹理坐标
-option.HIGH_PRECISION_VOXEL_TEXCOORD.comment=使用更高的精度存储体素的纹理坐标，但是会增加显存消耗. 关闭后，使用部分完成度较高但是不完全的高清纹理时，使用原版纹理的方块可能会读取到错误的纹理. 仅在1.16.5及以上Minecraft版本中有效
-# GlobalIllumination
-option.GI_SAMPLES=全局光照采样数
-option.GI_MAX_STEP=全局光照最大步进次数
-option.MAX_BLENDED_FRAMES=最大混合帧数
-option.MAX_BLENDED_FRAMES.comment=混合GI时的最大混合帧数. 更高的值能减少GI的噪点. 更低的值能提升GI响应速度
-option.IRRADIANCE_CACHE_SAMPLES=辐照度缓存采样数
-option.IRRADIANCE_CACHE_MAX_STEP=辐照度缓存最大步进次数
-option.CLOUD_IN_GI=全局光照中计算云光
-option.DISTANCE_GI_CULLING=远距离光照剔除
-option.DISTANCE_GI_CULLING.comment=只影响辐照度缓存，会降低距离过远的辐照度缓存采样的亮度
 # Reflection
-option.REFLECTION_MAX_STEP=反射最大步进次数
 option.REFLECTION=反射
 option.FULL_REFLECTION=完整反射
 option.FULL_REFLECTION.comment=开启后只要不是完全粗糙的表面都会计算反射. 开启PBR资源包时对性能影响巨大
-option.SCREEN_DATA_COVER=屏幕空间数据覆盖
-option.SCREEN_DATA_COVER.comment=在反射中使用屏幕空间内可用gbuffer数据覆盖获取到的体素表面信息. 由于架构原因仅能在不透明反射上使用
 option.REFLECTION_FILTER=反射过滤
 option.CLOUD_IN_REFLECTION=反射中渲染云
-option.SMOOTH_IRRADIANCE_CACHE=平滑辐照度缓存
-# GIDenoiser
-option.GI_DENOISER_NORMAL_STRICTNESS=法线严格度
-option.GI_DENOISER_NORMAL_STRICTNESS.comment=进行降噪时对法线判定的严格程度. 较高的值会使法线纹理产生的明暗更清晰，但可能会增加噪点
-option.SHARP_GI_FILTER=锐利光照过滤
-option.SHARP_GI_FILTER.comment=光照过滤的结果会更加锐利，噪点更少，并且性能略好. 但是光照不明显的地方遮挡可能会更加模糊，并且可能不符合一些人的喜好
-# ScreenSpaceReflection
-option.SCREEN_SPACE_REFLECTION=屏幕空间反射
-option.SCREEN_SPACE_REFLECTION.comment=在光线追踪反射未命中时才会调用
 option.SCREEN_SPACE_REFLECTION_STEP=屏幕空间反射步进次数
 option.SCREEN_SPACE_REFLECTION_REFINEMENTS=屏幕空间反射精度
 
 # Shadow
 option.shadowMapResolution=阴影分辨率
-option.shadowMapResolution.comment=不会提高实际阴影的质量，能够提升用于路径追踪的体素化范围. 对性能影响极大
+option.shadowMapResolution.comment=提升阴影的精细度. 对性能影响极大
 option.shadowDistance=阴影范围
 option.shadowDistance.comment=以降低近处阴影质量为代价让更远的距离渲染阴影并提高远处阴影质量. 用于路径追踪的体素化范围也受此设置影响
 option.SHADOW_BIAS=阴影形变
@@ -159,7 +123,6 @@ option.sunPathRotation.comment=太阳轨迹相较于原版的旋转角度
 option.PCSS_SAMPLES=软阴影采样数
 option.PCSS=软阴影
 option.SCREEN_SPACE_SHADOW=屏幕空间衔接阴影
-option.PATH_TRACED_CONTACT_SHADOW=路径追踪衔接阴影
 option.TRANSPARENT_SHADOW=半透明物体阴影
 option.WATER_CAUSTIC=水下焦散
 option.CLOUD_SHADOW=云影

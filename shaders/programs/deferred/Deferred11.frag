@@ -17,7 +17,6 @@ uniform vec3 viewShadowDirection;
 #define PCSS
 #define PCSS_SAMPLES 9 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 25 30 36]
 #define SCREEN_SPACE_SHADOW
-#define PATH_TRACED_CONTACT_SHADOW
 
 #include "/settings/CloudSettings.glsl"
 #include "/settings/GlobalSettings.glsl"
@@ -374,7 +373,7 @@ void main() {
         finalColor.rgb = vec3(BASIC_LIGHT + NIGHT_VISION_BRIGHTNESS * nightVision);
         finalColor.rgb += pow(gbufferData.lightmap.x, 4.4) * lightColor;
         #ifdef SHADOW_AND_SKY
-            finalColor.rgb += pow(gbufferData.lightmap.y, 2.2) * skyColorUp * (worldNormal.y * 0.3 + 0.4);
+            finalColor.rgb += pow(gbufferData.lightmap.y, 2.2) * skyColorUp * (worldNormal.y * 0.6 + 0.8);
         #endif
         float NdotV = clamp(dot(viewDir, -gbufferData.geoNormal), 0.0, 1.0);
         vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
