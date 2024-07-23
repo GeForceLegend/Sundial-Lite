@@ -347,5 +347,5 @@ option.GLOWING_OVERLAY=Glowing entities overlay
 option.GLOWING_OVERLAY.comment=Let glowing entities rendering above others. Have serious artifact with DoF
 option.UNDERGROUND_MODE=Underground mode
 option.UNDERGROUND_MODE.comment=Disable all sky and sunlight rendering. Always enabled in nether and the end
-option.SHADOW_BIAS_FIX=Shadow bias fix
-option.SHADOW_BIAS_FIX.comment=Fix depth difference caused by rasterizer in biased shadow mapping. Partially fix shadow issue on huge faces. Affects performance.
+option.SHADOW_DISTORTION_FIX=Shadow distortion fix
+option.SHADOW_DISTORTION_FIX.comment=Fix depth difference caused by rasterizer in distorted shadow mapping. Partially fix shadow issue on huge faces. Affects performance.

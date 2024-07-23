@@ -119,7 +119,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
 
 #ifdef MC_NORMAL_MAP
     vec2 perPixelParallax(
-        vec2 coord, vec3 viewVector, vec2 albedoTexSize, ivec2 baseCoord, float tileResolution, bool clampCoord,
+        vec2 coord, vec3 viewVector, vec2 albedoTexSize, ivec2 baseTexelCoord, int tileResolution, bool clampCoord,
         inout vec3 parallaxTexNormal, inout float parallaxOffset
     ) {
         vec2 parallaxCoord = coord;
@@ -131,31 +131,33 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
             vec3 stepDir = viewVector;
             stepDir.xy *= PARALLAX_DEPTH * tileResolution * 0.2;
             stepDir = normalize(stepDir);
+            stepDir.z = -stepDir.z;
 
             coord *= albedoTexSize;
-            vec2 sampleTexel = floor(coord);
-            vec2 basicTexel = vec2(baseCoord);
+            ivec2 sampleTexel = ivec2(floor(coord));
+            ivec2 basicTexel = baseTexelCoord;
             vec2 stepLength = abs(1.0 / stepDir.xy);
-            vec2 dirSigned = signI(stepDir.xy);
+            ivec2 dirSigned = (floatBitsToInt(stepDir.xy) >> 31) * 2 + 1;
             vec2 nextLength = (dirSigned * (0.5 - coord + sampleTexel) + 0.5) * stepLength;
-            vec2 nextPixel = vec2(0.0);
+            int tileBits = tileResolution - 1;
+            sampleHeight = 1.0 - sampleHeight;
 
             for (int i = 0; i < PARALLAX_QUALITY; i++) {
                 float rayLength = min(nextLength.x, nextLength.y);
-                float rayHeight = -rayLength * stepDir.z;
-                if (1.0 - rayHeight < sampleHeight) {
+                float rayHeight = rayLength * stepDir.z;
+                if (rayHeight < sampleHeight) {
                     parallaxOffset = 1.0 - sampleHeight;
                     break;
                 }
-                nextPixel = step(nextLength, vec2(rayLength));
+                ivec2 nextPixel = (floatBitsToInt(vec2(rayLength) - nextLength) >> 31) + 1;
                 nextLength += nextPixel * stepLength;
                 sampleTexel += nextPixel * dirSigned;
                 if (clampCoord) {
-                    sampleTexel = basicTexel + mod(sampleTexel - basicTexel, vec2(tileResolution));
+                    sampleTexel = basicTexel + (sampleTexel & tileBits);
                 }
-                sampleHeight = texelFetch(normals, ivec2(sampleTexel), 0).a;
-                sampleHeight += clamp(1.0 - sampleHeight * 1e+10, 0.0, 1.0);
-                if (1.0 - rayHeight < sampleHeight) {
+                sampleHeight = texelFetch(normals, sampleTexel, 0).a;
+                sampleHeight = 1.0 - sampleHeight;
+                if (rayHeight > sampleHeight) {
                     parallaxOffset = rayHeight;
                     parallaxTexNormal = vec3(-nextPixel * dirSigned, 0.0);
                     break;

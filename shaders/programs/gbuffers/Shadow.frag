@@ -7,7 +7,7 @@ in vec3 worldNormal;
 in vec2 texcoord;
 in vec2 shadowOffset;
 
-// #define SHADOW_BIAS_FIX
+// #define SHADOW_DISTORTION_FIX
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -66,7 +66,7 @@ void main() {
         vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
         if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || albedo.w < 0.001 || fwidth(shadowOffset.x) > 0.0) discard;
 
-        #ifdef SHADOW_BIAS_FIX
+        #ifdef SHADOW_DISTORTION_FIX
             vec3 shadowProjPos = vec3(centerTexelOffset / (realShadowMapResolution * 0.25), gl_FragCoord.z * 10.0 - 5.0);
             vec3 pixelWorldPos = shadowCoordToWorldPos(shadowProjPos);
             vec3 positionDiff = worldPos - pixelWorldPos;

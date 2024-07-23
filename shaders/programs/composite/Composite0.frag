@@ -133,29 +133,23 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         vec2 screenEdgeAA = projIntersection(originProjPos, projDirection, vec2(1.0));
         vec2 screenEdgeBB = projIntersection(originProjPos, projDirection, vec2(-1.0));
 
+        vec4 sampleCoord = vec4(originProjPos.xyz / originProjPos.w * 0.5 + 0.5, 0.0);
         float traceLength = min(min(screenEdgeAA.x, screenEdgeAA.y), min(screenEdgeBB.x, screenEdgeBB.y));
         vec4 targetProjPos = originProjPos + projDirection * traceLength;
-        vec3 targetCoord = targetProjPos.xyz / targetProjPos.w * 0.5 + 0.5;
+        vec4 targetCoord = vec4(targetProjPos.xyz / targetProjPos.w * 0.5 + 0.5, 0.0);
 
-        vec3 sampleCoord = originProjPos.xyz / originProjPos.w * 0.5 + 0.5;
+        #ifdef DISTANT_HORIZONS
+            projDirection.z *= dhProjection[2].z / gbufferProjection[2].z;
+            float originProjDepthDH = viewPos.z * dhProjection[2].z + dhProjection[3].z;
+            sampleCoord.w = originProjDepthDH / -viewPos.z * 0.5 + 0.5;
+            targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) / (projDirection.w * traceLength - viewPos.z) * 0.5 + 0.5;
+        #endif
+
         float noise = blueNoiseTemporal(texcoord).x + 0.1;
-        vec3 stepSize = (targetCoord - sampleCoord) / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
+        vec4 stepSize = (targetCoord - sampleCoord) / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
         sampleCoord += noise * stepSize;
         #ifdef TAA
             sampleCoord.st += taaOffset * 0.5;
-        #endif
-
-        #ifdef DISTANT_HORIZONS
-            vec4 originProjPosDH = vec4(vec3(dhProjection[0].x, dhProjection[1].y, dhProjection[2].z) * viewPos + dhProjection[3].xyz, -viewPos.z);
-            projDirection.z *= dhProjection[2].z / gbufferProjection[2].z;
-            vec4 targetProjPosDH = originProjPosDH + projDirection * traceLength;
-            vec3 sampleCoordDH = originProjPosDH.xyz / originProjPosDH.w * 0.5 + 0.5;
-            vec3 targetCoordDH = targetProjPosDH.xyz / targetProjPosDH.w * 0.5 + 0.5;
-            vec3 stepSizeDH = (targetCoordDH - sampleCoordDH) / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
-            sampleCoordDH += noise * stepSizeDH;
-            #ifdef TAA
-                sampleCoordDH.st += taaOffset * 0.5;
-            #endif
         #endif
 
         bool hitSky = true;
@@ -163,22 +157,18 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
             float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).x;
             bool hitCheck = sampleCoord.z > sampleDepth;
             #ifdef DISTANT_HORIZONS
-                float sampleDepthDH = textureLod(dhDepthTex1, sampleCoordDH.st, 0.0).x;
-                hitCheck = hitCheck || (sampleDepth == 1.0 && sampleCoordDH.z > sampleDepthDH);
+                float sampleDepthDH = textureLod(dhDepthTex1, sampleCoord.st, 0.0).x;
+                hitCheck = hitCheck || (sampleDepth == 1.0 && sampleCoord.w > sampleDepthDH);
             #endif
             if (hitCheck) {
                 float stepScale = 0.5;
-                vec3 refinementCoord = sampleCoord;
-                #ifdef DISTANT_HORIZONS
-                    vec3 refinementCoordDH = sampleCoordDH;
-                #endif
+                vec4 refinementCoord = sampleCoord;
                 for (int j = 0; j < SCREEN_SPACE_REFLECTION_REFINEMENTS; j++) {
                     float stepDirection = sampleDepth - refinementCoord.z;
                     #ifdef DISTANT_HORIZONS
-                        float stepDirectionDH = sampleDepthDH - refinementCoordDH.z;
+                        float stepDirectionDH = sampleDepthDH - refinementCoord.w;
                         stepDirection = mix(stepDirection, stepDirectionDH, float(sampleDepth == 1.0));
-                        refinementCoordDH += signMul(stepScale, stepDirection) * stepSizeDH;
-                        sampleDepthDH = textureLod(dhDepthTex1, refinementCoordDH.st, 0.0).x;
+                        sampleDepthDH = textureLod(dhDepthTex1, refinementCoord.st, 0.0).x;
                     #endif
                     refinementCoord += signMul(stepScale, stepDirection) * stepSize;
                     sampleDepth = textureLod(depthtex2, refinementCoord.st, 0.0).x;
@@ -187,23 +177,15 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
 
                 bool hitTerrain = abs(refinementCoord.z - sampleDepth) < 4e-4 && sampleDepth < 1.0;
                 #ifdef DISTANT_HORIZONS
-                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoordDH.z - sampleDepthDH) < 4e-3 && sampleDepthDH < 1.0);
+                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoord.w - sampleDepthDH) < 4e-3 && sampleDepthDH < 1.0);
                 #endif
                 if (hitTerrain && clamp(refinementCoord.st, 0.0, 1.0) == refinementCoord.st) {
                     sampleCoord = refinementCoord;
-                    #ifdef DISTANT_HORIZONS
-                        sampleCoordDH = refinementCoordDH;
-                    #endif
                     hitSky = false;
                     break;
                 }
             }
-            #ifdef DISTANT_HORIZONS
-                if (clamp(sampleCoordDH.st, 0.0, 1.0) != sampleCoordDH.st) break;
-                sampleCoordDH += stepSizeDH;
-            #else
-                if (clamp(sampleCoord.st, 0.0, 1.0) != sampleCoord.st) break;
-            #endif
+            if (clamp(sampleCoord.st, 0.0, 1.0) != sampleCoord.st || sampleCoord.z < 0.0) break;
             sampleCoord += stepSize;
         }
         rayDir = mat3(gbufferModelViewInverse) * rayDir;
@@ -213,7 +195,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
             vec3 sampleViewPos;
             #ifdef DISTANT_HORIZONS
                 if (sampleCoord.z >= 1.0) {
-                    vec3 sampleProjPos = sampleCoordDH * 2.0 - 1.0;
+                    vec3 sampleProjPos = sampleCoord.xyw * 2.0 - 1.0;
                     #ifdef TAA
                         sampleProjPos.st -= taaOffset;
                     #endif
@@ -223,7 +205,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                 } else
             #endif
             {
-                vec3 sampleProjPos = sampleCoord * 2.0 - 1.0;
+                vec3 sampleProjPos = sampleCoord.xyz * 2.0 - 1.0;
                 #ifdef TAA
                     sampleProjPos.st -= taaOffset;
                 #endif

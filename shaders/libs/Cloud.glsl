@@ -13,8 +13,8 @@ const float cloudBottomHeight = earthRadius + CLOUD_REALISTIC_HEIGHT + 500.0;
 const float cloudTopHeight = earthRadius + CLOUD_REALISTIC_HEIGHT + CLOUD_REALISTIC_THICKNESS + 500.0;
 const float cloudCenterHeight = earthRadius + CLOUD_REALISTIC_HEIGHT + CLOUD_REALISTIC_CENTER_THICKNESS + 500.0;
 
-float blockyCloudDensity(vec2 cloudPos) {
-    return step(1.0 - CLOUD_BLOCKY_AMOUNT, texelFetch(noisetex, ivec2(cloudPos), 0).z);
+float blockyCloudDensity(ivec2 cloudTexel) {
+    return step(1.0 - CLOUD_BLOCKY_AMOUNT, texelFetch(noisetex, cloudTexel, 0).z);
 }
 
 vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, vec3 shadowDir, vec3 skyColorUp, float backDepth, out float cloudDepth) {
@@ -26,7 +26,8 @@ vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, 
 
     float intersection = topIntersection * bottomIntersection > 0.0 ? min(topIntersection, bottomIntersection) : 0.0;
     vec4 result = vec4(baseColor, 0.0);
-    if (intersection > 0.0 && intersection * step(1e-5, backDepth) <= backDepth) {
+    backDepth -= intersection * step(1e-5, backDepth);
+    if (intersection > 0.0 && 0.0 <= backDepth) {
         vec2 wind = frameTimeCounter * CLOUD_SPEED * vec2(4.0, 2.0);
         vec2 cloudOffset = worldPos.xz + intersection * worldDir.xz;
         vec3 cloudPos = vec3(
@@ -38,37 +39,37 @@ vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, 
         vec3 stepDir = worldDir;
         stepDir.y /= cloudThicknessScale;
         vec3 stepLength = 1.0 / (abs(stepDir) + 1e-5);
-        vec3 dirSigned = signI(stepDir);
+        ivec3 dirSigned = (floatBitsToInt(stepDir) >> 31) * 2 + 1;
         vec3 nextLength = (dirSigned * (0.5 - fract(cloudPos)) + 0.5) * stepLength;
-        vec3 nextVoxel = vec3(0.0, 0.0, 0.0);
+        ivec3 nextVoxel = ivec3(0);
 
-        vec2 cloudCoord = floor(cloudPos.xz) - 64.0 * floor(cloudPos.xz / 64.0);
+        ivec2 cloudTexel = ivec2(floor(cloudPos.xz)) & 63;
         vec3 cloudNormal = vec3(0.0, -dirSigned.y, 0.0);
         float cloudOpticalDepth = 0.0;
         float totalRayLength = 0.0;
         float hitLength = 0.0;
-        vec2 sampleCloudCoord = cloudCoord;
+        ivec2 sampleCloudTexel = cloudTexel;
         for (int i = 0; i < CLOUD_BLOCKY_MAX_SAMPLES; i++) {
             float rayLength = min(nextLength.x, min(nextLength.y, nextLength.z));
-            float sampleCloudDensity = blockyCloudDensity(sampleCloudCoord);
+            float sampleCloudDensity = blockyCloudDensity(sampleCloudTexel);
             if (sampleCloudDensity > 0.5 && cloudOpticalDepth == 0.0) {
                 cloudPos += stepDir * totalRayLength;
                 cloudNormal = nextVoxel * -dirSigned;
-                cloudCoord = sampleCloudCoord;
+                cloudTexel = sampleCloudTexel;
                 hitLength = totalRayLength / cloudNoiseScale;
             }
             cloudOpticalDepth += rayLength * step(0.5, sampleCloudDensity);
-            nextVoxel = step(nextLength, vec3(rayLength));
+            nextVoxel = (floatBitsToInt(vec3(rayLength) - nextLength) >> 31) + 1;
             if (nextVoxel.y > 0.5) {
                 break;
             }
             totalRayLength += rayLength;
             nextLength += nextVoxel * stepLength - rayLength;
-            sampleCloudCoord = mod(sampleCloudCoord + nextVoxel.xz * dirSigned.xz, vec2(64.0));
+            sampleCloudTexel = (sampleCloudTexel + nextVoxel.xz * dirSigned.xz) & 63;
         }
 
         if (backDepth > 1e-5) {
-            float maximumOpticalDepth = (backDepth - intersection) * cloudNoiseScale;
+            float maximumOpticalDepth = backDepth * cloudNoiseScale;
             cloudOpticalDepth = min(maximumOpticalDepth, cloudOpticalDepth);
         }
 
@@ -79,21 +80,21 @@ vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, 
             stepDir = shadowDir;
             stepDir.y /= cloudThicknessScale;
             stepLength = 1.0 / (abs(stepDir) + 1e-5);
-            dirSigned = signI(stepDir);
+            dirSigned = (floatBitsToInt(stepDir) >> 31) * 2 + 1;
             nextLength = (dirSigned * (0.5 - fract(cloudPos)) + 0.5) * stepLength;
-            nextVoxel = vec3(0.0);
+            nextVoxel = ivec3(0);
 
             float shadowOpticalDepth = 0.0;
             for (int i = 0; i < CLOUD_BLOCKY_LIGHT_SAMPLES; i++) {
                 float rayLength = min(nextLength.x, min(nextLength.y, nextLength.z));
-                float sampleCloudDensity = blockyCloudDensity(cloudCoord);
+                float sampleCloudDensity = blockyCloudDensity(cloudTexel);
                 shadowOpticalDepth += rayLength * step(0.5, sampleCloudDensity);
-                nextVoxel = step(nextLength, vec3(rayLength));
+                nextVoxel = (floatBitsToInt(vec3(rayLength) - nextLength) >> 31) + 1;
                 if (nextVoxel.y > 0.5) {
                     break;
                 }
                 nextLength += nextVoxel * stepLength - rayLength;
-                cloudCoord = mod(cloudCoord + nextVoxel.xz * dirSigned.xz, vec2(64.0));
+                cloudTexel = (cloudTexel + nextVoxel.xz * dirSigned.xz) & 63;
             }
 
             vec3 cloudColor = sunColor * 8.0 * (1.1 - sqrt(weatherStrength)) * exp(-sqrt(shadowOpticalDepth) * 3.0);
@@ -336,26 +337,26 @@ float cloudShadowBlocky(vec3 worldPos, vec3 shadowDir) {
             clamp(worldHeight / CLOUD_BLOCKY_THICKNESS - CLOUD_BLOCKY_HEIGHT / CLOUD_BLOCKY_THICKNESS, 0.0, 0.9999),
             (cameraPosition.z + cloudOffset.y + wind.y) * cloudNoiseScale
         );
-        vec2 cloudCoord = floor(cloudPos.xz) - 64.0 * floor(cloudPos.xz / 64.0);
+        ivec2 cloudTexel = ivec2(floor(cloudPos.xz)) & 63;
 
         vec3 stepDir = shadowDir;
         stepDir.y /= cloudThicknessScale;
         vec3 stepLength = abs(1.0 / (stepDir + 1e-5));
-        vec3 dirSigned = signI(stepDir);
+        ivec3 dirSigned = (floatBitsToInt(stepDir) >> 31) * 2 + 1;
         vec3 nextLength = (dirSigned * (0.5 - fract(cloudPos)) + 0.5) * stepLength;
-        vec3 nextVoxel = vec3(0.0);
+        ivec3 nextVoxel = ivec3(0);
 
         float opticalDepth = 0.0;
         for (int i = 0; i < CLOUD_BLOCKY_MAX_SAMPLES; i++) {
             float rayLength = min(nextLength.x, min(nextLength.y, nextLength.z));
-            float sampleCloudDensity = blockyCloudDensity(cloudCoord);
+            float sampleCloudDensity = blockyCloudDensity(cloudTexel);
             opticalDepth += rayLength * step(0.5, sampleCloudDensity);
-            nextVoxel = step(nextLength, vec3(rayLength));
+            nextVoxel = (floatBitsToInt(vec3(rayLength) - nextLength) >> 31) + 1;
             if (nextVoxel.y > 0.5) {
                 break;
             }
             nextLength += nextVoxel * stepLength - rayLength;
-            cloudCoord = mod(cloudCoord + nextVoxel.xz * dirSigned.xz, vec2(64.0));
+            cloudTexel = (cloudTexel + nextVoxel.xz * dirSigned.xz) & 63;
         }
 
         float cloudShadowAbsorption = clamp(exp(-opticalDepth * opticalDepth * 20.0) * 1.01 - 0.01, 0.0, 1.0);

@@ -376,5 +376,5 @@ option.GLOWING_OVERLAY=发光实体遮罩
 option.GLOWING_OVERLAY.comment=让拥有发光效果的实体透过其他物体渲染. 会严重影响景深（DoF）
 option.UNDERGROUND_MODE=地底模式
 option.UNDERGROUND_MODE.comment=完全禁用所有天空与阳光的渲染. 在下界与末地恒定启用
-option.SHADOW_BIAS_FIX=阴影形变补偿
-option.SHADOW_BIAS_FIX.comment=补偿光栅化导致的形变后的阴影映射内预期深度与实际深度不一致的问题. 能部分修复大尺寸表面上的阴影问题. 会影响性能
+option.SHADOW_DISTORTION_FIX=阴影形变补偿
+option.SHADOW_DISTORTION_FIX.comment=补偿光栅化导致的形变后的阴影映射内预期深度与实际深度不一致的问题. 能部分修复大尺寸表面上的阴影问题. 会影响性能

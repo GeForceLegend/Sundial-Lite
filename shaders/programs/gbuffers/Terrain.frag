@@ -44,7 +44,7 @@ void main() {
         textureViewer.xy *= textureResolutionFixed * textureResolutionInv;
         #ifdef VOXEL_PARALLAX
             vec3 parallaxTexNormal = vec3(0.0, 0.0, 1.0);
-            texcoord = perPixelParallax(texlmcoord.st, textureViewer, atlasTexSize, baseCoordI, float(maxTextureResolution), true, parallaxTexNormal, parallaxOffset);
+            texcoord = perPixelParallax(texlmcoord.st, textureViewer, atlasTexSize, baseCoordI, maxTextureResolution, true, parallaxTexNormal, parallaxOffset);
         #else
             texcoord = calculateParallax(texlmcoord.st, textureViewer, atlasTexSize, atlasTexelSize, baseCoordI, maxTextureResolution, true, parallaxOffset);
         #endif

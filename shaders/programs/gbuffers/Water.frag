@@ -14,17 +14,17 @@ in mat3 tbnMatrix;
 flat in float isEmissive;
 flat in float materialID;
 
-#ifdef PHYSICS_OCEAN
-    in vec3 physics_localPosition;
-    in float physics_localWaviness;
-#endif
-
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/GbufferData.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/Water.glsl"
 #include "/libs/PhysicsOcean.glsl"
+
+#ifdef PHYSICS_OCEAN
+    in vec3 physics_localPosition;
+    in float physics_localWaviness;
+#endif
 
 void main() {
     #ifdef PHYSICS_OCEAN
