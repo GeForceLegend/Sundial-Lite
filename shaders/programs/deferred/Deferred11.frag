@@ -278,10 +278,11 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             projRayPos += projRayDir * stepScale;
             vec3 sampleCoord = projRayPos.xyz / projRayPos.w;
 
-            if (any(greaterThan(abs(sampleCoord.xy), vec2(0.5)))) {
+            if (any(greaterThan(abs(sampleCoord.xy), vec2(0.5))) || shadow < 0.01) {
                 break;
             }
 
+            stepScale += 0.2;
             sampleCoord.st += offset;
             float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).r;
             float sampleparallaxOffset = textureLod(colortex3, sampleCoord.st, 0.0).w;
@@ -300,11 +301,6 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             if (abs(depthDiff - maximumThickness) < maximumThickness) {
                 shadow *= absorption;
             }
-
-            if (shadow < 0.01) {
-                break;
-            }
-            stepScale += 0.2;
         }
 
         shadow = mix(shadow, 1.0, shadowWeight);

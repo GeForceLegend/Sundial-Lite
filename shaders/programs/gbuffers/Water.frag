@@ -97,7 +97,6 @@ void main() {
         rawData.normal = mix(rawData.geoNormal, rawData.normal, exp2(-0.0002 * length(viewPos.xyz) / max(1e-6, dot(rawData.geoNormal, viewDir))));
     #endif
 
-
     #ifdef MC_SPECULAR_MAP
         vec4 specularData = textureLod(specular, texcoord, 0.0);
         SPECULAR_FORMAT(rawData, specularData);
