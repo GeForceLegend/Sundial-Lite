@@ -20,6 +20,7 @@ vec2 calculateOffsetCoord(vec2 coord, vec2 baseCoord, vec2 tileCoordSize, vec2 a
             texelFetch(normalSampler, ivec2(texel11.x, texel00.y), 0).a,
             texelFetch(normalSampler, texel00, 0).a
         );
+        sh += clamp(1.0 - sh * 1e+10, vec4(0.0), vec4(1.0));
         return sh;
     }
 
@@ -177,6 +178,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
             float startHeight = bilinearHeightSample(normals, parallaxCoord.st - 0.5, baseCoord, tileBits, clampCoord);
         #else
             float startHeight = texelFetch(normals, ivec2(parallaxCoord.st), 0).a;
+            startHeight += clamp(1.0 - startHeight * 1e+10, 0.0, 1.0);
         #endif
 
         if (startHeight < 1.0) {
@@ -193,6 +195,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
                     float sampleHeight = bilinearHeightSample(normals, parallaxCoord.st, baseCoord, tileBits, clampCoord);
                 #else
                     float sampleHeight = texelFetch(normals, baseCoord + (ivec2(floor(parallaxCoord.st)) & tileBits), 0).a;
+                    sampleHeight += clamp(1.0 - sampleHeight * 1e+10, 0.0, 1.0);
                 #endif
                 if (sampleHeight > parallaxCoord.z) {
                     break;
@@ -207,6 +210,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
                     float sampleHeight = bilinearHeightSample(normals, parallaxCoord.st, baseCoord, tileBits, clampCoord);
                 #else
                     float sampleHeight = texelFetch(normals, baseCoord + (ivec2(floor(parallaxCoord.st)) & tileBits), 0).a;
+                    sampleHeight += clamp(1.0 - sampleHeight * 1e+10, 0.0, 1.0);
                 #endif
                 if (sampleHeight > parallaxCoord.z) {
                     parallaxCoord -= stepSize * stepScale;
