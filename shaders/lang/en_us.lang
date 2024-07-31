@@ -134,6 +134,8 @@ option.LIGHT_COLOR_B=Light color: blue
 
 # Atmosphere
 option.ATMOSPHERE_VIEW_SAMPLE=Atmosphere view samples
+option.WORLD_BASIC_HEIGHT=World basic height
+option.WORLD_BASIC_HEIGHT.comment=Planet height on Y=0 coordinate
 option.VOLUMETRIC_LIGHT=Volumetric light
 option.VOLUMETRIC_FOG=Volumetric fog
 option.ATMOSPHERE_SCATTERING_FOG=Atmosphere scattering fog

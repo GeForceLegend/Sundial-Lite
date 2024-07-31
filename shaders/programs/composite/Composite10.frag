@@ -55,7 +55,7 @@ float getAvgBrightness() {
     float currBrightness = dot(totalColor, vec3(60.0 / 3.0));
     float prevBrightness = texelFetch(colortex3, ivec2(0), 0).w;
 
-    float averageBrightness = mix(prevBrightness, currBrightness, min(frameTime * (step(currBrightness, prevBrightness) * 2.0 + 2.0), 1.0));
+    float averageBrightness = mix(prevBrightness, currBrightness, clamp(frameTime * (step(currBrightness, prevBrightness) * 2.0 + 2.0) + float(prevBrightness == 0.0), 0.0, 1.0));
 
     return averageBrightness;
 }
@@ -89,6 +89,9 @@ void main() {
     texBuffer3.rgb *= 60.0;
 
     texBuffer7 = vec4(pow(currColor, vec3(1.0 / 2.2)), textureLod(depthtex0, texcoord, 0.0).r);
+    #ifdef DISTANT_HORIZONS
+        texBuffer7.w += textureLod(dhDepthTex0, texcoord, 0.0).r * float(texBuffer7.w == 1.0);
+    #endif
     if (dot(texcoord, screenSize) < 1.1) {
         texBuffer7.w = getAvgBrightness();
     }

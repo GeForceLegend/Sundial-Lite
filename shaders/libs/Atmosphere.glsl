@@ -15,7 +15,7 @@ const float sunRadius = 0.02;
 const vec2 earthScaledHeight = 1.44269502 * earthRadius / scaledHeight;
 
 vec3 planetIntersectionData(vec3 worldPos, vec3 worldDir) {
-    worldPos.y += max(300.0 + earthRadius, cameraPosition.y + 500.0 + earthRadius);
+    worldPos.y += max(300.0 + earthRadius, cameraPosition.y + WORLD_BASIC_HEIGHT + earthRadius);
     float R2 = dot(worldPos, worldPos);
     float RdotP = dot(worldPos, worldDir);
     float RdotP2 = RdotP * RdotP - R2;
@@ -88,7 +88,7 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir
 
     if (intersectionData.y > -atmosphereHeight * atmosphereHeight) {
         vec3 originPos = worldPos;
-        originPos.y += max(cameraPosition.y + 500.0 + earthRadius, 300.0 + earthRadius);
+        originPos.y += max(cameraPosition.y + WORLD_BASIC_HEIGHT + earthRadius, 300.0 + earthRadius);
 
         float b = intersectionData.x;
         float deltaAtmos = intersectionData.y + atmosphereHeight * atmosphereHeight;
@@ -191,7 +191,7 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir
 }
 
 vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
-    float playerHeight = max(cameraPosition.y + 500.0 + earthRadius, 300.0 + earthRadius);
+    float playerHeight = max(cameraPosition.y + WORLD_BASIC_HEIGHT + earthRadius, 300.0 + earthRadius);
 
     float atmosphereLength = atmosphereHeight - playerHeight;
     vec3 result = vec3(0.0);
@@ -272,7 +272,7 @@ vec3 solidAtmosphereScattering(vec3 color, vec3 worldDir, vec3 skyColor, float w
     const float a = 0.1;
     vec3 absorption = exp2(-vec3(worldDepth * totalBeta * 2.5 * 1.44269502));
     float scatterPhase = sqrt(0.3848 - a * a + 2.0 * a * worldDir.y);
-    vec3 scattering = skyLight * scatterPhase * skyColor * sunColor * (1.0 - absorption) * 30.0 * exp2((-500.0 - cameraPosition.y) / 1200.0);
+    vec3 scattering = skyLight * scatterPhase * skyColor * sunColor * (1.0 - absorption) * 30.0 * exp2((-WORLD_BASIC_HEIGHT - cameraPosition.y) / 1200.0);
     return color * absorption + scattering;
 }
 

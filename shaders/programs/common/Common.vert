@@ -38,7 +38,7 @@ void main() {
     #ifdef SMOOTH_CENTER_DEPTH
         float prevCenterDepth = texelFetch(colortex7, ivec2(screenSize - 0.5), 0).w;
         float currCenterDepth = textureLod(DOF_DEPTH_TEXTURE, vec2(0.5), 0.0).x;
-        float fadeFactor = exp(log(0.5) * frameTime * 10.0 / CENTER_DEPTH_SMOOTHNESS);
+        float fadeFactor = exp(log(0.5) * frameTime * 10.0 / CENTER_DEPTH_SMOOTHNESS) * float(prevCenterDepth > 0.0);
         smoothCenterDepth = mix(currCenterDepth, prevCenterDepth, fadeFactor);
     #endif
 

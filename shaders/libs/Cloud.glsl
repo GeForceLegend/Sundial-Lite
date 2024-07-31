@@ -235,7 +235,7 @@ vec4 realisticCloud(
     vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, vec3 sunDir, vec3 skyColorUp, vec3 intersectionData, float backDepth, out float cloudDepth
 ) {
     vec3 cloudPos = worldPos;
-    cloudPos.y += max(300.0 + earthRadius, cameraPosition.y + 500.0 + earthRadius);
+    cloudPos.y += max(300.0 + earthRadius, cameraPosition.y + WORLD_BASIC_HEIGHT + earthRadius);
     float planetIntersection = intersectionData.z;
     vec2 cloudBottomIntersection = raySphereIntersection(intersectionData.x, intersectionData.y, -pow2(cloudBottomHeight));
     vec2 cloudTopIntersection = raySphereIntersection(intersectionData.x, intersectionData.y, -pow2(cloudTopHeight));
@@ -258,6 +258,7 @@ vec4 realisticCloud(
         hit = hit && startIntersection < backDepth;
         endIntersection = min(backDepth, endIntersection);
     }
+    endIntersection = min(endIntersection, startIntersection + 50000.0);
 
     vec4 result = vec4(baseColor, 0.0);
     cloudDepth = -1.0;
@@ -400,7 +401,7 @@ float cloudShadowNoise(vec3 position) {
 }
 
 float cloudShadowRealistic(vec3 worldPos, vec3 shadowDir) {
-    worldPos.y += max(300.0 + earthRadius, cameraPosition.y + 500.0 + earthRadius);
+    worldPos.y += max(300.0 + earthRadius, cameraPosition.y + WORLD_BASIC_HEIGHT + earthRadius);
     float R2 = dot(worldPos, worldPos);
     float RdotP = dot(worldPos, shadowDir);
     float RdotP2 = RdotP * RdotP - R2;
@@ -452,7 +453,7 @@ float cloudShadow(vec3 worldPos, vec3 shadowDir) {
 const float planeCloudHeight = PLANE_CLOUD_HEIGHT + earthRadius + 500.0;
 
 vec4 planeClouds(vec3 worldPos, vec3 worldDir, vec3 sunDirection, vec3 skyColorUp, vec3 intersectionData) {
-    worldPos.y += max(300.0 + earthRadius, cameraPosition.y + 500.0 + earthRadius);
+    worldPos.y += max(300.0 + earthRadius, cameraPosition.y + WORLD_BASIC_HEIGHT + earthRadius);
 
     float planetIntersection = intersectionData.z;
     vec2 cloudIntersection = raySphereIntersection(intersectionData.x, intersectionData.y, -pow2(planeCloudHeight));

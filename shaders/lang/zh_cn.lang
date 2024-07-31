@@ -143,6 +143,8 @@ option.LIGHT_COLOR_B=光源颜色：蓝
 
 # Atmosphere
 option.ATMOSPHERE_VIEW_SAMPLE=大气散射视角方向采样数
+option.WORLD_BASIC_HEIGHT=世界基础高度
+option.WORLD_BASIC_HEIGHT.comment=Y=0坐标对应的海拔高度
 option.VOLUMETRIC_LIGHT=体积光
 option.VOLUMETRIC_FOG=体积雾
 option.ATMOSPHERE_SCATTERING_FOG=大气散射雾

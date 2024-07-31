@@ -155,7 +155,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         bool hitSky = true;
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
             float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).x;
-            bool hitCheck = sampleCoord.z > sampleDepth;
+            bool hitCheck = sampleCoord.z > sampleDepth && sampleDepth < 1.0;
             #ifdef DISTANT_HORIZONS
                 float sampleDepthDH = textureLod(dhDepthTex1, sampleCoord.st, 0.0).x;
                 hitCheck = hitCheck || (sampleDepth == 1.0 && sampleCoord.w > sampleDepthDH);
@@ -177,7 +177,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
 
                 bool hitTerrain = abs(refinementCoord.z - sampleDepth) < 4e-4 && sampleDepth < 1.0;
                 #ifdef DISTANT_HORIZONS
-                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoord.w - sampleDepthDH) < 4e-3 && sampleDepthDH < 1.0);
+                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoord.w - sampleDepthDH) < 4e-2 && sampleDepthDH < 1.0);
                 #endif
                 if (hitTerrain && clamp(refinementCoord.st, 0.0, 1.0) == refinementCoord.st) {
                     sampleCoord = refinementCoord;
