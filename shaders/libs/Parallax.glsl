@@ -27,7 +27,7 @@ vec2 calculateOffsetCoord(vec2 coord, vec2 baseCoord, vec2 tileCoordSize, vec2 a
     float bilinearHeightSample(sampler2D normalSampler, vec2 coord, ivec2 baseCoord, int tileBits, bool clampCoord) {
         ivec2 texel = ivec2(floor(coord));
         vec4 sh = heightGather(normalSampler, texel, baseCoord, tileBits, clampCoord);
-        vec2 fpc = coord - texel;
+        vec2 fpc = fract(coord);
         vec2 x = mix(sh.wx, sh.zy, vec2(fpc.x));
         return mix(x.x, x.y, fpc.y);
     }
@@ -37,7 +37,7 @@ vec2 calculateOffsetCoord(vec2 coord, vec2 baseCoord, vec2 tileCoordSize, vec2 a
         ivec2 texel = ivec2(floor(coord - 0.5));
         vec4 sh = heightGather(normalSampler, texel, ivec2(baseCoord * normalTexSize), int(textureResolution) - 1, clampCoord);
 
-        vec2 fpc = coord - texel;
+        vec2 fpc = fract(coord);
         sh.y = sh.x + sh.z - sh.w - sh.y;
         vec3 normal = vec3(
             sh.y * fpc.yx + (sh.w - sh.zx),
@@ -89,9 +89,9 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
         A *= inversesqrt(V * dot(A, A)) / ANISOTROPIC_FILTERING_QUALITY;
         A = max(vec2(0.0), abs(A)) * atlasTexelSize;
 
-        float c = 0.0;
-        vec2 sampleCoord = coord + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * A + 1.0;
-        vec4 albedo = vec4(vec3(0.0), textureLod(gtexture, coord, l).a);
+        vec2 sampleCoord = coord + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * A;
+        vec4 albedo = vec4(0.0);
+        float opaque = 0.0;
         for (int i = 0; i < ANISOTROPIC_FILTERING_QUALITY; i++) {
             sampleCoord += A;
             vec2 sampleCoordClamped = sampleCoord;
@@ -99,12 +99,13 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
                 sampleCoordClamped = calculateOffsetCoord(sampleCoordClamped, baseCoord, tileCoordSize, atlasTiles);
             }
             vec4 albedoSample = textureLod(gtexture, sampleCoordClamped, l);
-
-            float sampleValid = clamp((albedoSample.a - 0.1) * 1e+10, 0.0, 1.0);
-            albedo.rgb += albedoSample.rgb * sampleValid;
-            c += sampleValid;
+            albedo.rgb += albedoSample.rgb * albedoSample.a;
+            albedo.a += albedoSample.a;
+            opaque = max(opaque, albedoSample.a);
         }
-        albedo.rgb *= clamp(1.0 / c, 0.0, 1.0);
+        albedo.rgb *= clamp(1.0 / albedo.a, 0.0, 1.0);
+        albedo.a *= clamp(texture(gtexture, coord).a * 10.0, 0.0, 1.0) / ANISOTROPIC_FILTERING_QUALITY;
+        albedo.a = clamp(albedo.a + float(opaque > 0.999), 0.0, 1.0);
     #else
         vec2 noise = blueNoiseTemporal(gl_FragCoord.st * texelSize).xy - 0.5;
         vec2 sampleCoord = coord + noise.x * texGradX + noise.y * texGradY;
