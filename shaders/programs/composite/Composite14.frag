@@ -55,7 +55,7 @@ vec3 vignette(vec2 coord, vec3 color) {
 
 vec3 averageExposure(vec3 color) {
     float averageBrightness = textureLod(colortex7, vec2(0.0), 0.0).w;
-    return color * pow(averageBrightness * pow(0.2, -1.0 / AVERAGE_EXPOSURE_STRENGTH) + 1e-5, -AVERAGE_EXPOSURE_STRENGTH);
+    return color * pow(averageBrightness + 1e-5, -AVERAGE_EXPOSURE_STRENGTH) * 0.2;
 }
 
 // Uchimura 2017, "HDR theory and practice"

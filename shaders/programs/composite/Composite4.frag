@@ -57,7 +57,7 @@ void main() {
             #ifdef PLANE_CLOUD
                 planeCloud = planeClouds(gbufferModelViewInverse[3].xyz, worldDir, sunDirection, skyColorUp, intersectionData);
             #endif
-            if (gbufferModelViewInverse[3].y + cameraPosition.y < PLANE_CLOUD_HEIGHT) {
+            if (gbufferModelViewInverse[3].y + cameraPosition.y + WORLD_BASIC_HEIGHT - 500.0 < PLANE_CLOUD_HEIGHT) {
                 solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
                 backColor.rgb = mix(backColor.rgb, planeCloud.rgb, planeCloud.a);
             }
@@ -67,7 +67,7 @@ void main() {
             solidColor.rgb, backColor, gbufferModelViewInverse[3].xyz, worldDir, shadowDirection, sunDirection, skyColorUp, intersectionData, backDepth, cloudDepth
         );
 
-        if (gbufferModelViewInverse[3].y + cameraPosition.y >= PLANE_CLOUD_HEIGHT) {
+        if (gbufferModelViewInverse[3].y + cameraPosition.y + WORLD_BASIC_HEIGHT - 500.0 >= PLANE_CLOUD_HEIGHT) {
             solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
         }
 

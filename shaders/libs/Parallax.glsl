@@ -104,8 +104,8 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
             opaque = max(opaque, albedoSample.a);
         }
         albedo.rgb *= clamp(1.0 / albedo.a, 0.0, 1.0);
-        albedo.a *= clamp(texture(gtexture, coord).a * 10.0, 0.0, 1.0) / ANISOTROPIC_FILTERING_QUALITY;
-        albedo.a = clamp(albedo.a + float(opaque > 0.999), 0.0, 1.0);
+        albedo.a /= ANISOTROPIC_FILTERING_QUALITY;
+        albedo.a = clamp(albedo.a + float(opaque > 0.999), 0.0, 1.0) * clamp(texture(gtexture, coord).a * 10.0, 0.0, 1.0);
     #else
         vec2 noise = blueNoiseTemporal(gl_FragCoord.st * texelSize).xy - 0.5;
         vec2 sampleCoord = coord + noise.x * texGradX + noise.y * texGradY;
