@@ -10,7 +10,7 @@ in vec2 texcoord;
     #define TONEMAPPING uchimura // [uchimura ACES AgX]
     #define GAMMA 1.0 // [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.5 6.0 6.5 7.0 7.5 8.0 9.5 10.0]
     #define SATURATION 1.0 // [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0]
-    #define COLOR_TEMPERATURE 6500 // [1000 1200 1400 1600 1800 2000 2200 2400 2600 2800 3000 3200 3400 3600 3800 4000 4250 4500 4750 5000 5250 5500 5750 6000 6250 6500 6750 7000 7250 7500 7750 8000 8500 9000 9500 10000 10500 11000 11500 12000 13000 14000 15000 16000 18000 20000 22000 24000 28000 32000 36000 40000]
+    #define COLOR_TEMPERATURE 6500.0 // [1000.0 1200.0 1400.0 1600.0 1800.0 2000.0 2200.0 2400.0 2600.0 2800.0 3000.0 3200.0 3400.0 3600.0 3800.0 4000.0 4250.0 4500.0 4750.0 5000.0 5250.0 5500.0 5750.0 6000.0 6250.0 6500.0 6750.0 7000.0 7250.0 7500.0 7750.0 8000.0 8500.0 9000.0 9500.0 10000.0 10500.0 11000.0 11500.0 12000.0 13000.0 14000.0 15000.0 16000.0 18000.0 20000.0 22000.0 24000.0 28000.0 32000.0 36000.0 40000.0]
     // Uchimura settings
         #define CONTRAST 1.0 // [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0]
         #define MINIMUM_BRIGHTNESS 0.00 // [0.00 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.10]
@@ -92,21 +92,25 @@ vec3 uchimura(vec3 x) {
 }
 
 // Shared from https://www.shadertoy.com/view/lsSXW1 by CC BY 3.0
-const float temperature = float(COLOR_TEMPERATURE) / 100.0;
-#if COLOR_TEMPERATURE <= 6600
-    const vec3 colorTemperature = vec3(
-        1.0,
-        pow(clamp(0.39008157876901960784 * log(temperature) - 0.63184144378862745098, 0.0, 1.0), 2.2),
-        pow(clamp(0.54320678911019607843 * log(temperature - 10.0) - 1.19625408914, 0.0, 1.0), 2.2)
-    );
-#else
-    const float t = temperature - 60.0;
-    const vec3 colorTemperature = vec3(
-        pow(clamp(1.29293618606274509804 * pow(t, -0.1332047592), 0.0, 1.0), 2.2),
-        pow(clamp(1.12989086089529411765 * pow(t, -0.0755148492), 0.0, 1.0), 2.2),
-        1.0
-    );
-#endif
+vec3 colorTemperature() {
+    const float temperature = float(COLOR_TEMPERATURE) / 100.0;
+    vec3 color;
+    if (COLOR_TEMPERATURE <= 6600.0) {
+        color = vec3(
+            1.0,
+            pow(clamp(0.39008157876901960784 * log(temperature) - 0.63184144378862745098, 0.0, 1.0), 2.2),
+            pow(clamp(0.54320678911019607843 * log(temperature - 10.0) - 1.19625408914, 0.0, 1.0), 2.2)
+        );
+    } else {
+        const float t = temperature - 60.0;
+        color = vec3(
+            pow(clamp(1.29293618606274509804 * pow(t, -0.1332047592), 0.0, 1.0), 2.2),
+            pow(clamp(1.12989086089529411765 * pow(t, -0.0755148492), 0.0, 1.0), 2.2),
+            1.0
+        );
+    }
+    return color;
+}
 
 // AgX from https://www.shadertoy.com/view/cd3XWr
 vec3 agxDefaultContrastApprox(vec3 x) {
@@ -225,7 +229,7 @@ void main() {
     float luminance = luminanceLiner(finalColor);
     finalColor = max(vec3(0.0), mix(finalColor, vec3(luminance), vec3(1.0 - SATURATION)));
 
-    finalColor = colorTemperature * finalColor;
+    finalColor = colorTemperature() * finalColor;
 
     finalColor = TONEMAPPING(finalColor);
 

@@ -32,9 +32,7 @@ void main() {
     #endif
     GbufferData rawData;
     vec2 texcoord = texlmcoord.st;
-
     vec4 albedoData = texture(gtexture, texcoord);
-    if (albedoData.w < 0.001) discard;
 
     rawData.albedo = albedoData * color;
     rawData.lightmap = texlmcoord.pq;

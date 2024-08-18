@@ -1,13 +1,14 @@
+#extension GL_ARB_shading_language_packing : enable
+
 layout(location = 0) out vec4 gbufferData0;
 layout(location = 1) out vec4 gbufferData1;
 layout(location = 2) out vec4 gbufferData2;
 
 in vec4 texlmcoord;
 in vec3 color;
-in vec3 viewPos;
 
-flat in uint material;
-flat in vec4 worldTangent;
+flat in uvec3 blockData;
+flat in vec3 viewNormal;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -17,26 +18,24 @@ flat in vec4 worldTangent;
 
 void main() {
     GbufferData rawData;
-    vec3 dPosDX = dFdx(viewPos);
-    vec3 dPosDY = dFdy(viewPos);
-    vec3 viewNormal = cross(dPosDX, dPosDY);
-    viewNormal *= signMul(inversesqrt(dot(viewNormal, viewNormal)), -dot(viewNormal, viewPos));
 
     vec2 atlasTexSize = vec2(atlasSize);
+    vec4 worldTangent = vec4(unpackHalf2x16(blockData.y), unpackHalf2x16(blockData.z));
     float tangentLenInv = inversesqrt(dot(worldTangent.xyz, worldTangent.xyz));
     vec3 tangent = mat3(gbufferModelView) * (worldTangent.xyz * tangentLenInv);
     vec3 bitangent = cross(viewNormal, tangent) * signI(worldTangent.w);
     mat3 tbnMatrix = mat3(tangent, bitangent, viewNormal);
 
     vec2 atlasTexelSize = 1.0 / atlasTexSize;
-    ivec2 textureResolutionFixed = ((floatBitsToInt(vec2(tangentLenInv, abs(worldTangent.w)) * atlasTexelSize) & 0x7FC00000) + (1 << 22)) >> 23;
-    textureResolutionFixed = 0x0000007F - textureResolutionFixed;
+    ivec2 textureResolutionFixed = (0x3FC00000 - floatBitsToInt(vec2(tangentLenInv, abs(worldTangent.w)) * atlasTexelSize)) >> 23;
     textureResolutionFixed = ivec2(1) << textureResolutionFixed;
     int maxTextureResolution = max(textureResolutionFixed.x, textureResolutionFixed.y);
     float textureResolutionInv = 1.0 / maxTextureResolution;
     ivec2 baseCoordI = ivec2(floor(texlmcoord.st * atlasTexSize * textureResolutionInv)) * maxTextureResolution;
 
+    vec3 viewPos = screenToViewPos(gl_FragCoord.st * texelSize, gl_FragCoord.z);
     vec3 viewDir = viewPos * (-inversesqrt(dot(viewPos, viewPos)));
+    vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
     float parallaxOffset = 0.0;
     vec2 texcoord = texlmcoord.st;
     #ifdef PARALLAX
@@ -127,7 +126,7 @@ void main() {
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;
     rawData.emissive = 0.0;
-    rawData.materialID = material >> 1;
+    rawData.materialID = blockData.x >> 1;
     rawData.parallaxOffset = parallaxOffset;
     rawData.depth = 0.0;
 
@@ -140,9 +139,8 @@ void main() {
         rawData.emissive = 0.0;
     #endif
 
-    vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
     #ifdef HARDCODED_EMISSIVE
-        float emissive = step(rawData.emissive, 1e-3) * (material & 1u);
+        float emissive = step(rawData.emissive, 1e-3) * (blockData.x & 1u);
         if (rawData.materialID == MAT_TORCH) {
             rawData.emissive += 0.57 * emissive * length(rawData.albedo.rgb);
         }

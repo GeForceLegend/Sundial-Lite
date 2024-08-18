@@ -16,24 +16,24 @@ vec4 reflectionFilter(float offset, bool useNoise) {
 
         vec4 accumulation = originData;
         float weightAccumulation = 1.0;
+        vec2 centerTexelCoord = centerTexel + 0.5;
 
         for (int i = -2; i < 3; i++) {
             for (int j = -2; j < 3; j++) {
-                ivec2 sampleTexel = ivec2(centerTexel + 0.5 + vec2(i, j) * coordOffset);
-                if (abs(i) + abs(j) > 0.5 && max(abs(sampleTexel.x / screenSize.x - 0.5), abs(sampleTexel.y / screenSize.y - 0.5)) < 0.5) {
-                    vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
-                    float sampleReflectionDepth = sampleData.w;
-                    float sampleSmoothness = unpack16Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
+                ivec2 sampleTexel = ivec2(centerTexelCoord + vec2(i, j) * coordOffset);
+                vec2 normalData = texelFetch(colortex1, sampleTexel, 0).xy;
+                vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
+                float sampleReflectionDepth = sampleData.w;
+                vec3 sampleNormal = decodeNormal(normalData);
+                float sampleSmoothness = unpack16Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
 
-                    vec3 sampleNormal = getNormalTexel(sampleTexel);
-
-                    float weight =
-                        pow(max(dot(originNormal, sampleNormal), 1e-6), roughnessInv) *
-                        pow(1.0 - abs(originSmoothness - sampleSmoothness), 100.0) *
-                        exp(-abs(originReflectionDepth - sampleReflectionDepth) * originSmoothness) *
-                        step(sampleSmoothness, 0.9975);
-                    weight = clamp(weight, 0.0, 1.0);
-
+                float weight =
+                    pow(max(dot(originNormal, sampleNormal), 1e-6), roughnessInv) *
+                    pow(1.0 - abs(originSmoothness - sampleSmoothness), 100.0) *
+                    exp(-abs(originReflectionDepth - sampleReflectionDepth) * originSmoothness) *
+                    step(sampleSmoothness, 0.9975);
+                weight = clamp(weight, 0.0, 1.0);
+                if (abs(i) + abs(j) > 0.5 && max(abs(sampleTexel.x * texelSize.x - 0.5), abs(sampleTexel.y * texelSize.y - 0.5)) < 0.5) {
                     accumulation += sampleData * weight;
                     weightAccumulation += weight;
                 }

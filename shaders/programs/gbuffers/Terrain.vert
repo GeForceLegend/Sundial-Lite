@@ -9,9 +9,7 @@ layout(location = 10) in vec4 mc_Entity;
 
 out vec4 vTexlmCoord;
 out vec3 vColor;
-out vec3 vViewPos;
 out vec3 vWorldPos;
-out vec3 vWorldNormal;
 
 out uint vMaterial;
 
@@ -20,10 +18,10 @@ out uint vMaterial;
 #include "/libs/GbufferData.glsl"
 
 void main() {
-    vViewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
-    vWorldPos = viewToWorldPos(vViewPos) + cameraPosition;
+    vec3 viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+    vWorldPos = viewToWorldPos(viewPos) + cameraPosition;
 
-    gl_Position = gl_ProjectionMatrix * vec4(vViewPos, 1.0);
+    gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
     vColor = gl_Color.rgb * gl_Color.a;
     vTexlmCoord.st = gl_MultiTexCoord0.st;
     vTexlmCoord.pq = gl_MultiTexCoord1.st / 240.0;
@@ -81,6 +79,4 @@ void main() {
     #ifdef TAA
         gl_Position.xy += taaOffset * gl_Position.w;
     #endif
-
-    vWorldNormal = gl_Normal;
 }

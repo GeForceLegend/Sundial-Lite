@@ -238,7 +238,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         return b;
     }
 
-    float screenSpaceShadow(vec3 viewPos, vec3 viewDir, vec3 viewNormal, vec3 viewGeoNormal, vec3 lightDir, float porosity, vec2 noise) {
+    float screenSpaceShadow(vec3 viewPos, vec3 viewDir, vec3 viewNormal, vec3 viewGeoNormal, vec3 lightDir, float porosity, vec2 noise, float depth) {
         float fov = 2.0 * atanSimple(1.0 / gbufferProjection[1][1]) * 180.0 / 3.14159265;
         float viewLength = length(viewPos);
         float screenScale = max(texelSize.x, texelSize.y);
@@ -246,9 +246,13 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec3 rayPos = viewPos;
         float stepLength = (2e-5 * viewLength + 5e-5) * fov;
         vec3 rayDir = stepLength * lightDir;
-        rayPos +=
+        vec3 originOffset = 
             (4e2 * screenScale / max(dot(viewGeoNormal, -viewDir), 0.1) + noise.x * 3.0) * rayDir +
             (0.1 * viewLength * screenScale / max(pow2(dot(viewGeoNormal, lightDir)), 0.01)) * viewGeoNormal;
+        #ifdef DISTANT_HORIZONS
+            originOffset *= 0.1 + 0.9 * float(depth > 0.0);
+        #endif
+        rayPos += originOffset;
         vec3 finalPos = rayPos + rayDir * 25.2;
 
         vec4 projRayPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayPos, -rayPos.z);
@@ -392,7 +396,7 @@ void main() {
                 );
             vec2 noise = blueNoiseTemporal(texcoord).xy;
             #ifdef SCREEN_SPACE_SHADOW
-                shadow *= screenSpaceShadow(viewPos, viewDir, gbufferData.normal, gbufferData.geoNormal, viewShadowDirection, gbufferData.porosity, noise);
+                shadow *= screenSpaceShadow(viewPos, viewDir, gbufferData.normal, gbufferData.geoNormal, viewShadowDirection, gbufferData.porosity, noise, gbufferData.depth);
             #endif
             #ifdef CLOUD_SHADOW
                 shadow *= cloudShadow(worldPos, shadowDirection);

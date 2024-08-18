@@ -1,20 +1,19 @@
+#extension GL_ARB_shading_language_packing : enable
+
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 
 in vec4 vTexlmCoord[];
 in vec3 vColor[];
-in vec3 vViewPos[];
 in vec3 vWorldPos[];
-in vec3 vWorldNormal[];
 
 in uint vMaterial[];
 
 out vec4 texlmcoord;
 out vec3 color;
-out vec3 viewPos;
 
-flat out uint material;
-flat out vec4 worldTangent;
+flat out uvec3 blockData;
+flat out vec3 viewNormal;
 
 #define SKYLIGHT_FIX
 
@@ -25,9 +24,10 @@ flat out vec4 worldTangent;
 void main() {
     vec3 posDiff0 = vWorldPos[0] - vWorldPos[1];
     vec3 posDiff1 = vWorldPos[1] - vWorldPos[2];
+    vec3 worldNormal = normalize(cross(posDiff0, posDiff1));
 
-    vec3 dPosPerpX = cross(vWorldNormal[0], posDiff0);
-    vec3 dPosPerpY = cross(posDiff1, vWorldNormal[0]);
+    vec3 dPosPerpX = cross(worldNormal, posDiff0);
+    vec3 dPosPerpY = cross(posDiff1, worldNormal);
     dPosPerpX /= dot(posDiff1, dPosPerpX);
     dPosPerpY /= dot(posDiff0, dPosPerpY);
 
@@ -35,8 +35,10 @@ void main() {
     vec3 bitangent = dPosPerpY * (vTexlmCoord[0].y - vTexlmCoord[1].y) + dPosPerpX * (vTexlmCoord[1].y - vTexlmCoord[2].y);
 
     float bitangentLenInv = inversesqrt(dot(bitangent, bitangent));
-    bitangentLenInv = signMul(bitangentLenInv, dot(cross(vWorldNormal[0], tangent), bitangent));
+    bitangentLenInv = signMul(bitangentLenInv, dot(cross(worldNormal, tangent), bitangent));
     vec4 tangentData = vec4(tangent, bitangentLenInv);
+    uvec3 data = uvec3(vMaterial[0], packHalf2x16(tangentData.xy), packHalf2x16(tangentData.zw));
+    vec3 normal = mat3(gbufferModelView) * worldNormal;
 
     #ifdef SKYLIGHT_FIX
         #ifdef SHADOW_AND_SKY
@@ -70,11 +72,10 @@ void main() {
         gl_Position = gl_in[i].gl_Position;
 
         color = vColor[i];
-        viewPos = vViewPos[i];
         texlmcoord = vTexlmCoord[i];
-        worldTangent = tangentData;
 
-        material = vMaterial[0];
+        blockData = data;
+        viewNormal = normal;
 
         #if defined SKYLIGHT_FIX && defined SHADOW_AND_SKY
             texlmcoord.w = clamp(texlmcoord.w + maximumLight - dot(vWorldPos[i], skyLightFixStrength), 0.0, 1.0);
