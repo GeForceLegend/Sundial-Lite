@@ -30,7 +30,7 @@ void main() {
         vec3 screenPos2 = vec3(gl_in[2].gl_Position.xy, 0.0);
 
         vec2 shadowOffsetCenter = vShadowOffset[0];
-        float isTransparent = float(abs(textureLod(gtexture, midCoord + 1e-6, 0.0).w * vColor[0].w - 0.5) < 0.499) * float(abs(shadowOffsetCenter.y) == 0.0);
+        float isTransparent = float(abs(textureLod(gtexture, midCoord + 1e-6, 0.0).w - 0.5) < 0.499) * float(abs(shadowOffsetCenter.y) == 0.0);
         shadowOffsetCenter.x -= isTransparent * 0.5 * realShadowMapResolution;
         vec4 positionOffset = vec4(-isTransparent, vec3(0.0));
 
