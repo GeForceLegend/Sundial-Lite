@@ -57,7 +57,7 @@
 // Screen Space Reflection
     #define REFLECTION
     // #define FULL_REFLECTION
-    #define REFLECTION_FILTER
+    #define REFLECTION_FILTER 1 // [0 1 2]
 
 // Atmosphere
     #define ATMOSPHERE_VIEW_SAMPLE 12 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 25 30 35 40]

@@ -278,7 +278,6 @@ vec4 realisticCloud(
 
         float unHitted = 1.0;
         vec3 cloudColor = vec3(0.0);
-        atmosphere = (skyColorUp + atmosphere) * vec3(0.5) / PI;
         cloudDepth = startIntersection + startNoise;
         #ifdef LQ_REALISTIC_CLOUD
             for (int i = 0; i < CLOUD_REALISTIC_LQ_SAMPLES; i++)
@@ -286,7 +285,7 @@ vec4 realisticCloud(
             for (int i = 0; i < CLOUD_REALISTIC_HQ_SAMPLES; i++)
         #endif
         {
-            vec4 sampleCloud = sampleRealisticCloud(cloudPos, sunDir, atmosphere);
+            vec4 sampleCloud = sampleRealisticCloud(cloudPos, sunDir, (skyColorUp + atmosphere) * vec3(0.5) / PI);
             float sampleTransmittance = exp2(sampleCloud.w * stepTransmittance) * cloudTransmittance;
             cloudColor += (cloudTransmittance - sampleTransmittance) * sampleCloud.rgb;
             cloudTransmittance = sampleTransmittance;
@@ -297,6 +296,7 @@ vec4 realisticCloud(
         }
         if (cloudTransmittance < 0.9999) {
             float cloudDensity = 1.0 - cloudTransmittance;
+            cloudColor /= max(1e-5, cloudDensity);
 
             float cloudFinalDensity = cloudDensity * exp(-startIntersection / CLOUD_REALISTIC_FADE_DISTANCE);
             cloudColor = mix(atmosphere, cloudColor, cloudFinalDensity);
@@ -495,8 +495,8 @@ vec4 planeClouds(vec3 worldPos, vec3 worldDir, vec3 sunDirection, vec3 skyColorU
             LdotP *= abs(LdotP);
             cloudHeight /= 1.44269502;
 
-            vec3 cloudColor = 8.0 * (sunlightStrength + moonlightStrength * nightBrightness) * cloudDensity;
-            result = vec4(cloudColor, cloudDensity);
+            vec3 cloudColor = 8.0 * (sunlightStrength + moonlightStrength * nightBrightness);
+            result = vec4(cloudColor, cloudDensity * cloudDensity);
         }
     }
 

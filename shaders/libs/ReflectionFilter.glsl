@@ -18,8 +18,8 @@ vec4 reflectionFilter(float offset, bool useNoise) {
         float weightAccumulation = 1.0;
         vec2 centerTexelCoord = centerTexel + 0.5;
 
-        for (int i = -2; i < 3; i++) {
-            for (int j = -2; j < 3; j++) {
+        for (int i = -REFLECTION_FILTER; i < REFLECTION_FILTER + 1; i++) {
+            for (int j = -REFLECTION_FILTER; j < REFLECTION_FILTER + 1; j++) {
                 ivec2 sampleTexel = ivec2(centerTexelCoord + vec2(i, j) * coordOffset);
                 vec2 normalData = texelFetch(colortex1, sampleTexel, 0).xy;
                 vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);

@@ -15,7 +15,7 @@ out vec3 color;
 flat out uvec3 blockData;
 flat out vec3 viewNormal;
 
-#define SKYLIGHT_FIX
+// #define SKYLIGHT_FIX
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"

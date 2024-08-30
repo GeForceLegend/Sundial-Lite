@@ -40,7 +40,7 @@ void main() {
                 reflectionWeight *= 1.0 - diffuseWeight;
             }
 
-            #ifdef REFLECTION_FILTER
+            #if REFLECTION_FILTER > 0
                 float originReflectionDepth = originData.w;
                 float originSmoothness = gbufferData.smoothness;
                 if (originSmoothness < 0.9975 && originReflectionDepth > 1e-5) {
@@ -52,8 +52,8 @@ void main() {
                     vec3 accumulation = originData.rgb;
                     float weightAccumulation = 1.0;
 
-                    for (int i = -2; i < 3; i++) {
-                        for (int j = -2; j < 3; j++) {
+                    for (int i = -REFLECTION_FILTER; i < REFLECTION_FILTER + 1; i++) {
+                        for (int j = -REFLECTION_FILTER; j < REFLECTION_FILTER + 1; j++) {
                             ivec2 sampleTexel = ivec2(texel + 0.5 + vec2(i, j) * coordOffset);
                             if (abs(i) + abs(j) > 0.5 && max(abs(sampleTexel.x / screenSize.x - 0.5), abs(sampleTexel.y / screenSize.y - 0.5)) < 0.5) {
                                 vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
