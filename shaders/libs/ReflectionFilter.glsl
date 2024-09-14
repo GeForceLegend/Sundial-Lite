@@ -28,10 +28,12 @@ vec4 reflectionFilter(float offset, bool useNoise) {
                 float sampleSmoothness = unpack16Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
 
                 float weight =
-                    pow(max(dot(originNormal, sampleNormal), 1e-6), roughnessInv) *
-                    pow(1.0 - abs(originSmoothness - sampleSmoothness), 100.0) *
-                    exp(-abs(originReflectionDepth - sampleReflectionDepth) * originSmoothness) *
-                    step(sampleSmoothness, 0.9975);
+                    exp2(
+                        roughnessInv * log2(max(dot(originNormal, sampleNormal), 1e-6)) +
+                        100.0 * log2(1.0 - abs(originData.w - sampleData.w)) - 
+                        1.44269502 * abs(originReflectionDepth - sampleReflectionDepth) * originSmoothness
+                    ) *
+                    step(0.0025, sampleSmoothness);
                 weight = clamp(weight, 0.0, 1.0);
                 if (abs(i) + abs(j) > 0.5 && max(abs(sampleTexel.x * texelSize.x - 0.5), abs(sampleTexel.y * texelSize.y - 0.5)) < 0.5) {
                     accumulation += sampleData * weight;

@@ -101,7 +101,7 @@ void main() {
             vec3 rayAbsorption = exp2(-absorptionBeta * noise) * basicWeight;
             vec3 stepAbsorption = exp2(-absorptionBeta);
             vec3 skyScattering = (sunColor * 2.0 + skyColorUp) * eyeBrightnessSmooth.y / 1000.0;
-            stepLength *= -0.01 * 1.44269502 / basicWeight;
+            stepLength *= -0.01 * 1.44269502 / max(1e-5, basicWeight);
 
             for (int i = 0; i < VL_SAMPLES; i++) {
                 vec3 singleLight = vec3(1.0);

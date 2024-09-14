@@ -76,7 +76,7 @@
             float result = wave * cos(x);
             vec2 force = result * weight * direction;
 
-            dx += force / pow(weight, PHYSICS_W_DETAIL);
+            dx += force * pow(weight, -PHYSICS_W_DETAIL);
             position -= force * PHYSICS_DRAG_MULT;
             iter += PHYSICS_ITER_INC;
             waveSum += weight;
@@ -85,7 +85,7 @@
             speed *= PHYSICS_SPEED_MULT;
         }
 
-        return vec2(dx / pow(waveSum, 1.0 - PHYSICS_W_DETAIL));
+        return vec2(dx * pow(waveSum, PHYSICS_W_DETAIL - 1.0));
     }
 
     vec3 physics_waveNormal(const in vec2 position, const in vec2 direction, const in float factor, const in float time) {
@@ -134,7 +134,7 @@
             float result = wave * cos(x);
             vec2 force = result * weight * direction;
 
-            dx += force / pow(weight, PHYSICS_W_DETAIL);
+            dx += force * pow(weight, -PHYSICS_W_DETAIL);
             wavePos -= force * PHYSICS_DRAG_MULT;
             height += wave * weight;
             iter += PHYSICS_ITER_INC;
@@ -145,7 +145,7 @@
         }
 
         WavePixelData data;
-        data.direction = -vec2(dx / pow(waveSum, 1.0 - PHYSICS_W_DETAIL));
+        data.direction = -vec2(dx - pow(waveSum, PHYSICS_W_DETAIL - 1.0));
         data.worldPos = wavePos / physics_oceanWaveHorizontalScale / PHYSICS_XZ_SCALE;
         data.height = height / waveSum * physics_oceanHeight * factor - physics_oceanHeight * factor * 0.5;
 

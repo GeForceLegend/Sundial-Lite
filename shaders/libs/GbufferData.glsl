@@ -144,7 +144,8 @@ GbufferData getGbufferData(ivec2 texel, vec2 coord) {
 
     GbufferData data;
 
-    data.albedo = pow(tex0, vec4(vec3(2.2), 1.0));
+    data.albedo = tex0;
+    data.albedo.rgb = pow(data.albedo.rgb, vec3(2.2));
     decodeNormals(tex1, data.normal, data.geoNormal);
     data.lightmap = unpack16Bit(tex2.r);
 

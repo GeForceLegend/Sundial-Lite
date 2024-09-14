@@ -98,7 +98,7 @@ void main() {
 
         vec3 waterWorldPos = viewToWorldPos(waterViewPos);
         float waterDistance = distance(worldPos, waterWorldPos);
-        vec3 stainedColor = vec3(1.0);
+        vec3 stainedColor = vec3(0.0);
         vec3 rawSolidColor = solidColor.rgb;
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         n -= 0.166666 * float(isTargetWater);
@@ -116,9 +116,9 @@ void main() {
                 solidColor.rgb = waterFogTotal(solidColor.rgb, worldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
             }
             #if WATER_TYPE == 1
-                stainedColor = pow(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w), vec3(sqrt(gbufferData.albedo.w * 1.5)));
+                stainedColor = sqrt(gbufferData.albedo.w * 1.5) * log2(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w));
             #endif
-            stainedColor *= pow(1.0 - fresnel(LdotH, LdotH * LdotH, n), gbufferData.smoothness * gbufferData.smoothness);
+            stainedColor += gbufferData.smoothness * gbufferData.smoothness * log2(1.0 - fresnel(LdotH, LdotH * LdotH, n));
         }
         else {
             if (isEyeInWater == 0) {
@@ -145,11 +145,12 @@ void main() {
             else if (isEyeInWater == 3) {
                 solidColor.rgb = snowFogTotal(solidColor.rgb, skyColorUp, waterDistance, gbufferData.lightmap.y);
             }
-            stainedColor = pow(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w), vec3(sqrt(gbufferData.albedo.w * 1.5)));
+            stainedColor = sqrt(gbufferData.albedo.w * 1.5) * log2(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w));
             if (isTargetNotParticle) {
-                stainedColor *= pow(1.0 - fresnel(LdotH, LdotH * LdotH, n), gbufferData.smoothness * gbufferData.smoothness);
+                stainedColor += gbufferData.smoothness * gbufferData.smoothness * log2(1.0 - fresnel(LdotH, LdotH * LdotH, n));
             }
         }
+        stainedColor = exp2(stainedColor);
 
         stainedColor = mix(vec3(1.0), stainedColor, vec3(solidColor.w));
         solidColor.rgb = mix(rawSolidColor, solidColor.rgb, vec3(solidColor.w)) * stainedColor;

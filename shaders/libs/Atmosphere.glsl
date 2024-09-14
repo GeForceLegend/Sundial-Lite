@@ -61,7 +61,7 @@ vec3 sampleInScattering(float originHeight, vec2 c, vec2 cExpH, float cosZenith)
 void chapmanOpticalDepthDoubleSide(float originHeight, vec2 c, vec2 cExpH, float cosZenith, out vec2 sunOpticalDepth, out vec2 moonOpticalDepth) {
     const vec2 baseWeight = scaledHeight * 1.44269502;
 
-    cExpH /= (c * abs(cosZenith) + 1.0);
+    cExpH /= c * abs(cosZenith) + 1.0;
     float sinZenith2 = 1.0 - cosZenith * cosZenith;
     float x0 = sinZenith2 * inversesqrt(sinZenith2) * originHeight;
     vec2 c0 = 2.0 * inversesqrt(scaledHeight * 1.44269502) * x0 * inversesqrt(x0) * exp2(earthScaledHeight - x0 / scaledHeight) - cExpH;
@@ -94,98 +94,86 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir
         float deltaAtmos = intersectionData.y + atmosphereHeight * atmosphereHeight;
         float d = deltaAtmos * inversesqrt(deltaAtmos);
         float atmosphereLength = -b + d;
+        if (atmosphereLength > 0.0) {
+            float groundLength = intersectionData.z;
+            float hitSky = clamp(-1e+10 * groundLength, 0.0, 1.0);
+            atmosphereLength = mix(groundLength, atmosphereLength, hitSky);
+            b += d;
+            b = min(0.0, b);
+            originPos -= worldDir * b;
+            atmosphereLength += b;
+            vec3 samplePosition = originPos;
+            result *= hitSky;
 
-        float deltaGround = intersectionData.y + earthRadius * earthRadius;
-        float groundLength = intersectionData.z;
-        float hitSky = clamp(-1e+10 * groundLength, 0.0, 1.0);
-        atmosphereLength = mix(groundLength, atmosphereLength, hitSky);
-        b += d;
-        b = min(0.0, b);
-        originPos -= worldDir * b;
-        atmosphereLength += b;
-        vec3 samplePosition = originPos;
-        result *= hitSky;
+            float originHeight2 = dot(samplePosition, samplePosition);
+            float originHeightInv = inversesqrt(originHeight2);
+            float originHeight = originHeight2 * originHeightInv * 1.44269502;
+            vec2 c = inversesqrt(originHeightInv) * inversesqrt(scaledHeight);
+            vec2 prevRelativeDensity = exp2(earthScaledHeight - originHeight / scaledHeight);
+            vec2 cExpH = c * prevRelativeDensity;
 
-        float originHeight2 = dot(samplePosition, samplePosition);
-        float originHeightInv = inversesqrt(originHeight2);
-        float originHeight = originHeight2 * originHeightInv * 1.44269502;
-        vec2 c = inversesqrt(originHeightInv) * inversesqrt(scaledHeight);
-        vec2 prevRelativeDensity = exp2(earthScaledHeight - originHeight / scaledHeight);
-        vec2 cExpH = c * prevRelativeDensity;
+            vec3 atmosphereAbsorption = sampleInScattering(originHeight, c, cExpH, dot(worldDir, samplePosition) * originHeightInv);
+            result *= atmosphereAbsorption;
 
-        vec3 atmosphereAbsorption = sampleInScattering(originHeight, c, cExpH, dot(worldDir, samplePosition) * originHeightInv);
-        result *= atmosphereAbsorption;
+            float originRdotP = dot(sunDir, samplePosition) * originHeightInv;
+            vec3 originSunInScattering, originMoonInScattering;
+            sampleInScatteringDoubleSide(originHeight, c, cExpH, originRdotP, originSunInScattering, originMoonInScattering);
 
-        float originRdotP = dot(sunDir, samplePosition) * originHeightInv;
-        vec3 originSunInScattering, originMoonInScattering;
-        sampleInScatteringDoubleSide(originHeight, c, cExpH, originRdotP, originSunInScattering, originMoonInScattering);
-        vec3 prevSunRayleighInScattering = originSunInScattering * prevRelativeDensity.x;
-        vec3 prevSunMieInScattering = originSunInScattering * prevRelativeDensity.y;
-        vec3 prevMoonRayleighInScattering = originMoonInScattering * prevRelativeDensity.x;
-        vec3 prevMoonMieInScattering = originMoonInScattering * prevRelativeDensity.y;
+            float sunCosAngle = dot(worldDir, sunDir);
+            float sunRayleigh = rayleighPhase(sunCosAngle);
+            float sunMie = miePhase(sunCosAngle);
+            float moonRayleigh = rayleighPhase(-sunCosAngle) * nightBrightness;
+            float moonMie = miePhase(-sunCosAngle) * nightBrightness;
 
-        vec2 opticalDepth = vec2(0.0);
-        vec3 totalSunRayleighInScattering = vec3(0.0);
-        vec3 totalSunMieInScattering = vec3(0.0);
-        vec3 totalMoonRayleighInScattering = vec3(0.0);
-        vec3 totalMoonMieInScattering = vec3(0.0);
+            vec3 prevRayleighInScattering = originSunInScattering * prevRelativeDensity.x * sunRayleigh + originMoonInScattering * prevRelativeDensity.x * moonRayleigh;
+            vec3 prevMieInScattering = originSunInScattering * prevRelativeDensity.y * sunMie + originMoonInScattering * prevRelativeDensity.y * moonMie;
 
-        const float viewSampleStepScale = 4.0;
-        float stepUnit = atmosphereLength / ((ATMOSPHERE_VIEW_SAMPLE * 0.5 - 0.5 + viewSampleStepScale) * ATMOSPHERE_VIEW_SAMPLE);
-        float stepLength = stepUnit * (viewSampleStepScale - 1.0);
+            vec2 opticalDepth = vec2(0.0);
+            vec3 totalRayleighInScattering = vec3(0.0);
+            vec3 totalMieInScattering = vec3(0.0);
 
-        for (int i = 0; i < ATMOSPHERE_VIEW_SAMPLE; i++) {
-            stepLength += stepUnit;
-            samplePosition += worldDir * stepLength;
-            float sampleHeight2 = dot(samplePosition, samplePosition);
+            const float viewSampleStepScale = 4.0;
+            float stepUnit = atmosphereLength / ((ATMOSPHERE_VIEW_SAMPLE * 0.5 - 0.5 + viewSampleStepScale) * ATMOSPHERE_VIEW_SAMPLE);
+            float stepLength = stepUnit * (viewSampleStepScale - 1.0);
 
-            float sampleHeightInv = inversesqrt(sampleHeight2);
-            float sampleRdotP = dot(sunDir, samplePosition) * sampleHeightInv;
-            float sampleHeight = sampleHeight2 * sampleHeightInv * 1.44269502;
-            vec2 c = inversesqrt(sampleHeightInv) * inversesqrt(scaledHeight);
-            vec2 currRelativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight);
-            vec2 cExpH = c * currRelativeDensity;
+            for (int i = 0; i < ATMOSPHERE_VIEW_SAMPLE; i++) {
+                stepLength += stepUnit;
+                samplePosition += worldDir * stepLength;
+                float sampleHeight2 = dot(samplePosition, samplePosition);
 
-            opticalDepth += (0.5 * 1.44269502 * stepLength) * (prevRelativeDensity + currRelativeDensity);
-            prevRelativeDensity = currRelativeDensity;
+                float sampleHeightInv = inversesqrt(sampleHeight2);
+                float sampleRdotP = dot(sunDir, samplePosition) * sampleHeightInv;
+                float sampleHeight = sampleHeight2 * sampleHeightInv * 1.44269502;
+                vec2 c = inversesqrt(sampleHeightInv) * inversesqrt(scaledHeight);
+                vec2 currRelativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight);
+                vec2 cExpH = c * currRelativeDensity;
 
-            vec2 sunOpticalDepth, moonOpticalDepth;
-            chapmanOpticalDepthDoubleSide(sampleHeight, c, cExpH, sampleRdotP, sunOpticalDepth, moonOpticalDepth);
-            sunOpticalDepth += opticalDepth;
-            moonOpticalDepth += opticalDepth;
+                opticalDepth += (0.5 * 1.44269502 * stepLength) * (prevRelativeDensity + currRelativeDensity);
+                prevRelativeDensity = currRelativeDensity;
 
-            vec3 currSunInScattering = exp2(-sunOpticalDepth.x * rayLeighBeta - sunOpticalDepth.y * rainyMieBeta);
-            vec3 currSunRayleighInScattering = currSunInScattering * prevRelativeDensity.x;
-            totalSunRayleighInScattering += stepLength * (prevSunRayleighInScattering + currSunRayleighInScattering);
-            prevSunRayleighInScattering = currSunRayleighInScattering;
-            vec3 currSunMieInScattering = currSunInScattering * prevRelativeDensity.y;
-            totalSunMieInScattering += stepLength * (prevSunMieInScattering + currSunMieInScattering);
-            prevSunMieInScattering = currSunMieInScattering;
+                vec2 sunOpticalDepth, moonOpticalDepth;
+                chapmanOpticalDepthDoubleSide(sampleHeight, c, cExpH, sampleRdotP, sunOpticalDepth, moonOpticalDepth);
+                sunOpticalDepth += opticalDepth;
+                moonOpticalDepth += opticalDepth;
 
-            vec3 currMoonInScattering = exp2(-moonOpticalDepth.x * rayLeighBeta - moonOpticalDepth.y * rainyMieBeta);
-            vec3 currMoonRayleighInScattering = currMoonInScattering * prevRelativeDensity.x;
-            totalMoonRayleighInScattering += stepLength * (prevMoonRayleighInScattering + currMoonRayleighInScattering);
-            prevMoonRayleighInScattering = currMoonRayleighInScattering;
-            vec3 currMoonMieInScattering = currMoonInScattering * prevRelativeDensity.y;
-            totalMoonMieInScattering += stepLength * (prevMoonMieInScattering + currMoonMieInScattering);
-            prevMoonMieInScattering = currMoonMieInScattering;
+                vec3 currSunInScattering = exp2(-sunOpticalDepth.x * rayLeighBeta - sunOpticalDepth.y * rainyMieBeta);
+                vec3 currMoonInScattering = exp2(-moonOpticalDepth.x * rayLeighBeta - moonOpticalDepth.y * rainyMieBeta);
+
+                vec3 currRayleighInScattering = currSunInScattering * prevRelativeDensity.x * sunRayleigh + currMoonInScattering * prevRelativeDensity.x * moonRayleigh;
+                totalRayleighInScattering += stepLength * (prevRayleighInScattering + currRayleighInScattering);
+                prevRayleighInScattering = currRayleighInScattering;
+                vec3 currMieInScattering = currSunInScattering * prevRelativeDensity.y * sunMie + currMoonInScattering * prevRelativeDensity.y * moonMie;
+                totalMieInScattering += stepLength * (prevMieInScattering + currMieInScattering);
+                prevMieInScattering = currMieInScattering;
+            }
+
+            vec3 totalInScattering = totalRayleighInScattering * pureRayleighBeta + totalMieInScattering * rainyMieBeta;
+            totalInScattering *= 0.5;
+
+            atmosphere = totalInScattering * sunLightStrength;
+
+            result += atmosphere;
         }
-
-        float sunCosAngle = dot(worldDir, sunDir);
-        totalSunRayleighInScattering *= rayleighPhase(sunCosAngle);
-        totalSunMieInScattering *= miePhase(sunCosAngle);
-        totalMoonRayleighInScattering *= rayleighPhase(-sunCosAngle) * nightBrightness;
-        totalMoonMieInScattering *= miePhase(-sunCosAngle) * nightBrightness;
-
-        vec3 totalRayleighInScattering = totalSunRayleighInScattering + totalMoonRayleighInScattering;
-        vec3 totalMieInScattering = totalSunMieInScattering + totalMoonMieInScattering;
-
-        vec3 totalInScattering = totalRayleighInScattering * pureRayleighBeta + totalMieInScattering * rainyMieBeta;
-        totalInScattering *= 0.5;
-
-        atmosphere = totalInScattering * sunLightStrength;
-
-        result += atmosphere;
     }
     return result;
 }

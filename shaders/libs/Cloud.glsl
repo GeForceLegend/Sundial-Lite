@@ -101,9 +101,11 @@ vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, 
             cloudColor += mix(skyColorUp, atmosphere, vec3(pow2(clamp(worldDir.y, 0.0, 1.0)))) * exp(-0.5 * (1.0 - cloudPos.y) * (1.0 - cloudNormal.y));
 
             float cloudDistance = length(cloudOffset);
-            float cloudFade = mix(0.0, 1.0 - exp(-cloudOpticalDepth * cloudOpticalDepth * 500.0), exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * max(cloudDistance - CLOUD_BLOCKY_FADE_DISTANCE, 0.0) - max(0.0, cameraPosition.y - 1000.0) / 1200.0));
+            float cloudDensity = 1.0 - exp(-cloudOpticalDepth * cloudOpticalDepth * 500.0);
+            float cloudFade = cloudDensity * (exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * max(cloudDistance - CLOUD_BLOCKY_FADE_DISTANCE, 0.0) - max(0.0, cameraPosition.y - 1000.0) / 1200.0));
             float cloudAbsorptionFade = exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * max(cloudDistance - CLOUD_BLOCKY_FADE_DISTANCE * 2.0, 0.0));
 
+            atmosphere = mix(baseColor, atmosphere, cloudDensity);
             cloudColor = mix(atmosphere, cloudColor, cloudFade);
             cloudColor = mix(baseColor, cloudColor, cloudAbsorptionFade);
             result = vec4(cloudColor, cloudFade);
@@ -296,12 +298,10 @@ vec4 realisticCloud(
         }
         if (cloudTransmittance < 0.9999) {
             float cloudDensity = 1.0 - cloudTransmittance;
-            cloudColor /= max(1e-5, cloudDensity);
-
-            float cloudFinalDensity = cloudDensity * exp(-startIntersection / CLOUD_REALISTIC_FADE_DISTANCE);
-            cloudColor = mix(atmosphere, cloudColor, cloudFinalDensity);
+            float cloudFalloff = exp(-startIntersection / CLOUD_REALISTIC_FADE_DISTANCE);
+            cloudColor = cloudColor * cloudFalloff + (1.0 - cloudDensity * cloudFalloff) * atmosphere;
             cloudColor = mix(baseColor, cloudColor, cloudDensity * exp(-max(startIntersection * 1.44269502 / CLOUD_REALISTIC_FADE_DISTANCE - 1.44269502, 0.0)));
-            result = vec4(cloudColor, cloudFinalDensity);
+            result = vec4(cloudColor, cloudDensity * cloudFalloff);
         } else {
             cloudDepth = -1.0;
         }
@@ -492,8 +492,6 @@ vec4 planeClouds(vec3 worldPos, vec3 worldDir, vec3 sunDirection, vec3 skyColorU
             vec2 cExpH = c * currRelativeDensity;
             vec3 sunlightStrength, moonlightStrength;
             sampleInScatteringDoubleSide(cloudHeight, c, cExpH, LdotP, sunlightStrength, moonlightStrength);
-            LdotP *= abs(LdotP);
-            cloudHeight /= 1.44269502;
 
             vec3 cloudColor = 8.0 * (sunlightStrength + moonlightStrength * nightBrightness);
             result = vec4(cloudColor, cloudDensity * cloudDensity);

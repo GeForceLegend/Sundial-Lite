@@ -26,7 +26,7 @@ void main() {
     vTexlmCoord.st = gl_MultiTexCoord0.st;
     vTexlmCoord.pq = gl_MultiTexCoord1.st / 240.0;
 
-    uint isEmissive = uint(511.5 < mc_Entity.x) * uint(mc_Entity.x < 1023.5);
+    uint isEmissive = uint(511.5 < mc_Entity.x && mc_Entity.x < 1023.5);
     int materialID = MAT_OPAQUE;
 
     if (mc_Entity.x < -0.5) {
