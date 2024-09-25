@@ -244,10 +244,10 @@ vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 albedo, flo
     float LdotHInv = inversesqrt(LdotH2);
     float LdotH = clamp(LdotH2 * LdotHInv, 0.0, 1.0);
 
-    float NdotH = clamp(dot(normal, h) * LdotHInv * 0.5, 0.0, 1.0);
+    float NdotH = clamp(dot(normal, h) * LdotHInv * 0.5 / 0.9998, 0.0, 1.0);
     float roughness = pow2(1.0 - smoothness);
 
-    float D = distribution(NdotH, roughness);
+    float D = clamp(distribution(NdotH, roughness) / 30.0, 0.0, 1.0) * 30.0;
     float V = geometry(NdotV, NdotL, roughness);
     vec3 F = fresnelFull(LdotH, LdotH2, n, k, metalness) * metalColor(albedo, LdotH, metalness, 1.0);
     return D * V * F;

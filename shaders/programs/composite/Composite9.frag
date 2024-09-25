@@ -10,11 +10,9 @@ in vec2 texcoord;
 
 // https://software.intel.com/en-us/node/503873
 vec3 RGB_YCoCg(vec3 c) {
-    return vec3(
-         c.x/4.0 + c.y/2.0 + c.z/4.0,
-         c.x/2.0 - c.z/2.0,
-        -c.x/4.0 + c.y/2.0 - c.z/4.0
-    );
+    c.y *= 0.5;
+    c.xz = vec2(c.x + c.z, c.x - c.z);
+    return vec3(c.x * 0.25 + c.y, c.z * 0.5, c.y + c.x * (-0.25));
 }
 
 // https://software.intel.com/en-us/node/503873

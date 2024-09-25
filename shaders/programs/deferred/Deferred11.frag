@@ -18,6 +18,10 @@ uniform vec3 viewShadowDirection;
 #define PCSS_SAMPLES 9 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 25 30 36]
 #define SCREEN_SPACE_SHADOW
 
+const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
+const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
+const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0 360.0 400.0 480.0 560.0 640.0]
+
 #include "/settings/CloudSettings.glsl"
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -27,10 +31,6 @@ uniform vec3 viewShadowDirection;
 #include "/libs/GbufferData.glsl"
 #include "/libs/Shadow.glsl"
 
-const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
-const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
-const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0 360.0 400.0 480.0 560.0 640.0]
-
 #ifdef SHADOW_AND_SKY
     vec3 shadowSpaceSurfaceOffset(vec3 worldOffsetDir) {
         vec3 offset = mat3(shadowModelViewProjection) * worldOffsetDir;
@@ -38,67 +38,6 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         offset *= clamp(inversesqrt(dot(offset, offset)) * 3.333333, 0.0, 1.0) * 400.0 / shadowDistance / realShadowMapResolution;
         offset.z *= 0.25;
         return offset;
-    }
-
-    vec3 worldPosToShadowCoord(vec3 worldPos) {
-        vec3 shadowCoord = mat3(shadowModelViewProjection) * worldPos + shadowModelViewProjection[3].xyz;
-        float shadowBias = 1.0 - SHADOW_BIAS + length(shadowCoord.xy) * SHADOW_BIAS;
-        shadowCoord.xy /= shadowBias;
-        shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
-        shadowCoord.xy = shadowCoord.xy * 0.25 + 0.75;
-        return shadowCoord.xyz;
-    }
-
-    vec3 singleSampleShadow(
-        vec3 albedo, vec3 worldPos, vec3 geoNormal, float NdotL, float lightFactor,
-        float smoothness, float porosity, float skyLight, float detail
-    ) {
-        vec3 result = vec3(0.0);
-        if (weatherStrength < 0.999) {
-            vec3 sssShadowCoord = worldPosToShadowCoordNoBias(worldPos);
-            float normalFactor = clamp(pow(NdotL, pow2(1.0 - min(0.3, smoothness))), 0.0, 1.0);
-            worldPos += geoNormal * ((dot(worldPos, worldPos) * 4e-5 + 2e-2) * (1.0 + sqrt(1.0 - NdotL))) * 4096.0 / realShadowMapResolution;
-            vec3 shadowCoord = worldPosToShadowCoord(worldPos);
-            if (any(greaterThan(abs(shadowCoord - vec3(vec2(0.75), 0.5)), vec3(vec2(0.25), 0.5)))) {
-                result = vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * mix(normalFactor, 1.0 - clamp(NdotL * 5.0, 0.0, 1.0) * (1.0 - NdotL), step(64.5 / 255.0, porosity)));
-            } else {
-                shadowCoord.z -= 4e-5;
-                float sssOffsetZ = sssShadowCoord.z - shadowCoord.z;
-                float rawShadow = textureLod(shadowtex0, shadowCoord, detail);
-                float subsurfaceScatteringWeight = (1.0 - rawShadow * clamp(NdotL * 5.0, 0.0, 1.0));
-                vec3 shadow = vec3(rawShadow) * normalFactor;
-
-                if (porosity > 64.5 / 255.0) {
-                    float shadowDepth = textureLod(shadowtex1, shadowCoord.st, 1.0).r;
-                    float opticalDepth = clamp(shadowCoord.z - shadowDepth + sssOffsetZ, 0.0, 1.0);
-                    const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
-                    float absorptionBeta = -4e+3 * 0.5 * 1.44269502 / max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5) * opticalDepth;
-
-                    float subsurfaceScattering = exp2(absorptionBeta);
-                    shadow += subsurfaceScattering * subsurfaceScatteringWeight;
-                }
-
-                #ifdef TRANSPARENT_SHADOW
-                    vec3 transparentShadowCoord = shadowCoord - vec3(0.5, 0.0, 0.0);
-                    vec4 transparentShadowColor = textureLod(shadowcolor0, transparentShadowCoord.st, detail);
-                    transparentShadowColor.rgb = pow(
-                        transparentShadowColor.rgb * (1.0 - 0.5 * pow2(transparentShadowColor.w)),
-                        vec3(sqrt(transparentShadowColor.w * 2.2 * 2.2 * 1.5))
-                    );
-                    float transparentShadowStrength = textureLod(shadowtex0, transparentShadowCoord, detail);
-                    shadow *= mix(transparentShadowColor.rgb, vec3(1.0), vec3(transparentShadowStrength));
-                #endif
-
-                vec3 waterShadowCoord = shadowCoord - vec3(0.0, 0.5, 0.0);
-                vec3 caustic = waterCaustic(waterShadowCoord, worldPos, shadowDirection, 1.0 + detail * 2.0);
-                shadow *= caustic;
-
-                shadow *= lightFactor * basicSunlight;
-
-                result = shadow;
-            }
-        }
-        return result;
     }
 
     vec3 percentageCloserSoftShadow(
@@ -323,8 +262,8 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec3 sun = vec3(0.0);
         if (theta < sunRadius) {
             vec3 light = sunLight;
-            float mu = sqrt(1.0 - centerToEdge * centerToEdge);
-            vec3 factor = vec3(1.0) - u * (vec3(1.0) - pow(vec3(mu), a));
+            float mu = 1.0 - centerToEdge * centerToEdge;
+            vec3 factor = vec3(1.0) - u * (vec3(1.0) - pow(vec3(mu), a * 0.5));
 
             sun = light * factor;
         }
@@ -391,7 +330,7 @@ void main() {
             shadow *=
                 gbufferData.albedo.rgb * diffuseAbsorption +
                 sunlightSpecular(
-                    worldDir, shadowDirection, worldNormal, gbufferData.albedo.rgb, gbufferData.smoothness * 0.99,
+                    worldDir, shadowDirection, worldNormal, gbufferData.albedo.rgb, gbufferData.smoothness * 0.995,
                     gbufferData.metalness, NdotL, NdotV, n, k
                 );
             vec2 noise = blueNoiseTemporal(texcoord).xy;

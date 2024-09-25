@@ -114,16 +114,7 @@ vec3 colorTemperature() {
 
 // AgX from https://www.shadertoy.com/view/cd3XWr
 vec3 agxDefaultContrastApprox(vec3 x) {
-    vec3 x2 = x * x;
-    vec3 x4 = x2 * x2;
-
-    return + 15.5     * x4 * x2
-           - 40.14    * x4 * x
-           + 31.96    * x4
-           - 6.868    * x2 * x
-           + 0.4298   * x2
-           + 0.1191   * x
-           - 0.00232;
+    return (((((15.5 * x - 40.14) * x + 31.96) * x - 6.868) * x + 0.4298) * x + 0.1191) * x  - 0.00232;
 }
 
 vec3 AgX(vec3 val) {
@@ -139,8 +130,7 @@ vec3 AgX(vec3 val) {
     val = agx_mat * (val * 7.0);
 
     // Log2 space encoding
-    val = clamp(log2(val), min_ev, max_ev);
-    val = (val - min_ev) / (max_ev - min_ev);
+    val = clamp(log2(val) / (max_ev - min_ev) - min_ev / (max_ev - min_ev), 0.0, 1.0);
 
     // Apply sigmoid function approximation
     val = agxDefaultContrastApprox(val);

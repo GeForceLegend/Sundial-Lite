@@ -6,6 +6,10 @@ in vec2 texcoord;
 in vec3 skyColorUp;
 in mat4 shadowModelViewProjection;
 
+const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
+const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
+const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0 360.0 400.0 480.0 560.0 640.0]
+
 #include "/settings/CloudSettings.glsl"
 #include "/settings/GlobalSettings.glsl"
 #include "/settings/VolumetricLightSettings.glsl"

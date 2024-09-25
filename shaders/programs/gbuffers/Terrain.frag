@@ -77,7 +77,7 @@ void main() {
                 #endif
             ) {
                 #ifdef VOXEL_PARALLAX
-                    rawData.normal = normalize(tbnMatrix * parallaxTexNormal);
+                    rawData.normal = tbnMatrix * parallaxTexNormal;
                 #else
                     #ifdef SMOOTH_PARALLAX
                         vec3 parallaxNormal = heightBasedNormal(normals, texcoord, baseCoord, atlasTexSize, atlasTexelOffset, maxTextureResolution, true);

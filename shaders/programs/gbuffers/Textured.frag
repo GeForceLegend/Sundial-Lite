@@ -73,8 +73,8 @@ vec2 calcTextureScale(vec2 dCoordDX, vec2 dCoordDY, vec3 position) {
     vec3 dPosDX = dFdx(position);
     vec3 dPosDY = dFdy(position);
 
-    vec3 normal = normalize(cross(dPosDX, dPosDY));
-    normal *= signI(-dot(normal, position));
+    vec3 normal = cross(dPosDX, dPosDY);
+    normal *= signI(-dot(normal, position)) * inversesqrt(dot(normal, normal));
 
     vec3 dPosPerpX = cross(normal, dPosDX);
     vec3 dPosPerpY = cross(dPosDY, normal);
@@ -271,7 +271,7 @@ void main() {
                     #endif
                 ) {
                     #ifdef VOXEL_PARALLAX
-                        rawData.normal = normalize(tbnMatrix * parallaxTexNormal);
+                        rawData.normal = tbnMatrix * parallaxTexNormal;
                     #else
                         #ifdef SMOOTH_PARALLAX
                             vec3 parallaxNormal = heightBasedNormal(normals, texcoord, baseCoord, albedoTexSize, atlasTexelOffset, float(ENTITY_TEXTURE_RESOLUTION), clampCoord);
