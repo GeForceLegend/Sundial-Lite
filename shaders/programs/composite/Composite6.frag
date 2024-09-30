@@ -76,7 +76,7 @@ void main() {
             }
             else {
                 float timeStrength = pow(clamp(1.0 - shadowDirection.y, 0.0, 1.0), 5.0);
-                float timeVLStrength = (timeStrength * (MORNING_VL_STRENGTH - NOON_VL_STRENGTH) + NOON_VL_STRENGTH) * exp(-max(cameraPosition.y + WORLD_BASIC_HEIGHT, 0.0) / 1200.0);
+                float timeVLStrength = (timeStrength * (MORNING_VL_STRENGTH - NOON_VL_STRENGTH) + NOON_VL_STRENGTH) * clamp(exp(-(cameraPosition.y + WORLD_BASIC_HEIGHT) / 1200.0), 0.0, 1.0);;
                 basicWeight *= timeVLStrength;
                 airScattering *= miePhase(LdotV, 0.6, 0.36);
 

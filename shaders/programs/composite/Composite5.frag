@@ -106,57 +106,43 @@ void main() {
 
         vec3 waterWorldPos = viewToWorldPos(waterViewPos);
         float waterDistance = distance(worldPos, waterWorldPos);
-        vec3 stainedColor = vec3(0.0);
         vec3 rawSolidColor = solidColor.rgb;
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         n -= 0.166666 * float(isTargetWater);
         n = mix(n, f0ToIor(gbufferData.metalness) , step(0.001, gbufferData.metalness));
         float LdotH = clamp(dot(worldNormal, -waterWorldDir), 0.0, 1.0);
-        if (isTargetWater) {
-            if (isEyeInWater == 1) {
+        if (isEyeInWater == 1 ^^ isTargetWater) {
+            solidColor.rgb = waterFogTotal(solidColor.rgb, worldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
+            n *= 1.0 - 0.25 * float(isEyeInWater);
+        }
+        else if (isEyeInWater == 2) {
+            solidColor.rgb = lavaFogTotal(solidColor.rgb, waterDistance);
+        }
+        else if (isEyeInWater == 3) {
+            solidColor.rgb = snowFogTotal(solidColor.rgb, skyColorUp, waterDistance, gbufferData.lightmap.y);
+        }
+        else {
+            #ifdef NETHER
+                solidColor.rgb = netherFogTotal(solidColor.rgb, waterDistance);
+            #elif defined THE_END
+                solidColor.rgb = endFogTotal(solidColor.rgb, waterDistance);
+                if (solidDepth - float(solidDepth > 1.0) > 0.999999)
+                    solidColor.rgb += endStars(worldDir);
+            #else
                 solidColor.rgb *= airAbsorption(waterDistance);
                 #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
                     solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, worldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
                 #endif
-                n = 1.0 / n;
-            }
-            else {
-                solidColor.rgb = waterFogTotal(solidColor.rgb, worldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
-            }
-            #if WATER_TYPE == 1
-                stainedColor = sqrt(gbufferData.albedo.w * 1.5) * log2(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w));
             #endif
-            stainedColor += gbufferData.smoothness * gbufferData.smoothness * log2(1.0 - fresnel(LdotH, LdotH * LdotH, n));
+            n = mix(n, 1.0 / n, float(isTargetWater));
         }
-        else {
-            if (isEyeInWater == 0) {
-                #ifdef NETHER
-                    solidColor.rgb = netherFogTotal(solidColor.rgb, waterDistance);
-                #elif defined THE_END
-                    solidColor.rgb = endFogTotal(solidColor.rgb, waterDistance);
-                    if (solidDepth - float(solidDepth > 1.0) > 0.999999)
-                        solidColor.rgb += endStars(worldDir);
-                #else
-                    solidColor.rgb *= airAbsorption(waterDistance);
-                    #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
-                        solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, worldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
-                    #endif
-                #endif
-            }
-            else if (isEyeInWater == 1) {
-                solidColor.rgb = waterFogTotal(solidColor.rgb, waterWorldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
-                n = n / 1.333333;
-            }
-            else if (isEyeInWater == 2) {
-                solidColor.rgb = lavaFogTotal(solidColor.rgb, waterDistance);
-            }
-            else if (isEyeInWater == 3) {
-                solidColor.rgb = snowFogTotal(solidColor.rgb, skyColorUp, waterDistance, gbufferData.lightmap.y);
-            }
-            stainedColor = sqrt(gbufferData.albedo.w * 1.5) * log2(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w));
-            if (isTargetNotParticle) {
-                stainedColor += gbufferData.smoothness * gbufferData.smoothness * log2(1.0 - fresnel(LdotH, LdotH * LdotH, n));
-            }
+        float waterStain = 1.0;
+        #if WATER_TYPE == 0
+            waterStain = float(!isTargetWater);
+        #endif
+        vec3 stainedColor = sqrt(gbufferData.albedo.w * 1.5) * log2(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w)) * waterStain;
+        if (isTargetNotParticle) {
+            stainedColor += gbufferData.smoothness * gbufferData.smoothness * log2(1.0 - fresnel(LdotH, LdotH * LdotH, n));
         }
         stainedColor = exp2(stainedColor);
 

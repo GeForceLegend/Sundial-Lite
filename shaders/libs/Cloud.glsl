@@ -102,7 +102,7 @@ vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, 
 
             float cloudDistance = length(cloudOffset);
             float cloudDensity = 1.0 - exp(-cloudOpticalDepth * cloudOpticalDepth * 500.0);
-            float cloudFade = cloudDensity * (exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * max(cloudDistance - CLOUD_BLOCKY_FADE_DISTANCE, 0.0) - max(0.0, cameraPosition.y - 1000.0) / 1200.0));
+            float cloudFade = cloudDensity * exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * max(cloudDistance - CLOUD_BLOCKY_FADE_DISTANCE, 0.0) - max(0.0, cameraPosition.y - 1000.0) / 1200.0);
             float cloudAbsorptionFade = exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * max(cloudDistance - CLOUD_BLOCKY_FADE_DISTANCE * 2.0, 0.0));
 
             atmosphere = mix(baseColor, atmosphere, cloudDensity);
@@ -328,7 +328,7 @@ float cloudShadowBlocky(vec3 worldPos, vec3 shadowDir) {
     float topIntersection = (CLOUD_BLOCKY_TOP_HEIGHT - worldHeight) / shadowDir.y;
     float bottomIntersection = (CLOUD_BLOCKY_HEIGHT - worldHeight) / shadowDir.y;
 
-    float intersection = topIntersection * bottomIntersection > 0.0 ? min(topIntersection, bottomIntersection) : 0.0;
+    float intersection = float(topIntersection * bottomIntersection > 0.0) * min(topIntersection, bottomIntersection);
     float result = 1.0;
     if (intersection > 0.0) {
         vec2 wind = frameTimeCounter * CLOUD_SPEED * vec2(4.0, 2.0);
@@ -407,13 +407,8 @@ float cloudShadowRealistic(vec3 worldPos, vec3 shadowDir) {
     float RdotP2 = RdotP * RdotP - R2;
 
     vec2 cloudIntersection = raySphereIntersection(RdotP, RdotP2, -pow2(cloudCenterHeight));
-    float startIntersection = cloudIntersection.x;
-    bool hit = cloudIntersection.y >= 0.0;
-    if (worldPos.y < cloudCenterHeight) {
-        float planetIntersection = raySphereIntersection(RdotP, RdotP2, -pow2(earthRadius)).x;
-        hit = planetIntersection <= 0.0;
-        startIntersection = cloudIntersection.y;
-    }
+    float startIntersection = mix(cloudIntersection.x, cloudIntersection.y, float(worldPos.y < cloudCenterHeight));
+    bool hit = cloudIntersection.y >= 0.0 || worldPos.y < cloudCenterHeight;
 
     float result = 1.0;
     if (hit) {

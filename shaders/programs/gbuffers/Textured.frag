@@ -200,6 +200,9 @@ void main() {
             textureScale = vec2(textureResolutionFixed) / ENTITY_TEXTURE_RESOLUTION;
 
             bool clampCoord = textureSize(gaux1, 0) == albedoTexSize;
+            #ifdef MC_ANISOTROPIC_FILTERING
+                clampCoord = (spriteBounds.zw - spriteBounds.xy) * textureSize(gaux1, 0) == albedoTexSize;
+            #endif
             #ifdef ENTITY_PARALLAX
                 #ifdef PARALLAX
                     float parallaxOffset = 0.0;
@@ -223,7 +226,7 @@ void main() {
         vec2 atlasTiles = albedoTexSize / ENTITY_TEXTURE_RESOLUTION;
         vec2 atlasTexelOffset = 0.5 * atlasTexelSize;
         vec2 tileCoordSize = 1.0 / atlasTiles;
-        #if ANISOTROPIC_FILTERING_QUALITY > 0 && !defined PARTICLE
+        #if ANISOTROPIC_FILTERING_QUALITY > 0 && !defined PARTICLE && !defined MC_ANISOTROPIC_FILTERING
             vec4 texAlbedo = anisotropicFilter(texcoord, albedoTexSize, atlasTexelSize, texGradX, texGradY, baseCoord, tileCoordSize, atlasTiles, clampCoord);
         #else
             vec4 texAlbedo = textureGrad(gtexture, texcoord, texGradX, texGradY);

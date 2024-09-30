@@ -17,14 +17,16 @@ in float smoothCenterDepth;
 const bool colortex3MipmapEnabled = true;
 
 vec3 calculateBloomBase(vec2 coord) {
-    vec2 level = -floor(log2(1.0 - coord));
+    uvec2 levelU = floatBitsToUint(1.0 - coord) & 0x7F800000u;
     vec3 result = vec3(0.0);
-    if (level.x == level.y && level.x < 7.5) {
-        float lod = level.x;
-        float expLevel = exp2(lod);
-        vec2 levelOffset = vec2(1.0 - 2.0 / expLevel);
+    if (levelU.x == levelU.y && levelU.x >= 0x3C000000u) {
+        float lod = 127.0 - float(levelU.x >> 23);
+        float expLevel = uintBitsToFloat(0x3F800000u + 0x3F800000u - levelU.x);
+        float levelOffset = float(1.0 - 2.0 * uintBitsToFloat(levelU.x));
         vec2 bloomTexel = texelSize * expLevel * 0.5;
         vec2 centerCoord = (coord - levelOffset) * expLevel;
+        vec2 lodSize = floor(screenSize * uintBitsToFloat(levelU.x));
+        centerCoord *= (lodSize + 1.0) / lodSize;
         lod -= 1.0;
 
         vec3 bloomColor = textureLod(colortex3, centerCoord, lod).rgb * 4.0;
@@ -52,7 +54,7 @@ float getAvgBrightness() {
         }
     }
     totalColor = pow(totalColor / totalWeight, vec3(AVERAGE_EXPOSURE_TENDENCY));
-    float currBrightness = dot(totalColor, vec3(60.0 / 3.0));
+    float currBrightness = dot(totalColor, vec3(600.0 / 3.0));
     float prevBrightness = texelFetch(colortex3, ivec2(0), 0).w;
 
     float averageBrightness = mix(prevBrightness, currBrightness, clamp(frameTime * (step(currBrightness, prevBrightness) * 2.0 + 2.0) + float(prevBrightness == 0.0), 0.0, 1.0));
@@ -79,14 +81,14 @@ vec3 motionBlur(vec2 currCoord, vec2 velocity) {
 void main() {
     vec3 currColor = textureLod(colortex3, texcoord, 0.0).rgb;
 
-    texBuffer4 = vec4(calculateBloomBase(texcoord) * 60.0, 1.0);
+    texBuffer4 = vec4(calculateBloomBase(texcoord) * 600.0, 1.0);
     texBuffer3 = vec4(currColor, 1.0);
     #ifdef MOTION_BLUR
         vec2 velocity = textureLod(colortex1, texcoord, 0.0).xy * 2.0 - 1.0;
         vec3 motionBlurColor = motionBlur(texcoord, velocity);
         texBuffer3.rgb = mix(currColor, motionBlurColor, vec3(clamp(length(velocity * screenSize) * 0.3, 0.0, 1.0)));
     #endif
-    texBuffer3.rgb *= 60.0;
+    texBuffer3.rgb *= 600.0;
 
     texBuffer7 = vec4(pow(currColor, vec3(1.0 / 2.2)), textureLod(depthtex0, texcoord, 0.0).r);
     #ifdef DISTANT_HORIZONS

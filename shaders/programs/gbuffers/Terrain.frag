@@ -20,6 +20,9 @@ void main() {
     GbufferData rawData;
 
     vec2 atlasTexSize = vec2(atlasSize);
+    #ifdef MC_ANISOTROPIC_FILTERING
+        atlasTexSize *= spriteBounds.zw - spriteBounds.xy;
+    #endif
     vec4 worldTangent = vec4(unpackHalf2x16(blockData.y), unpackHalf2x16(blockData.z));
     float tangentLenInv = inversesqrt(dot(worldTangent.xyz, worldTangent.xyz));
     vec3 tangent = mat3(gbufferModelView) * (worldTangent.xyz * tangentLenInv);
@@ -54,7 +57,7 @@ void main() {
     vec2 texGradY = dFdy(texlmcoord.st);
     vec2 atlasTiles = atlasTexSize * textureResolutionInv;
     vec2 tileCoordSize = maxTextureResolution * atlasTexelSize;
-    #if ANISOTROPIC_FILTERING_QUALITY > 0
+    #if ANISOTROPIC_FILTERING_QUALITY > 0 && !defined MC_ANISOTROPIC_FILTERING
         vec4 albedoData = anisotropicFilter(texcoord, atlasTexSize, atlasTexelSize, texGradX, texGradY, baseCoord, tileCoordSize, atlasTiles, true);
     #else
         vec4 albedoData = textureGrad(gtexture, texcoord, texGradX, texGradY);

@@ -166,7 +166,7 @@ vec3 fresnelFull(float LdotH, float LdotH2, vec3 n, vec3 k, float metalness) {
     vec3 t0 = n2 - k2 - sinR2;
     vec3 a2b2 = sqrt(t0 * t0 + 4.0 * n2 * k2);
     vec3 t1 = a2b2 + LdotH2;
-    vec3 a = sqrt(2.0 * (a2b2 + t0));
+    vec3 a = sqrt(2.0 * max(a2b2 + t0, 0.0));
     vec3 t2 = a * LdotH;
     vec3 rs = 0.5 * (t1 - t2) / (t1 + t2);
 
@@ -239,15 +239,15 @@ vec3 metalColor(vec3 albedo, float NdotV, float metalness, float smoothness) {
 
 vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 albedo, float smoothness, float metalness, float NdotL, float NdotV, vec3 n, vec3 k) {
     float LdotV = dot(-viewDir, lightDir);
-    vec3 h = lightDir - viewDir;
     float LdotH2 = LdotV * 0.5 + 0.5;
     float LdotHInv = inversesqrt(LdotH2);
     float LdotH = clamp(LdotH2 * LdotHInv, 0.0, 1.0);
 
-    float NdotH = clamp(dot(normal, h) * LdotHInv * 0.5 / 0.9998, 0.0, 1.0);
     float roughness = pow2(1.0 - smoothness);
+    vec3 reflectDir = viewDir + 2.0 * NdotV * normal;
+    float NdotH = sqrt(clamp(dot(reflectDir, lightDir) * 1.0001 * 0.5 + 0.0001 * 0.5 + 0.5, 0.0, 1.0));
 
-    float D = clamp(distribution(NdotH, roughness) / 30.0, 0.0, 1.0) * 30.0;
+    float D = clamp(distribution(NdotH, roughness) / 300.0, 0.0, 1.0) * 300.0;
     float V = geometry(NdotV, NdotL, roughness);
     vec3 F = fresnelFull(LdotH, LdotH2, n, k, metalness) * metalColor(albedo, LdotH, metalness, 1.0);
     return D * V * F;

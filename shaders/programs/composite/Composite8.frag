@@ -77,10 +77,11 @@ float getClosestDepth(vec2 coord) {
     return closest;
 }
 
-vec3 calculateVelocity(in vec3 coord, float materialID) {
+vec3 calculateVelocity(vec3 coord, ivec2 texel) {
     vec3 view = coord;
-    ivec2 texel = ivec2(gl_FragCoord.st);
-    float parallaxOffset = unpack16Bit(texelFetch(colortex2, texel, 0).w).y * PARALLAX_DEPTH * 0.2;
+    vec2 data = unpack16Bit(texelFetch(colortex2, texel, 0).a);
+    float materialID = round(data.x * 255.0);
+    float parallaxOffset = data.y * PARALLAX_DEPTH * 0.2;
     vec3 geoNormal = decodeNormal(texelFetch(colortex1, texel, 0).zw);
     if (materialID == MAT_HAND) {
         #ifdef DISTANT_HORIZONS
@@ -257,13 +258,12 @@ void main() {
         centerData.rgb = totalColor;
     #endif
 
-    texBuffer3 = vec4(clamp(pow(0.05 * centerData.rgb, vec3(1.0 / 2.2)), vec3(0.0), vec3(1.0)), 1.0);
+    texBuffer3 = vec4(clamp(pow(0.005 * centerData.rgb, vec3(1.0 / 2.2)), vec3(0.0), vec3(1.0)), 1.0);
 
     float closestDepth = getClosestDepth(texcoord);
     vec3 closest = vec3(texcoord, closestDepth);
 
-    float materialID = round(unpack16Bit(texelFetch(colortex2, texel, 0).a).x * 255.0);
-    vec3 velocity = calculateVelocity(closest, materialID);
+    vec3 velocity = calculateVelocity(closest, texel);
     velocity = velocity * clamp(0.5 * inversesqrt(dot(velocity.st, velocity.st) + 1e-7), 0.0, 1.0);
 
     float blendWeight = 1.0;

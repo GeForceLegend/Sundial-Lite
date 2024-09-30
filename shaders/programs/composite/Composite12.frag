@@ -11,10 +11,12 @@ in vec2 texcoord;
 #include "/libs/Uniform.glsl"
 
 vec3 sampleBloomY(vec2 coord) {
-    vec2 level = floor(log2(1.0 - coord));
+    vec2 offset = uintBitsToFloat(floatBitsToUint(1.0 - coord) & 0x7F800000u);
     vec3 result = vec3(0.0);
-    if (level.x == level.y) {
+    if (offset.x == offset.y) {
         ivec2 texel = ivec2(coord * screenSize);
+        int maxTexelY = int(floor(screenSize.y * (1.0 - offset.y)));
+        int minTexelY = int(ceil(screenSize.y * (1.0 - 2.0 * offset.y)));
 
         const float weights[5] = float[5](0.27343750, 0.21875000, 0.10937500, 0.03125000, 0.00390625);
         vec3 totalColor = texelFetch(colortex4, texel, 0).rgb * weights[0];
@@ -22,8 +24,8 @@ vec3 sampleBloomY(vec2 coord) {
         ivec2 sampleTexel1 = texel;
 
         for (int i = 1; i < 5; i++) {
-            sampleTexel0.y += 1;
-            sampleTexel1.y -= 1;
+            sampleTexel0.y = min(maxTexelY, sampleTexel0.y + 1);
+            sampleTexel1.y = max(minTexelY, sampleTexel1.y - 1);
             totalColor += (texelFetch(colortex4, sampleTexel0, 0).rgb + texelFetch(colortex4, sampleTexel1, 0).rgb) * weights[i];
         }
         result = totalColor;

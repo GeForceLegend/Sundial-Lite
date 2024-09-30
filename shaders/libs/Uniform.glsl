@@ -21,6 +21,7 @@ uniform vec3 sunlightColor;
 uniform vec3 cameraPosition;
 uniform vec3 cameraMovement;
 uniform vec3 shadowDirection;
+uniform vec4 spriteBounds;
 
 uniform sampler2D gtexture;
 uniform sampler2D normals;

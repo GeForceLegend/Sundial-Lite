@@ -356,7 +356,7 @@ void main() {
     }
     #ifdef SHADOW_AND_SKY
         else {
-            finalColor.rgb = renderSun(worldDir, sunDirection, vec3(30.0)) + gbufferData.albedo.rgb * 2.0;
+            finalColor.rgb = renderSun(worldDir, sunDirection, vec3(300.0)) + gbufferData.albedo.rgb * 2.0;
         }
     #endif
 
