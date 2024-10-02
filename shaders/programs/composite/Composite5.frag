@@ -174,6 +174,7 @@ void main() {
     }
 
     vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, waterWorldDir);
+    waterDepth -= float(waterDepth > 1.0);
     float waterViewDepthFar = mix(waterViewDepthNoLimit, 500.0 + 500.0 * float(intersectionData.z > 0.0), step(0.999999, waterDepth));
     if (isEyeInWater == 0) {
         #ifdef NETHER

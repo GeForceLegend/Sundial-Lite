@@ -291,7 +291,7 @@ void main() {
     vec4 finalColor = vec4(0.0);
     texBuffer0 = vec4(texelFetch(colortex0, texel, 0).rgb, texelFetch(colortex4, texel, 0).w);
 
-    if (gbufferData.depth < 0.999999) {
+    if (abs(gbufferData.depth) < 1.0) {
         vec3 viewDir = normalize(viewPos);
         viewPos += PARALLAX_DEPTH * gbufferData.parallaxOffset * viewPos / max(dot(viewPos, -gbufferData.geoNormal), 1e-5) * 0.2;
         vec3 worldPos = viewToWorldPos(viewPos);

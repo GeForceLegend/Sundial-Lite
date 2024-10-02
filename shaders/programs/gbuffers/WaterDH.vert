@@ -1,4 +1,6 @@
-#ifndef IS_IRIS
+#ifndef DISTANT_HORIZONS
+    #define DISTANT_HORIZONS
+
     in int dhMaterialId;
 #endif
 
@@ -14,7 +16,7 @@ flat out float materialID;
 
 void main() {
     viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
-    gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
+    gl_Position = dhProjection * vec4(viewPos, 1.0);
 
     color = gl_Color;
     blockLight = (gl_TextureMatrix[1] * gl_MultiTexCoord1).st * 16.0 / 15.0 - 0.5 / 15.0;
