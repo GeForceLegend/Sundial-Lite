@@ -35,8 +35,11 @@ void main() {
         #endif
         vWorldPos = mat3(shadowModelViewInverse) * viewPos.xyz + shadowModelViewInverse[3].xyz;
 
-        float isWater = float(mc_Entity.x == 264);
-        vShadowOffset = vec2(0.0, -isWater);
+        vShadowOffset = vec2(0.0, 0.0);
+        #ifdef TRANSPARENT
+            float isWater = float(mc_Entity.x == 264);
+            vShadowOffset.y = -isWater;
+        #endif
 
         gl_Position = gl_ProjectionMatrix * viewPos;
         float shadowBias = 1.0 - SHADOW_BIAS + length(gl_Position.xy) * SHADOW_BIAS;

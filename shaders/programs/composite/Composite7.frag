@@ -13,7 +13,7 @@ in vec2 texcoord;
 
 float circleOfConfusionRadius(vec2 coord, float sampleDepth, float focusDepth) {
     sampleDepth = max(0.31, sampleDepth);
-    float circleRadius = clamp(abs((focusDepth - sampleDepth) / (sampleDepth * (focusDepth - FOCAL_LENGTH))) * 0.5, 0.0, 1.0);
+    float circleRadius = clamp(abs((focusDepth - sampleDepth) / (sampleDepth * (focusDepth - FOCAL_LENGTH))) * APERTURE_DIAMETER_SCALE / MAX_BLUR_RADIUS, 0.0, 1.0);
     #ifndef HAND_DOF
         float materialID = round(unpack16Bit(textureLod(colortex2, coord, 0.0).a).x * 255.0);
         if (materialID == MAT_HAND) {
@@ -39,7 +39,7 @@ void main() {
     float centerCoC = circleOfConfusionRadius(texcoord, centerViewDepth, focusDepth);
 
     const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
-    float strength = 15.0 * APERTURE_DIAMETER_SCALE;
+    float strength = 15.0 * MAX_BLUR_RADIUS;
     vec2 noise = blueNoiseTemporal(texcoord).xy;
     float radius2 = centerCoC * centerCoC;
     float stepSize = (1.0 - radius2) / COC_SPREAD_SAMPLES;

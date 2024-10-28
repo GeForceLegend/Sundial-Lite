@@ -38,7 +38,7 @@ void main() {
     vec2 rainTexcoord = vec2(fract(texcoord.x * RAIN_DROP_AMOUNT), texcoord.y);
     vec4 albedoData2 = texture(gtexture, rainTexcoord) * color;
 
-    float rainOrSnow = signI(0.001 - abs(albedoData2.r - albedoData2.g) - abs(albedoData2.g - albedoData2.b));
+    float rainOrSnow = signI(0.001 - abs(albedoData2.r - albedoData2.g) - abs(albedoData2.g - albedoData2.b) - abs(albedoData.r - albedoData.g) - abs(albedoData.g - albedoData.b));
 
     if (rainOrSnow < 0.0) {
         albedoData = albedoData2;

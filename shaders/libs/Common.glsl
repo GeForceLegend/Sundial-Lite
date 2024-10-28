@@ -119,7 +119,7 @@ float luminanceExp(vec3 color) {
 }
 
 vec2 centralizeCoord(vec2 coord) {
-    return (floor(coord * screenSize) + 0.5) / screenSize;
+    return (floor(coord * screenSize) + 0.5) * texelSize;
 }
 
 float f0ToIor(float f0) {
@@ -128,7 +128,7 @@ float f0ToIor(float f0) {
 
 float distribution(float NoH, float roughness) {
     float r2 = roughness * roughness;
-    float k = r2 / max(1e-20, pow2(1.0 + NoH * NoH * (r2 - 1.0)));
+    float k = r2 / pow2(1.0 + NoH * NoH * (r2 - 1.0));
     return k * (1.0 / PI);
 }
 

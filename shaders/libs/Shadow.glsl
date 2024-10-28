@@ -36,11 +36,11 @@
 
                 float waterShadowHeightInv = inversesqrt(0.4375 + 0.5625 * lightDir.y * lightDir.y);
                 vec3 mcPos = worldPos + cameraPosition;
-                float waterDepth = max(0.0, (waterHeight - mcPos.y) * waterShadowHeightInv);
+                float waterDepth = (waterHeight - mcPos.y) * waterShadowHeightInv;
 
                 float causticStrength = textureLod(shadowcolor0, waterShadowCoord.st, lod).r;
-                causticStrength = mix(causticStrength * 4.0, 1.0, exp(-0.3 * waterDepth));
-                caustic = causticStrength * waterFogAbsorption(waterDepth);
+                causticStrength = mix(causticStrength * 4.0, 1.0, clamp(exp(-0.3 * waterDepth), 0.0, 1.0));
+                caustic = causticStrength * clamp(waterFogAbsorption(waterDepth), 0.0, 1.0);
                 caustic = mix(caustic, vec3(1.0), vec3(waterShadow));
             }
         #endif
@@ -51,7 +51,7 @@
     float basicSunlight = (1.0 - sqrt(weatherStrength)) * 8.0 * SUNLIGHT_BRIGHTNESS;
 
     vec3 singleSampleShadow(
-        vec3 albedo, vec3 worldPos, vec3 geoNormal, float NdotL, float lightFactor,
+        vec3 worldPos, vec3 geoNormal, float NdotL, float lightFactor,
         float smoothness, float porosity, float skyLight, float detail
     ) {
         vec3 result = vec3(0.0);
@@ -60,14 +60,16 @@
             float normalFactor = clamp(pow(NdotL, pow2(1.0 - min(0.3, smoothness))), 0.0, 1.0);
             worldPos += geoNormal * ((dot(worldPos, worldPos) * 4e-5 + 2e-2) * (1.0 + sqrt(1.0 - NdotL))) * 4096.0 / realShadowMapResolution;
             vec3 shadowCoord = worldPosToShadowCoord(worldPos);
+            NdotL = abs(dot(geoNormal, shadowDirection));
+            NdotL = NdotL + (1.0 - NdotL) * clamp(porosity * 255.0 / 191.0 - 64.0 / 191.0, 0.0, 1.0);
             if (any(greaterThan(abs(shadowCoord - vec3(vec2(0.75), 0.5)), vec3(vec2(0.25), 0.5)))) {
-                result = vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * mix(normalFactor, 1.0 - clamp(NdotL * 5.0, 0.0, 1.0) * (1.0 - NdotL), step(64.5 / 255.0, porosity)));
+                result = vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * (normalFactor + (1.0 - normalFactor) * NdotL * step(64.5 / 255.0, porosity)));
             } else {
                 shadowCoord.z -= 4e-5;
                 float sssOffsetZ = sssShadowCoord.z - shadowCoord.z;
-                float rawShadow = textureLod(shadowtex0, shadowCoord, detail);
-                float subsurfaceScatteringWeight = (1.0 - rawShadow * clamp(NdotL * 5.0, 0.0, 1.0));
-                vec3 shadow = vec3(rawShadow) * normalFactor;
+                float rawShadow = textureLod(shadowtex0, shadowCoord, detail) * normalFactor;
+                float subsurfaceScatteringWeight = (1.0 - rawShadow) * NdotL;
+                vec3 shadow = vec3(rawShadow);
 
                 if (porosity > 64.5 / 255.0) {
                     float shadowDepth = textureLod(shadowtex1, shadowCoord.st, 1.0).r;

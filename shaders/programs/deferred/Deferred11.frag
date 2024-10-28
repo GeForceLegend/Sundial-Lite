@@ -41,7 +41,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
     }
 
     vec3 percentageCloserSoftShadow(
-        vec3 albedo, vec3 worldPos, vec3 worldGeoNormal, float NdotL, float lightFactor, float smoothness, float porosity, float skyLight, vec2 noise
+        vec3 worldPos, vec3 worldGeoNormal, float NdotL, float lightFactor, float smoothness, float porosity, float skyLight, vec2 noise
     ) {
         vec3 result = vec3(0.0);
         if (weatherStrength < 0.999) {
@@ -57,8 +57,9 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
             float normalFactor = clamp(pow(NdotL, pow2(1.0 - smoothness * 0.3)), 0.0, 1.0);
             float basicSunlight = 8.0 * SUNLIGHT_BRIGHTNESS - 8.0 * SUNLIGHT_BRIGHTNESS * sqrt(weatherStrength);
-            NdotL = clamp(NdotL * 5.0, 0.0, 1.0);
-            result = vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * mix(normalFactor, 1.0 - NdotL + NdotL * normalFactor, step(64.5 / 255.0, porosity)));
+            NdotL = abs(dot(worldGeoNormal, shadowDirection));
+            NdotL = NdotL + (1.0 - NdotL) * clamp(porosity * 255.0 / 191.0 - 64.0 / 191.0, 0.0, 1.0);
+            result = vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * (normalFactor + (1.0 - normalFactor) * NdotL * step(64.5 / 255.0, porosity)));
             if (all(lessThan(abs(basicShadowCoord - vec3(vec2(0.75), 0.5)), vec3(vec2(0.249), 0.5)))) {
                 vec3 offsetDirection1 = cross(worldGeoNormal, shadowDirection);
                 vec3 offsetDirection2 = cross(worldGeoNormal, offsetDirection1);
@@ -127,14 +128,14 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                             }
                         #endif
                     }
-                    solidShadow /= PCSS_SAMPLES;
+                    solidShadow *= normalFactor / PCSS_SAMPLES;
                     float subsurfaceScattering = float(0.0);
                     if (needSubsurfaceScattering && SUBSERFACE_SCATTERING_STRENTGH > 0.0) {
                         const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
                         float absorptionBeta = -4e+3 * 0.5 * 1.44269502 / max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5) * opticalDepth / PCSS_SAMPLES;
                         subsurfaceScattering = exp2(absorptionBeta);
                     }
-                    result *= solidShadow * normalFactor + subsurfaceScattering * (1.0 - solidShadow * NdotL);
+                    result *= solidShadow + subsurfaceScattering * (1.0 - solidShadow) * NdotL;
 
                     #ifdef TRANSPARENT_SHADOW
                         transparentShadowColor /= transparentShadow;
@@ -314,7 +315,7 @@ void main() {
         #ifdef SHADOW_AND_SKY
             finalColor.rgb += pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (worldNormal.y * 0.4 + 0.6);
         #endif
-        float NdotV = clamp(dot(viewDir, -gbufferData.geoNormal), 0.0, 1.0);
+        float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
         vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
         finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;
         finalColor.rgb += gbufferData.emissive *  BLOCK_LIGHT_BRIGHTNESS;
@@ -325,7 +326,7 @@ void main() {
             float shadowLightFactor = 1.0;
             float NdotL = clamp(dot(worldNormal, shadowDirection), 0.0, 1.0);
             #ifdef LIGHT_LEAKING_FIX
-                shadowLightFactor = clamp(gbufferData.lightmap.y * 10.0 + float(isEyeInWater != 0), 0.0, 1.0);
+                shadowLightFactor = clamp(gbufferData.lightmap.y * 10.0 + isEyeInWater, 0.0, 1.0);
             #endif
             shadow *=
                 gbufferData.albedo.rgb * diffuseAbsorption +
@@ -342,12 +343,12 @@ void main() {
             #endif
             #ifdef PCSS
                 shadow *= percentageCloserSoftShadow(
-                    gbufferData.albedo.rgb, worldPosNoPOM, worldGeoNormal, NdotL, shadowLightFactor,
+                    worldPosNoPOM, worldGeoNormal, NdotL, shadowLightFactor,
                     gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, noise
                 );
             #else
                 shadow *= singleSampleShadow(
-                    gbufferData.albedo.rgb, worldPosNoPOM, worldGeoNormal, NdotL, shadowLightFactor,
+                    worldPosNoPOM, worldGeoNormal, NdotL, shadowLightFactor,
                     gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, 0.0
                 );
             #endif

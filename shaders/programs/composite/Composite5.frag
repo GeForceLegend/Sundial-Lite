@@ -157,7 +157,7 @@ void main() {
                     shadowLightFactor = clamp(gbufferData.lightmap.y * 10.0, 0.0, 1.0);
                 #endif
                 vec3 shadow = singleSampleShadow(
-                    gbufferData.albedo.rgb, waterWorldPos, mat3(gbufferModelViewInverse) * gbufferData.geoNormal, NdotL, shadowLightFactor,
+                    waterWorldPos, mat3(gbufferModelViewInverse) * gbufferData.geoNormal, NdotL, shadowLightFactor,
                     gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, 0.0
                 );
                 #ifdef CLOUD_SHADOW

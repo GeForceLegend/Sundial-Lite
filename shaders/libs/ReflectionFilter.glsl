@@ -35,7 +35,7 @@ vec4 reflectionFilter(float offset, bool useNoise) {
                     ) *
                     step(0.0025, sampleSmoothness);
                 weight = clamp(weight, 0.0, 1.0);
-                if (abs(i) + abs(j) > 0.5 && max(abs(sampleTexel.x * texelSize.x - 0.5), abs(sampleTexel.y * texelSize.y - 0.5)) < 0.5) {
+                if (abs(i) + abs(j) > 0.5 && all(lessThan(sampleTexel * texelSize - 0.5, vec2(0.5)))) {
                     accumulation += sampleData * weight;
                     weightAccumulation += weight;
                 }

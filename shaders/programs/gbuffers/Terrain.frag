@@ -145,30 +145,27 @@ void main() {
     #ifdef HARDCODED_EMISSIVE
         float emissive = step(rawData.emissive, 1e-3) * (blockData.x & 1u);
         if (rawData.materialID == MAT_TORCH) {
-            rawData.emissive += 0.57 * emissive * length(rawData.albedo.rgb);
+            emissive *= 0.57 * length(rawData.albedo.rgb);
         }
         else if (rawData.materialID == MAT_CAULDRON) {
             rawData.smoothness += step(1e-6, abs(color.r - color.b) * (1e-3 - rawData.smoothness));
         }
         else if (rawData.materialID == MAT_LAVA_CAULDRON) {
-            vec2 midBlockVelocity = abs(fract(mcPos.xz) - 0.5);
-            rawData.emissive += step(max(midBlockVelocity.x, midBlockVelocity.y), 0.376) * step(abs(fract(mcPos.y) - 0.9375), 0.001);
+            emissive *= float(all(lessThan(abs(fract(mcPos.xyz) - vec3(0.5, 0.9375, 0.5)), vec3(0.376, 0.001, 0.376))));
         }
         else if (rawData.materialID == MAT_BREWING_STAND) {
             vec2 midBlockVelocity = abs(fract(mcPos.xz) - 0.5);
-            rawData.emissive += step(max(midBlockVelocity.x, midBlockVelocity.y), 0.063);
+            emissive *= float(all(lessThan(midBlockVelocity, vec2(0.063))));
         }
         else if (rawData.materialID == MAT_GLOWING_BERRIES) {
-            rawData.emissive += clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0);
+            emissive *= clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0);
         }
-        else {
-            rawData.emissive += emissive;
-        }
+        rawData.emissive += emissive;
     #endif
 
     #ifdef MOD_LIGHT_DETECTION
         if (rawData.lightmap.x > 0.99999) {
-            rawData.emissive += step(rawData.emissive, 1e-3) * step(rawData.materialID, 0.5);
+            rawData.emissive += float(rawData.emissive < 1e-3 && rawData.materialID < 0.5);
         }
     #endif
 

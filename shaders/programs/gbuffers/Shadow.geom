@@ -28,11 +28,18 @@ void main() {
         vec3 screenPos0 = vec3(gl_in[0].gl_Position.xy, 0.0);
         vec3 screenPos1 = vec3(gl_in[1].gl_Position.xy, 0.0);
         vec3 screenPos2 = vec3(gl_in[2].gl_Position.xy, 0.0);
-
+    
         vec2 shadowOffsetCenter = vShadowOffset[0];
-        float isTransparent = float(abs(textureLod(gtexture, midCoord + 1e-6, 0.0).w - 0.5) < 0.499) * float(abs(shadowOffsetCenter.y) == 0.0);
-        shadowOffsetCenter.x -= isTransparent * 0.5 * realShadowMapResolution;
-        vec4 positionOffset = vec4(-isTransparent, vec3(0.0));
+        vec4 positionOffset = vec4(0.0);
+        #ifdef TRANSPARENT
+            float isTransparent = 1.0;
+            #ifdef ENTITIES
+                isTransparent = float(abs(textureLod(gtexture, midCoord + 1e-6, 0.0).w * vColor[0].w - 0.5) + 1e-4 < 0.499);
+            #endif
+            isTransparent *= float(shadowOffsetCenter.y == realShadowMapResolution - 1024.0);
+            shadowOffsetCenter.x -= isTransparent * 0.5 * realShadowMapResolution;
+            positionOffset.x = -isTransparent;
+        #endif
 
         gl_Position = gl_in[0].gl_Position + positionOffset;
         color = vColor[0];

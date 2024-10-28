@@ -20,7 +20,7 @@ in vec2 texcoord;
 
 float circleOfConfusionRadius(vec2 coord, float sampleDepth, float focusDepth) {
     sampleDepth = max(0.31, sampleDepth);
-    float circleRadius = clamp(abs((focusDepth - sampleDepth) / (sampleDepth * (focusDepth - FOCAL_LENGTH))) * 0.5, 0.0, 1.0);
+    float circleRadius = clamp(abs((focusDepth - sampleDepth) / (sampleDepth * (focusDepth - FOCAL_LENGTH))) * APERTURE_DIAMETER_SCALE / MAX_BLUR_RADIUS, 0.0, 1.0);
     #ifndef HAND_DOF
         float materialID = round(unpack16Bit(textureLod(colortex2, coord, 0.0).a).x * 255.0);
         if (materialID == MAT_HAND) {
@@ -84,31 +84,14 @@ vec3 calculateVelocity(vec3 coord, ivec2 texel) {
     float parallaxOffset = data.y * PARALLAX_DEPTH * 0.2;
     vec3 geoNormal = decodeNormal(texelFetch(colortex1, texel, 0).zw);
     if (materialID == MAT_HAND) {
-        #ifdef DISTANT_HORIZONS
-            if (coord.z > 1.0) {
-                view.z -= 1.0;
-                view = projectionToViewPosDH(view * 2.0 - 1.0);
-            } else
-        #endif
-        {
-            view = projectionToViewPos(view * 2.0 - 1.0);
-        }
+        view = projectionToViewPos(view * 2.0 - 1.0);
         view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
         view -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
         view += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
 
         view -= view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
-        #ifdef DISTANT_HORIZONS
-            if (coord.z > 1.0) {
-                view = viewToProjectionPosDH(view);
-                view = view * 0.5 + 0.5;
-                view.z += 1.0;
-            } else
-        #endif
-        {
-            view = viewToProjectionPos(view);
-            view = view * 0.5 + 0.5;
-        }
+        view = viewToProjectionPos(view);
+        view = view * 0.5 + 0.5;
     } else if (coord.z > 0.7) {
         #ifdef DISTANT_HORIZONS
             if (coord.z > 1.0) {
@@ -177,7 +160,7 @@ void main() {
         float centerCoCRadius = circleOfConfusionRadius(texcoord, centerDepth, focusDepth);
 
         const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
-        const float strength = 15.0 * APERTURE_DIAMETER_SCALE;
+        const float strength = 15.0 * MAX_BLUR_RADIUS;
         vec2 noise = blueNoiseTemporal(texcoord).xy;
         float radius = noise.y / DOF_SAMPLES;
         float noiseAngle = noise.x * PI * 2.0;

@@ -64,7 +64,11 @@ void main() {
         vec4 albedo = textureLod(gtexture, texcoord, 0.0);
         albedo *= color;
         vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
-        if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || albedo.w < 0.001 || fwidth(shadowOffset.x) > 0.0) discard;
+        if (any(greaterThan(abs(centerTexelOffset), vec2(1024.0))) || fwidth(shadowOffset.x) > 0.0
+            #ifdef ALPHA_TEST
+                || albedo.w < alphaTestRef
+            #endif
+        ) discard;
 
         #ifdef SHADOW_DISTORTION_FIX
             vec3 shadowProjPos = vec3(centerTexelOffset / (realShadowMapResolution * 0.25), gl_FragCoord.z * 10.0 - 5.0);

@@ -103,7 +103,7 @@ vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, 
             float cloudDistance = length(cloudOffset);
             float cloudDensity = 1.0 - exp(-cloudOpticalDepth * cloudOpticalDepth * 500.0);
             float cloudFade = cloudDensity * exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * max(cloudDistance - CLOUD_BLOCKY_FADE_DISTANCE, 0.0) - max(0.0, cameraPosition.y - 1000.0) / 1200.0);
-            float cloudAbsorptionFade = exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * max(cloudDistance - CLOUD_BLOCKY_FADE_DISTANCE * 2.0, 0.0));
+            float cloudAbsorptionFade = clamp(exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * cloudDistance + 0.002 * CLOUD_BLOCKY_FADE_SPEED * CLOUD_BLOCKY_FADE_DISTANCE), 0.0, 1.0);
 
             atmosphere = mix(baseColor, atmosphere, cloudDensity);
             cloudColor = mix(atmosphere, cloudColor, cloudFade);
@@ -295,12 +295,13 @@ vec4 realisticCloud(
             unHitted *= float(sampleTransmittance > 0.99999);
             cloudDepth += stepSize * unHitted;
             cloudPos += worldDir;
+            cloudTransmittance = clamp(cloudTransmittance * 1.005 - 0.005, 0.0, 1.0);
         }
         if (cloudTransmittance < 0.9999) {
             float cloudDensity = 1.0 - cloudTransmittance;
             float cloudFalloff = exp(-startIntersection / CLOUD_REALISTIC_FADE_DISTANCE);
             cloudColor = cloudColor * cloudFalloff + (1.0 - cloudDensity * cloudFalloff) * atmosphere;
-            cloudColor = mix(baseColor, cloudColor, cloudDensity * exp(-max(startIntersection * 1.44269502 / CLOUD_REALISTIC_FADE_DISTANCE - 1.44269502, 0.0)));
+            cloudColor = mix(baseColor, cloudColor, cloudDensity * clamp(exp(-startIntersection * 1.44269502 / CLOUD_REALISTIC_FADE_DISTANCE + 1.44269502), 0.0, 1.0));
             result = vec4(cloudColor, cloudDensity * cloudFalloff);
         } else {
             cloudDepth = -1.0;
@@ -361,7 +362,7 @@ float cloudShadowBlocky(vec3 worldPos, vec3 shadowDir) {
         }
 
         float cloudShadowAbsorption = clamp(exp(-opticalDepth * opticalDepth * 20.0) * 1.01 - 0.01, 0.0, 1.0);
-        float cloudAbsorptionFade = exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * max(length(cloudOffset) - CLOUD_BLOCKY_FADE_DISTANCE * 2.0, 0.0));
+        float cloudAbsorptionFade = clamp(exp(-0.001 * CLOUD_BLOCKY_FADE_SPEED * length(cloudOffset) + 0.001 * CLOUD_BLOCKY_FADE_SPEED * CLOUD_BLOCKY_FADE_DISTANCE * 2.0), 0.0, 1.0);
 
         result = mix(1.0, cloudShadowAbsorption, cloudAbsorptionFade);
     }
@@ -429,7 +430,7 @@ float cloudShadowRealistic(vec3 worldPos, vec3 shadowDir) {
         float cloudTransmittance = pow2(clamp(1.0 - density * 1.4, 0.0, 1.0));
 
         const float fadeFactor = -1.44269502 * 5.0;
-        cloudTransmittance = mix(1.0, cloudTransmittance, exp2(min(0.0, startIntersection * fadeFactor / CLOUD_REALISTIC_FADE_DISTANCE - 0.5 * fadeFactor)));
+        cloudTransmittance = mix(1.0, cloudTransmittance, clamp(exp2(startIntersection * fadeFactor / CLOUD_REALISTIC_FADE_DISTANCE - 0.5 * fadeFactor), 0.0, 1.0));
         result = cloudTransmittance;
     }
     return result;
