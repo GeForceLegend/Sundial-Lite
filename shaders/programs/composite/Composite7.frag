@@ -11,6 +11,10 @@ in vec2 texcoord;
 #include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
 
+#ifdef FOCUS_IGNORE_HAND
+    uniform float centerDepthSmooth;
+#endif
+
 float circleOfConfusionRadius(vec2 coord, float sampleDepth, float focusDepth) {
     sampleDepth = max(0.31, sampleDepth);
     float circleRadius = clamp(abs((focusDepth - sampleDepth) / (sampleDepth * (focusDepth - FOCAL_LENGTH))) * APERTURE_DIAMETER_SCALE / MAX_BLUR_RADIUS, 0.0, 1.0);
@@ -27,7 +31,11 @@ void main() {
     float focusDepth = far;
     #if FOCUS_MODE == 0
         const float minFocalLength = max(FOCAL_LENGTH + 0.01, 0.3);
-        focusDepth = max(minFocalLength, screenToViewDepth(smoothCenterDepth));
+        #ifdef FOCUS_IGNORE_HAND
+            focusDepth = max(minFocalLength, screenToViewDepth(centerDepthSmooth));
+        #else
+            focusDepth = max(minFocalLength, screenToViewDepth(smoothCenterDepth));
+        #endif
     #elif FOCUS_MODE == 1
         focusDepth = MANUAL_FOCUS_DEPTH;
     #endif

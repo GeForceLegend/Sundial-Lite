@@ -49,7 +49,7 @@ float getAvgBrightness() {
     for (int i = 0; i < avgExposureSteps.x; i++) {
         for (int j = 0; j < avgExposureSteps.y; j++) {
             float sampleWeight = exp2(-length((vec2(i, j) - avgExposureSteps * 0.5) * avgExposureTexel) * exp2(AVERAGE_EXPOSURE_CENTER_WEIGHT));
-            totalColor += pow(texelFetch(colortex3, ivec2(i, j), int(mipmapLevel)).rgb, vec3(1.0 / AVERAGE_EXPOSURE_TENDENCY)) * sampleWeight;
+            totalColor += pow(texelFetch(colortex3, ivec2(i, j), int(mipmapLevel)).rgb * 0.01, vec3(1.0 / AVERAGE_EXPOSURE_TENDENCY)) * sampleWeight;
             totalWeight += sampleWeight;
         }
     }
@@ -81,16 +81,16 @@ vec3 motionBlur(vec2 currCoord, vec2 velocity) {
 void main() {
     vec3 currColor = textureLod(colortex3, texcoord, 0.0).rgb;
 
-    texBuffer4 = vec4(calculateBloomBase(texcoord) * 600.0, 1.0);
+    texBuffer4 = vec4(calculateBloomBase(texcoord) * 6.0, 1.0);
     texBuffer3 = vec4(currColor, 1.0);
     #ifdef MOTION_BLUR
         vec2 velocity = textureLod(colortex1, texcoord, 0.0).xy * 2.0 - 1.0;
         vec3 motionBlurColor = motionBlur(texcoord, velocity);
         texBuffer3.rgb = mix(currColor, motionBlurColor, vec3(clamp(length(velocity * screenSize) * 0.3, 0.0, 1.0)));
     #endif
-    texBuffer3.rgb *= 600.0;
+    texBuffer3.rgb *= 6.0;
 
-    texBuffer7 = vec4(pow(currColor, vec3(1.0 / 2.2)), textureLod(depthtex0, texcoord, 0.0).r);
+    texBuffer7 = vec4(pow(currColor * 0.01, vec3(1.0 / 2.2)), textureLod(depthtex0, texcoord, 0.0).r) * 10.0;
     #ifdef DISTANT_HORIZONS
         texBuffer7.w += textureLod(dhDepthTex0, texcoord, 0.0).r * float(texBuffer7.w == 1.0);
     #endif

@@ -23,7 +23,7 @@ in vec2 texcoord;
     vec3 worldPosToShadowCoord(vec3 worldPos) {
         vec4 shadowCoord = shadowProjection * shadowModelView * vec4(worldPos, 1.0);
         shadowCoord /= shadowCoord.w;
-        float shadowBias = 1.0 - SHADOW_BIAS + length(shadowCoord.xy) * SHADOW_BIAS;
+        float shadowBias = 1.0 - SHADOW_DISTORTION_STRENGTH + length(shadowCoord.xy) * SHADOW_DISTORTION_STRENGTH;
         shadowCoord.xy /= shadowBias;
         shadowCoord.z *= 0.2;
         shadowCoord = shadowCoord * 0.5 + 0.5;

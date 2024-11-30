@@ -51,7 +51,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             normalOffset.z *= 0.1;
 
             vec3 basicShadowCoordNoBias = sssShadowCoord + normalOffset;
-            float distortFactor = 1.0 - SHADOW_BIAS + length(basicShadowCoordNoBias.xy) * SHADOW_BIAS;
+            float distortFactor = 1.0 - SHADOW_DISTORTION_STRENGTH + length(basicShadowCoordNoBias.xy) * SHADOW_DISTORTION_STRENGTH;
             vec3 basicShadowCoord = basicShadowCoordNoBias;
             basicShadowCoord.st = basicShadowCoord.st * 0.25 / distortFactor + 0.75;
 
@@ -74,7 +74,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 for (int i = -1; i <= 1; i++) {
                     float offsetY = -1.0;
                     for (int j = -1; j <= 1; j++) {
-                        vec3 sampleCoord = biaShadowCoord(basicShadowCoordNoBias + depthSampleRadius * (offsetX * offsetDirection1 + offsetY * offsetDirection2));
+                        vec3 sampleCoord = distortShadowCoord(basicShadowCoordNoBias + depthSampleRadius * (offsetX * offsetDirection1 + offsetY * offsetDirection2));
                         float sampleDepth = textureLod(shadowtex1, sampleCoord.st, 1.0).r;
                         depthSum += sampleDepth;
                         avgOcclusionDepth += clamp(sampleCoord.z - sampleDepth, 0.0, 1.0);
@@ -103,14 +103,14 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                     for (int i = 0; i < PCSS_SAMPLES; i++) {
                         vec2 sampleRotation = sampleRadius * inversesqrt(sampleRadius) * sampleAngle;
                         vec3 sampleOffset = sampleRotation.x * offsetDirection1 + sampleRotation.y * offsetDirection2;
-                        vec3 sampleShadowCoord = biaShadowCoord(basicShadowCoordNoBias + sampleOffset);
+                        vec3 sampleShadowCoord = distortShadowCoord(basicShadowCoordNoBias + sampleOffset);
                         if (normalFactor > 1e-5) {
                             float sampleSolidShadow = textureLod(shadowtex0, sampleShadowCoord, 0.0);
                             solidShadow += sampleSolidShadow;
                         }
 
                         if (needSubsurfaceScattering) {
-                            vec3 sssSampleCoord = biaShadowCoord(sssShadowCoord + vec3(sampleOffset.st * sssRadius, 0.0));
+                            vec3 sssSampleCoord = distortShadowCoord(sssShadowCoord + vec3(sampleOffset.st * sssRadius, 0.0));
                             float shadowDepth = textureLod(shadowtex1, sssSampleCoord.st, 1.0).r;
                             opticalDepth += clamp(sssSampleCoord.z - shadowDepth + 1e-4, 0.0, 1.0);
                         }

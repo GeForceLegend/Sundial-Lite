@@ -13,9 +13,13 @@ out vec3 vWorldPos;
 
 out uint vMaterial;
 
+// #define MOD_PLANT_DETECTION
+
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/GbufferData.glsl"
+
+uniform vec3 cameraPositionFract;
 
 void main() {
     vec3 viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
@@ -32,9 +36,24 @@ void main() {
     if (mc_Entity.x < -0.5) {
         // Used for MOD_LIGHT_DETECTION
         materialID = 0;
+        #ifdef MOD_PLANT_DETECTION
+            if (abs(max(abs(gl_Normal.x), abs(gl_Normal.z)) - 0.5) < 0.45) {
+                materialID = MAT_GRASS;
+            }
+        #endif
     }
     // Early break for common blocks
     else if (mc_Entity.x > 1) {
+        #ifdef IS_IRIS
+            vec3 blockPos = fract(gl_Vertex.xyz + cameraPositionFract);
+        #else
+            #if MC_VERSION >= 11700
+                vec3 blockPos = fract(vaPosition);
+            #else
+                vec3 blockPos = fract(gl_Vertex.xyz);
+            #endif
+        #endif
+
         if (abs(mc_Entity.x - 188.5) < 1.0 || mc_Entity.x == 265) {
             materialID = MAT_GRASS;
         }
@@ -48,9 +67,11 @@ void main() {
             materialID = MAT_TORCH;
         }
         else if (mc_Entity.x == 630) {
+            isEmissive = uint(gl_Normal.y > 0.5 && abs(blockPos.y - 0.9375) < 0.01);
             materialID = MAT_LAVA_CAULDRON;
         }
         else if (abs(mc_Entity.x - 681.5) < 1.0) {
+            isEmissive = uint(abs(dot(gl_Normal * vec3(16.0, 16.0 / 7.0, 16.0), blockPos - vec3(0.5, 0.4375, 0.5)) - 1.0) < 0.1);
             materialID = MAT_BREWING_STAND;
         }
         else if (abs(mc_Entity.x - 702.5) < 3.5) {
@@ -58,21 +79,6 @@ void main() {
         }
     }
 
-    #ifdef MOD_MATERIAL_DETECTION
-        if (dot(gl_Color.rgb, vec3(1.0)) < 2.999) {
-            #if MC_VERSION >= 11700
-                if (dot(fract(vaPosition), vec3(1.0)) < 0.001)
-            #else
-                if (dot(fract(gl_Vertex.xyz), vec3(1.0)) < 0.001)
-            #endif
-            {
-                materialID = MAT_LEAVES;
-            }
-            else {
-                materialID = MAT_GRASS;
-            }
-        }
-    #endif
     vMaterial = isEmissive;
     vMaterial |= uint(materialID) << 1;
 

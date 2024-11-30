@@ -150,13 +150,6 @@ void main() {
         else if (rawData.materialID == MAT_CAULDRON) {
             rawData.smoothness += step(1e-6, abs(color.r - color.b) * (1e-3 - rawData.smoothness));
         }
-        else if (rawData.materialID == MAT_LAVA_CAULDRON) {
-            emissive *= float(all(lessThan(abs(fract(mcPos.xyz) - vec3(0.5, 0.9375, 0.5)), vec3(0.376, 0.001, 0.376))));
-        }
-        else if (rawData.materialID == MAT_BREWING_STAND) {
-            vec2 midBlockVelocity = abs(fract(mcPos.xz) - 0.5);
-            emissive *= float(all(lessThan(midBlockVelocity, vec2(0.063))));
-        }
         else if (rawData.materialID == MAT_GLOWING_BERRIES) {
             emissive *= clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0);
         }

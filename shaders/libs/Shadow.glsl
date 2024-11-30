@@ -5,17 +5,8 @@
         return shadowCoord.xyz;
     }
 
-    vec3 worldPosToShadowCoord(vec3 worldPos) {
-        vec3 shadowCoord = mat3(shadowModelViewProjection) * worldPos + shadowModelViewProjection[3].xyz;
-        float shadowBias = 1.0 - SHADOW_BIAS + length(shadowCoord.xy) * SHADOW_BIAS;
-        shadowCoord.xy /= shadowBias;
-        shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
-        shadowCoord.xy = shadowCoord.xy * 0.25 + 0.75;
-        return shadowCoord.xyz;
-    }
-
-    vec3 biaShadowCoord(vec3 shadowCoord) {
-        float shadowBias = 4.0 * (1.0 - SHADOW_BIAS) + length(shadowCoord.xy) * SHADOW_BIAS * 4.0;
+    vec3 distortShadowCoord(vec3 shadowCoord) {
+        float shadowBias = 4.0 * (1.0 - SHADOW_DISTORTION_STRENGTH) + length(shadowCoord.xy) * SHADOW_DISTORTION_STRENGTH * 4.0;
         shadowCoord.xy = shadowCoord.xy / shadowBias + 0.75;
         return shadowCoord;
     }
@@ -46,6 +37,15 @@
         #endif
 
         return caustic;
+    }
+
+    vec3 worldPosToShadowCoord(vec3 worldPos) {
+        vec3 shadowCoord = mat3(shadowModelViewProjection) * worldPos + shadowModelViewProjection[3].xyz;
+        float shadowBias = 1.0 - SHADOW_DISTORTION_STRENGTH + length(shadowCoord.xy) * SHADOW_DISTORTION_STRENGTH;
+        shadowCoord.xy /= shadowBias;
+        shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
+        shadowCoord.xy = shadowCoord.xy * 0.25 + 0.75;
+        return shadowCoord.xyz;
     }
 
     float basicSunlight = (1.0 - sqrt(weatherStrength)) * 8.0 * SUNLIGHT_BRIGHTNESS;

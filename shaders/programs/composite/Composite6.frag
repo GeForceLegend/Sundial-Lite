@@ -112,7 +112,7 @@ void main() {
                 #ifdef CLOUD_SHADOW
                     singleLight *= cloudShadow(samplePos, shadowDirection);
                 #endif
-                vec3 sampleShadowCoord = biaShadowCoord(sampleShadowCoordNoBias);
+                vec3 sampleShadowCoord = distortShadowCoord(sampleShadowCoordNoBias);
                 if (all(lessThan(
                     abs(sampleShadowCoord - vec3(vec2(0.75), 0.5)),
                     vec3(vec2(0.25), 0.5))

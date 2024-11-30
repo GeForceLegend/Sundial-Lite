@@ -44,7 +44,7 @@ void resolverAABB(in vec2 coord, out vec3 avgColor, out vec3 variance, float var
 
     for (int i = -1; i < 2; i++) {
         for (int j = -1; j < 2; j++) {
-            vec3 sampleColor = RGB_YCoCg(texelFetch(colortex3, texel + ivec2(i, j), 0).rgb);
+            vec3 sampleColor = RGB_YCoCg(texelFetch(colortex3, texel + ivec2(i, j), 0).rgb * 0.1);
 
             m1 += sampleColor;
             m2 += sampleColor * sampleColor;
@@ -109,8 +109,8 @@ vec3 temporalAntiAliasing(vec2 coord, vec2 velocity, vec3 currentColor, float bl
     vec3 antiAliasing;
     if (blendWeight > 0.01) {
         vec2 reprojectCoord = coord + velocity;
-        vec3 previousColor = RGB_YCoCg(catmullRomFilter(reprojectCoord));
-        currentColor = RGB_YCoCg(currentColor);
+        vec3 previousColor = RGB_YCoCg(catmullRomFilter(reprojectCoord) * 0.1);
+        currentColor = RGB_YCoCg(currentColor * 0.1);
 
         vec3 avgColor;
         vec3 variance;
@@ -119,7 +119,7 @@ vec3 temporalAntiAliasing(vec2 coord, vec2 velocity, vec3 currentColor, float bl
         previousColor = clipToEllipse(avgColor, variance, previousColor);
 
         antiAliasing = mix(currentColor, previousColor, vec3(blendWeight));
-        antiAliasing = YCoCg_RGB(antiAliasing);
+        antiAliasing = YCoCg_RGB(antiAliasing) * 10.0;
     }
     else {
         antiAliasing = getCurrColorNeighborhood(currentColor);
@@ -136,7 +136,7 @@ void main() {
     #ifdef TAA
         solidColor = temporalAntiAliasing(texcoord, velocity.st * 2.0 - 1.0, solidColor, velocity.w);
     #endif
-    texBuffer3 = vec4(pow(clamp(solidColor, 0.0, 1.0), vec3(2.2)), 1.0);
+    texBuffer3 = vec4(pow(clamp(solidColor * 0.1, 0.0, 1.0), vec3(2.2)) * 100.0, 1.0);
     if (dot(texcoord, screenSize) < 1.1) {
         texBuffer3.w = texelFetch(colortex4, ivec2(0), 0).w;
     }
