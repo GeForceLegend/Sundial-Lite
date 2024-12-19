@@ -68,10 +68,6 @@ option.PARALLAX_QUALITY.comment=Improves parallax quality with more performance 
 option.PARALLAX_MAX_REFINEMENTS=Parallax fineness
 option.PARALLAX_MAX_REFINEMENTS.comment=Improves parallax quality with Less performance cost. Does not improve the "pane edge" effect
 # Specular
-option.RAIN_WET=Rain wet
-value.RAIN_WET.0=Off
-value.RAIN_WET.1=Low
-value.RAIN_WET.2=High
 option.SUBSERFACE_SCATTERING_STRENTGH=Sub-surface scattering strength
 option.SPECULAR_FORMAT=PBR format
 option.SPECULAR_EMISSIVE=PBR emissive
@@ -307,6 +303,16 @@ option.CHROMATIC_DISPERSION_B=Blue chromatic dispersion
 option.CHROMATIC_DISPERSION_B.comment=Higher value will move blue to the outside of screen
 
 # Weather
+option.RAIN_PUDDLE=Rain puddle
+value.RAIN_PUDDLE.0=Off
+value.RAIN_PUDDLE.1=Low
+value.RAIN_PUDDLE.2=High
+option.RAIN_RIPPLES=Rain ripples
+option.RIPPLE_SPEED=Ripple animation speed
+option.RIPPLE_SCALE=Ripple scale
+option.RIPPLE_STRENGTH=Ripple strength
+option.RIPPLE_FADE_SPEED=Ripple fade speed
+option.RIPPLE_FADE_SPEED.comment=Ripple strength fade speed when far away
 option.RAIN_DROP_SIZE=Rain drop size
 option.RAIN_DROP_SIZE.comment=Only affect rain drop width, but not its length
 option.RAIN_DROP_AMOUNT=Rain drop amount

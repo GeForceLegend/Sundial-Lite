@@ -20,6 +20,7 @@ flat in float materialID;
 #include "/libs/Common.glsl"
 #include "/libs/Water.glsl"
 #include "/libs/PhysicsOcean.glsl"
+#include "/libs/Parallax.glsl"
 
 #ifdef PHYSICS_OCEAN
     in vec3 physics_localPosition;
@@ -36,6 +37,7 @@ void main() {
 
     rawData.albedo = albedoData * color;
     rawData.lightmap = texlmcoord.pq;
+    rawData.normal = tbnMatrix[2];
     rawData.geoNormal = tbnMatrix[2];
     rawData.smoothness = 0.0;
     rawData.metalness = 0.0;
@@ -44,56 +46,6 @@ void main() {
     rawData.materialID = materialID;
     rawData.parallaxOffset = 0.0;
     rawData.depth = 0.0;
-
-    #ifdef PHYSICS_OCEAN
-        rawData.normal = mat3(gbufferModelView) * (physics_waveData.normal * vec3(0.5, 1.0, 0.5));
-        rawData.normal = -signI(dot(rawData.normal, viewPos.xyz)) * rawData.normal;
-        rawData.geoNormal = rawData.normal;
-        #if WATER_TYPE == 0
-            rawData.albedo.rgb = color.rgb;
-        #else
-            rawData.albedo = albedoData;
-        #endif
-    #else
-        #ifdef MC_NORMAL_MAP
-            vec4 normalData = texture(normals, texcoord);
-        #else
-            vec4 normalData = vec4(0.5, 0.5, 1.0, 1.0);
-        #endif
-        #if WATER_TYPE == 0
-            if (normalData.z > 0.999 && rawData.materialID == MAT_WATER) {
-                rawData.albedo.rgb = color.rgb;
-                vec3 tangentDir = normalize(transpose(tbnMatrix) * viewPos.xyz);
-                rawData.normal = normalize(tbnMatrix * waterWave(mcPos / 32.0, tangentDir));
-            }
-            else
-        #endif
-        {
-            #if WATER_TYPE == 1
-                if (rawData.materialID == MAT_WATER) {
-                    rawData.albedo = albedoData;
-                }
-            #endif
-            #ifdef MC_NORMAL_MAP
-                rawData.normal = NORMAL_FORMAT(normalData.xyz);
-                rawData.normal.xy *= NORMAL_STRENGTH;
-            #else
-                rawData.normal = vec3(0.0, 0.0, 1.0);
-            #endif
-            rawData.normal = normalize(tbnMatrix * rawData.normal);
-        }
-
-        vec3 viewDir = -normalize(viewPos.xyz);
-        float NdotV = dot(rawData.normal, viewDir);
-        if (NdotV < 1e-6) {
-            vec3 edgeNormal = rawData.normal - viewDir * NdotV;
-            float weight = 1.0 - NdotV;
-            weight = sin(min(weight, PI / 2.0));
-            weight = clamp(min(max(NdotV, dot(viewDir, rawData.geoNormal)), 1.0 - weight), 0.0, 1.0);
-            rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
-        }
-        rawData.normal = mix(rawData.geoNormal, rawData.normal, exp2(-0.0002 * length(viewPos.xyz) / max(1e-6, dot(rawData.geoNormal, viewDir))));
-    #endif
 
     #ifdef MC_SPECULAR_MAP
         vec4 specularData = textureLod(specular, texcoord, 0.0);
@@ -121,15 +73,74 @@ void main() {
         rawData.porosity = 0.0;
     #endif
 
+    float wetStrength = 0.0;
     if (rainyStrength > 0.0) {
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
-        #if RAIN_WET == 1
-            float rainWetness = clamp(worldNormal.y * 10.0 + 0.5, 0.0, 1.0) * outdoor * rainyStrength;
-            rawData.smoothness += (1.0 - rawData.metalness) * (1.0 - rawData.smoothness) * clamp(rainWetness, 0.0, 1.0);
-        #elif RAIN_WET == 2
-            rawData.smoothness = groundWetSmoothness(mcPos, worldNormal.y, rawData.smoothness, rawData.metalness, 0.0, outdoor);
+        #if RAIN_PUDDLE == 1
+            wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
+        #elif RAIN_PUDDLE == 2
+            wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, 0.0, outdoor);
         #endif
+        rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
     }
+
+    #ifdef PHYSICS_OCEAN
+        rawData.normal = mat3(gbufferModelView) * (physics_waveData.normal * vec3(0.5, 1.0, 0.5));
+        rawData.normal = -signI(dot(rawData.normal, viewPos.xyz)) * rawData.normal;
+        rawData.geoNormal = rawData.normal;
+        #if WATER_TYPE == 0
+            rawData.albedo.rgb = color.rgb;
+        #else
+            rawData.albedo = albedoData;
+        #endif
+    #else
+        #ifdef MC_NORMAL_MAP
+            vec4 normalData = texture(normals, texcoord);
+        #else
+            vec4 normalData = vec4(0.5, 0.5, 1.0, 1.0);
+        #endif
+        #if WATER_TYPE == 0
+            if (rawData.materialID == MAT_WATER) {
+                rawData.albedo.rgb = color.rgb;
+                vec3 tangentDir = normalize(transpose(tbnMatrix) * viewPos.xyz);
+                rawData.normal = waterWave(mcPos / 32.0, tangentDir);
+            }
+            else
+        #endif
+        {
+            #if WATER_TYPE == 1
+                if (rawData.materialID == MAT_WATER) {
+                    rawData.albedo = albedoData;
+                }
+            #endif
+            #ifdef MC_NORMAL_MAP
+                rawData.normal = NORMAL_FORMAT(normalData.xyz);
+                rawData.normal.xy *= NORMAL_STRENGTH;
+            #else
+                rawData.normal = vec3(0.0, 0.0, 1.0);
+            #endif
+        }
+
+        float viewDepthInv = inversesqrt(dot(viewPos.xyz, viewPos.xyz));
+        vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
+        #ifdef RAIN_RIPPLES
+            rippleNormal = rainRippleNormal(mcPos);
+            rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
+        #endif
+        rawData.normal.xy += rippleNormal.xy * wetStrength;
+        rawData.normal = normalize(tbnMatrix * rawData.normal);
+
+        vec3 viewDir = viewPos.xyz * (-viewDepthInv);
+        float NdotV = dot(rawData.normal, viewDir);
+        if (NdotV < 1e-6) {
+            vec3 edgeNormal = rawData.normal - viewDir * NdotV;
+            float weight = 1.0 - NdotV;
+            weight = sin(min(weight, PI / 2.0));
+            weight = clamp(min(max(NdotV, dot(viewDir, rawData.geoNormal)), 1.0 - weight), 0.0, 1.0);
+            rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
+        }
+        rawData.normal = mix(rawData.geoNormal, rawData.normal, exp2(-0.0002 * length(viewPos.xyz) / max(1e-6, dot(rawData.geoNormal, viewDir))));
+    #endif
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);
 }

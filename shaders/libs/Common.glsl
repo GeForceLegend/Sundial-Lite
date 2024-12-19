@@ -253,7 +253,7 @@ vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 albedo, flo
     return D * V * F;
 }
 
-float groundWetSmoothness(vec3 position, float normalDir, float smoothness, float metalness, float porosity, float outdoor) {
+float groundWetStrength(vec3 position, float normalDir, float metalness, float porosity, float outdoor) {
     position *= 0.004;
     position.y *= 0.2;
     float noise = smooth3DNoise(position);
@@ -266,13 +266,12 @@ float groundWetSmoothness(vec3 position, float normalDir, float smoothness, floa
         weights += weight;
     }
     noise /= weights;
-    noise = noise * (rainyStrength * 0.6 + porosity * 0.12) + (rainyStrength * 0.7 - porosity * 0.14);
+    noise = noise * (rainyStrength * 1.0 + porosity * 0.1) + (rainyStrength * 0.4 - porosity * 0.1);
     #ifdef LABPBR_F0
         metalness = step(229.5 / 255.0, metalness);
     #endif
 
-    smoothness += (1.0 - metalness) * (1.0 - smoothness) * clamp(normalDir * 10.0 + 0.5, 0.0, 1.0) * outdoor * clamp(noise, 0.0, 1.0);
-    return smoothness;
+    return (1.0 - metalness) * clamp(normalDir * 10.0 - 0.1, 0.0, 1.0) * outdoor * clamp(noise, 0.0, 1.0);
 }
 
 /***************************************************************************

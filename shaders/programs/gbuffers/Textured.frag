@@ -129,7 +129,8 @@ void main() {
     #else
         textureScale = calcTextureScale(texGradX, texGradY, viewPos.xyz);
     #endif
-    vec3 viewDir = viewPos.xyz * (-inversesqrt(dot(viewPos.xyz, viewPos.xyz)));
+    float viewDepthInv = inversesqrt(dot(viewPos.xyz, viewPos.xyz));
+    vec3 viewDir = viewPos.xyz * (-viewDepthInv);
 
     rawData.lightmap = texlmcoord.pq;
     rawData.geoNormal = viewNormal;
@@ -252,79 +253,6 @@ void main() {
             SPECULAR_FORMAT(rawData, specularData);
         #endif
 
-        if (noCoord) {
-            // Physics mod snow support
-            rawData.parallaxOffset = 0.0;
-            rawData.smoothness = 0.0;
-            rawData.metalness = 0.0;
-            rawData.porosity = 0.0;
-            rawData.emissive = 0.0;
-            #ifdef ENTITIES
-                if (!useTexAlbedo) {
-                    rawData.albedo.rgb = vec3(1.0);
-                    rawData.emissive = 1.0;
-                }
-            #endif
-        }
-        #ifdef PARALLAX_BASED_NORMAL
-            #if defined ENTITY_PARALLAX && defined PARALLAX
-                else if (parallaxOffset > 0.0
-                    #ifdef VOXEL_PARALLAX
-                        && parallaxTexNormal.z < 0.5
-                    #endif
-                ) {
-                    #ifdef VOXEL_PARALLAX
-                        rawData.normal = tbnMatrix * parallaxTexNormal;
-                    #else
-                        #ifdef SMOOTH_PARALLAX
-                            vec3 parallaxNormal = heightBasedNormal(normals, texcoord, baseCoord, albedoTexSize, atlasTexelOffset, float(ENTITY_TEXTURE_RESOLUTION), clampCoord);
-                            rawData.normal = normalize(tbnMatrix * parallaxNormal);
-                        #else
-                            const float eps = 1e-4;
-                            vec2 coordrD = texcoord + vec2(eps * tileCoordSize.x, 0.0);
-                            vec2 coordlD = texcoord - vec2(eps * tileCoordSize.x, 0.0);
-                            vec2 coorduD = texcoord + vec2(0.0, eps * tileCoordSize.y);
-                            vec2 coorddD = texcoord - vec2(0.0, eps * tileCoordSize.y);
-                            if (clampCoord) {
-                                coordrD = calculateOffsetCoord(coordrD, baseCoord, tileCoordSize, atlasTiles);
-                                coordlD = calculateOffsetCoord(coordlD, baseCoord, tileCoordSize, atlasTiles);
-                                coorduD = calculateOffsetCoord(coorduD, baseCoord, tileCoordSize, atlasTiles);
-                                coorddD = calculateOffsetCoord(coorddD, baseCoord, tileCoordSize, atlasTiles);
-                            }
-                            float rD = textureGrad(normals, coordrD, texGradX, texGradY).a;
-                            float lD = textureGrad(normals, coordlD, texGradX, texGradY).a;
-                            float uD = textureGrad(normals, coorduD, texGradX, texGradY).a;
-                            float dD = textureGrad(normals, coorddD, texGradX, texGradY).a;
-                            rawData.normal = normalize(tbnMatrix * vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3)));
-                        #endif
-                    #endif
-                    rawData.normal = normalize(mix(rawData.geoNormal, rawData.normal, 1.0 / (1.0 + 4.0 * pow(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY)), 0.1))));
-                }
-            #endif
-        #endif
-        else {
-            #ifdef SMOOTH_NORMAL
-                normalData = bilinearNormalSample(normals, texcoord, baseCoord, tileCoordSize, atlasTiles, albedoTexSize, atlasTexelOffset, clampCoord);
-            #else
-            #endif
-            #ifdef MC_NORMAL_MAP
-                rawData.normal = NORMAL_FORMAT(normalData.xyz);
-                rawData.normal.xy *= NORMAL_STRENGTH;
-            #else
-                rawData.normal = vec3(0.0, 0.0, 1.0);
-            #endif
-            rawData.normal = normalize(tbnMatrix * rawData.normal);
-
-            float NdotV = dot(rawData.normal, viewDir);
-            if (NdotV < 1e-6) {
-                vec3 edgeNormal = rawData.normal - viewDir * NdotV;
-                float weight = 1.0 - NdotV;
-                weight = sin(min(weight, PI / 2.0));
-                weight = clamp(min(max(NdotV, dot(viewDir, rawData.geoNormal)), 1.0 - weight), 0.0, 1.0);
-                rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
-            }
-        }
-
         #ifdef TRANSPARENT
             rawData.smoothness += step(rawData.smoothness, 1e-3);
         #endif
@@ -341,29 +269,113 @@ void main() {
             rawData.emissive += step(rawData.emissive, 1e-3);
         #endif
 
-        if (rainyStrength > 0.0) {
-            float porosity = rawData.porosity * 255.0 / 64.0;
-            porosity *= step(porosity, 1.0);
-            float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
-
-            float porosityDarkness = porosity * outdoor * rainyStrength;
-            rawData.albedo.rgb = pow(rawData.albedo.rgb, vec3(1.0 + porosityDarkness)) * (1.0 - 0.2 * porosityDarkness);
-
-            vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
-            #if RAIN_WET == 0 || !defined USE_RAIN_WET
-            #elif RAIN_WET == 1
-                float rainWetness = clamp(worldNormal.y * 10.0 + 0.5, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);
-                rawData.smoothness += (1.0 - rawData.metalness) * (1.0 - rawData.smoothness) * clamp(rainWetness, 0.0, 1.0);
-            #elif RAIN_WET == 2
-                rawData.smoothness = groundWetSmoothness(mcPos, worldNormal.y, rawData.smoothness, rawData.metalness, porosity, outdoor);
-            #endif
-        }
-
         #ifdef PARTICLE
             if (noCoord) {
                 rawData.emissive = 1.0;
             }
         #endif
+
+        if (noCoord) {
+            // Physics mod snow support
+            rawData.parallaxOffset = 0.0;
+            rawData.smoothness = 0.0;
+            rawData.metalness = 0.0;
+            rawData.porosity = 0.0;
+            rawData.emissive = 0.0;
+            #ifdef ENTITIES
+                if (!useTexAlbedo) {
+                    rawData.albedo.rgb = vec3(1.0);
+                    rawData.emissive = 1.0;
+                }
+            #endif
+        } else {
+            float wetStrength = 0.0;
+            if (rainyStrength > 0.0) {
+                float porosity = rawData.porosity * 255.0 / 64.0;
+                porosity *= step(porosity, 1.0);
+                float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
+
+                float porosityDarkness = porosity * outdoor * rainyStrength;
+                rawData.albedo.rgb = pow(rawData.albedo.rgb, vec3(1.0 + porosityDarkness)) * (1.0 - 0.2 * porosityDarkness);
+
+                vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
+                #if RAIN_PUDDLE == 0 || !defined USE_RAIN_PUDDLE
+                #elif RAIN_PUDDLE == 1
+                    wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);
+                #elif RAIN_PUDDLE == 2
+                    wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, porosity, outdoor);
+                #endif
+                rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
+            }
+
+            vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
+            #ifdef RAIN_RIPPLES
+                rippleNormal = rainRippleNormal(mcPos);
+                rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
+            #endif
+            #ifdef PARALLAX_BASED_NORMAL
+                #if defined ENTITY_PARALLAX && defined PARALLAX
+                    if (parallaxOffset > 0.0
+                        #ifdef VOXEL_PARALLAX
+                            && parallaxTexNormal.z < 0.5
+                        #endif
+                    ) {
+                        #ifdef VOXEL_PARALLAX
+                            rawData.normal = tbnMatrix * parallaxTexNormal;
+                        #else
+                            #ifdef SMOOTH_PARALLAX
+                                vec3 parallaxNormal = heightBasedNormal(normals, texcoord, baseCoord, albedoTexSize, atlasTexelOffset, float(ENTITY_TEXTURE_RESOLUTION), clampCoord);
+                                rawData.normal = mix(parallaxNormal, rippleNormal, wetStrength);
+                                rawData.normal = normalize(tbnMatrix * rawData.normal);
+                            #else
+                                const float eps = 1e-4;
+                                vec2 coordrD = texcoord + vec2(eps * tileCoordSize.x, 0.0);
+                                vec2 coordlD = texcoord - vec2(eps * tileCoordSize.x, 0.0);
+                                vec2 coorduD = texcoord + vec2(0.0, eps * tileCoordSize.y);
+                                vec2 coorddD = texcoord - vec2(0.0, eps * tileCoordSize.y);
+                                if (clampCoord) {
+                                    coordrD = calculateOffsetCoord(coordrD, baseCoord, tileCoordSize, atlasTiles);
+                                    coordlD = calculateOffsetCoord(coordlD, baseCoord, tileCoordSize, atlasTiles);
+                                    coorduD = calculateOffsetCoord(coorduD, baseCoord, tileCoordSize, atlasTiles);
+                                    coorddD = calculateOffsetCoord(coorddD, baseCoord, tileCoordSize, atlasTiles);
+                                }
+                                float rD = textureGrad(normals, coordrD, texGradX, texGradY).a;
+                                float lD = textureGrad(normals, coordlD, texGradX, texGradY).a;
+                                float uD = textureGrad(normals, coorduD, texGradX, texGradY).a;
+                                float dD = textureGrad(normals, coorddD, texGradX, texGradY).a;
+                                rawData.normal = vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3));
+                                rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
+                                rawData.normal = normalize(tbnMatrix * rawData.normal);
+                            #endif
+                        #endif
+                        rawData.normal = normalize(mix(rawData.geoNormal, rawData.normal, 1.0 / (1.0 + 4.0 * pow(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY)), 0.1))));
+                    } else
+                #endif
+            #endif
+            {
+                #ifdef SMOOTH_NORMAL
+                    normalData = bilinearNormalSample(normals, texcoord, baseCoord, tileCoordSize, atlasTiles, albedoTexSize, atlasTexelOffset, clampCoord);
+                #else
+                #endif
+                #ifdef MC_NORMAL_MAP
+                    rawData.normal = NORMAL_FORMAT(normalData.xyz);
+                    rawData.normal.xy *= NORMAL_STRENGTH;
+                #else
+                    rawData.normal = vec3(0.0, 0.0, 1.0);
+                #endif
+                rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
+                rawData.normal = normalize(tbnMatrix * rawData.normal);
+
+                float NdotV = dot(rawData.normal, viewDir);
+                if (NdotV < 1e-6) {
+                    vec3 edgeNormal = rawData.normal - viewDir * NdotV;
+                    float weight = 1.0 - NdotV;
+                    weight = sin(min(weight, PI / 2.0));
+                    weight = clamp(min(max(NdotV, dot(viewDir, rawData.geoNormal)), 1.0 - weight), 0.0, 1.0);
+                    rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
+                }
+            }
+        }
     }
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);

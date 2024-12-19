@@ -10,7 +10,6 @@ in vec2 texcoord;
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
-#include "/libs/ReflectionFilter.glsl"
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.xy);

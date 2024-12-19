@@ -10,7 +10,11 @@ in vec2 texcoord;
 
 void main() {
     texBuffer4 = texture(colortex4, texcoord, 0.0);
-    if (getWaterDepth(texcoord) < 1.0)
+    float depth = getWaterDepth(texcoord);
+    #ifdef DISTANT_HORIZONS
+        depth += float(depth == 1.0) * (textureLod(dhDepthTex0, texcoord, 0.0).r - 1.0);
+    #endif
+    if (depth < 1.0)
         texBuffer4 = reflectionFilter(2.5, false);
 }
 

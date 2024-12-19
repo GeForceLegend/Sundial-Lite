@@ -10,6 +10,7 @@ flat in vec3 blockData;
 #include "/libs/Uniform.glsl"
 #include "/libs/GbufferData.glsl"
 #include "/libs/Common.glsl"
+#include "/libs/Parallax.glsl"
 
 void main() {
     vec3 worldPos = viewToWorldPos(viewPos);
@@ -20,7 +21,8 @@ void main() {
     GbufferData rawData;
 
 	vec4 albedo = vec4(color, 1.0);
-	ivec3 pixelPos = ivec3(floor((worldPos + cameraPosition) * 16.0 + 1e-3));
+    vec3 mcPos = worldPos + cameraPosition;
+	ivec3 pixelPos = ivec3(floor(mcPos * 16.0 + 1e-3));
 	ivec2 texel = (pixelPos.xz + 17 * pixelPos.y) & 63;
 	float noise = texelFetch(noisetex, texel, 0).r;
 	albedo.rgb = pow(albedo.rgb, vec3(noise * 0.3 + 0.85));
@@ -43,13 +45,26 @@ void main() {
     rawData.depth = 0.0;
 
     if (rainyStrength > 0.0) {
+        float wetStrength = 0.0;
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
         vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
-        #if RAIN_WET == 1
-            float rainWetness = clamp(worldNormal.y * 10.0 + 0.5, 0.0, 1.0) * outdoor * rainyStrength;
-            rawData.smoothness += (1.0 - rawData.metalness) * (1.0 - rawData.smoothness) * rainWetness;
-        #elif RAIN_WET == 2
-            rawData.smoothness = groundWetSmoothness(worldPos + cameraPosition, worldNormal.y, rawData.smoothness, rawData.metalness, 0.0, outdoor);
+        #if RAIN_PUDDLE == 1
+            wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
+        #elif RAIN_PUDDLE == 2
+            wetStrength = groundWetStrength(mcPos, worldNormal.y, 0.0, 0.0, outdoor);
+        #endif
+        rawData.smoothness = wetStrength;
+
+        #ifdef RAIN_RIPPLES
+            vec3 tangent = normalize(cross(viewNormal, mat3(gbufferModelView) * vec3(1.0)));
+            vec3 bitangent = normalize(cross(tangent, viewNormal));
+            mat3 tbnMatrix = mat3(tangent, bitangent, viewNormal);
+
+            vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
+            float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
+            rippleNormal = rainRippleNormal(viewPos);
+            rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
+            rawData.normal = mix(rawData.normal, tbnMatrix * rippleNormal, wetStrength);
         #endif
     }
 

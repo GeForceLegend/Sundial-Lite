@@ -1,3 +1,13 @@
+vec3 rainRippleNormal(vec3 position) {
+    float offsetY = mod(floor(frameTimeCounter * 90.0 * RIPPLE_SPEED), 60.0);
+    vec2 uv = fract(position.xz / RIPPLE_SCALE);
+    uv.y -= offsetY + 59.0;
+    uv.y *= 1.0 / 60.0;
+    vec3 normal = textureLod(gaux2, uv, 0.0).xyz * 2.0 - 1.0;
+    normal.z /= RIPPLE_STRENGTH;
+    return normal;
+}
+
 ivec2 calculateOffsetTexel(ivec2 texel, ivec2 baseCoord, int tileBits) {
     return baseCoord + (texel & tileBits);
 }

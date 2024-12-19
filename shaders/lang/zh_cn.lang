@@ -74,11 +74,6 @@ option.PARALLAX_QUALITY.comment=能提升视差精度，但是性能损耗较大
 option.PARALLAX_MAX_REFINEMENTS=视差精度
 option.PARALLAX_MAX_REFINEMENTS.comment=能提升视差精度且性能损耗较小，但不能缓解片状边缘现象. 不会影响体素视差
 # Specular
-option.RAIN_WET=雨天地面反光
-option.RAIN_WET.comment=雨天露天地面增加光滑度模拟积水效果. 低质量使用一致的光滑度. 高质量使用噪声模拟地面的水洼. 高质量在雨天会严重影响性能
-value.RAIN_WET.0=关
-value.RAIN_WET.1=低
-value.RAIN_WET.2=高
 option.SUBSERFACE_SCATTERING_STRENTGH=次表面散射强度
 option.SPECULAR_FORMAT=PBR格式
 option.SPECULAR_FORMAT.comment=LabPBR格式为R光滑度G反射强度B孔隙度/次表面散射A发光强度. ClassicPBR格式为R光滑度G金属性B发光强度. BedrockRTX格式为R金属性G发光强度B粗糙度
@@ -336,6 +331,18 @@ option.CHROMATIC_DISPERSION_B=蓝色色散强度
 option.CHROMATIC_DISPERSION_B.comment=较大的值会让蓝色向外偏
 
 # Weather
+option.RAIN_PUDDLE=雨天地面积水
+option.RAIN_PUDDLE.comment=雨天露天地面增加光滑度模拟积水效果. 低质量使用一致的光滑度. 高质量使用噪声模拟地面的水洼. 高质量在雨天会严重影响性能
+value.RAIN_PUDDLE.0=关
+value.RAIN_PUDDLE.1=低
+value.RAIN_PUDDLE.2=高
+option.RAIN_RIPPLES=雨滴涟漪
+option.RAIN_RIPPLES.comment=雨天地面积水内计算涟漪效果. 需要开启“雨天地面积水”效果. 出于兼容性限制无法在反射镜像内显示
+option.RIPPLE_SPEED=雨滴涟漪动画速度
+option.RIPPLE_SCALE=雨滴涟漪尺寸缩放
+option.RIPPLE_STRENGTH=雨滴涟漪强度
+option.RIPPLE_FADE_SPEED=雨滴涟漪淡出速度
+option.RIPPLE_FADE_SPEED.comment=雨滴涟漪强度随距离降低的速度
 option.RAIN_DROP_SIZE=雨滴大小
 option.RAIN_DROP_SIZE.comment=只影响雨滴宽度，不影响雨滴长度
 option.RAIN_DROP_AMOUNT=雨滴数量

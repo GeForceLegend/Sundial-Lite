@@ -36,9 +36,9 @@ float waterWaveHeight(vec2 coord) {
 vec2 sampleWaterNormal(vec2 coord, vec2 scale) {
     coord = coord * 64.0;
     vec2 fpc = floor(coord);
-    vec4 sh = textureGather(noisetex, fpc / 64.0 - 1.0 / 128.0, 0);
+    vec4 sh = textureGather(noisetex, fpc / 64.0, 0);
 
-    fpc = coord - fpc;
+    fpc = fract(coord);
     vec2 weight = fpc * fpc * (3.0 - 2.0 * fpc);
 
     sh.y = sh.w + sh.y - sh.x - sh.z;

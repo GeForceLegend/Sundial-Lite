@@ -88,7 +88,8 @@ void main() {
             #ifdef DISTANT_HORIZONS
                 maxAllowedDistance = dhFarPlane;
             #endif
-            maxAllowedDistance = pow2(maxAllowedDistance + 32.0) / (1.0 - min(waterWorldDir.y * waterWorldDir.y, 0.5)) * exp(-12.0 * length(absorptionBeta));
+            maxAllowedDistance = pow2(maxAllowedDistance + 32.0) / (1.0 - min(waterWorldDir.y * waterWorldDir.y, 0.5));
+            maxAllowedDistance = min(maxAllowedDistance, 25000000.0 * exp(-12.0 * length(absorptionBeta)));
 
             vec3 origin = gbufferModelViewInverse[3].xyz;
             vec3 originShadowCoordNoBias = worldPosToShadowCoordNoBias(origin);
