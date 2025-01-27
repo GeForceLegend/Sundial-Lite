@@ -10,6 +10,7 @@ screen.Reflection=Reflection
 screen.Shadow=Shadow
 screen.Lighting=Lighting
 screen.Atmosphere=Atmosphere
+screen.RainFog=Rain fog
 screen.VolumetricLight=Volumetric light
 screen.VolumetricFog=Volumetric fog
 screen.CommonFog=Common fog
@@ -86,6 +87,8 @@ option.LABPBR_TEXTURE_AO.comment=Texture AO in LabPBR, will make some pixels bec
 option.WATER_TYPE=Water type
 value.WATER_TYPE.0=Default
 value.WATER_TYPE.1=Vanilla
+option.CAULDRON_WAVE=Cauldron water wave
+option.CAULDRON_WAVE.comment=Render water waves for water in cauldron. Requires Water type setting to default
 option.WATER_WAVE_SCALE=Water wave scale
 option.WATER_WAVE_HEIGHT=Water wave height
 option.WATER_WAVE_SPEED=Water wave speed
@@ -139,6 +142,15 @@ option.WORLD_BASIC_HEIGHT.comment=Planet height on Y=0 coordinate
 option.VOLUMETRIC_LIGHT=Volumetric light
 option.VOLUMETRIC_FOG=Volumetric fog
 option.ATMOSPHERE_SCATTERING_FOG=Atmosphere scattering fog
+# RainFog
+option.RF_SKY_BRIGHTNESS=Rain fog skylight brightness
+option.RF_SUN_BRIGHTNESS=Rain fog sunlight brightness
+option.RF_DENSITY=Rain fog density
+option.RF_DENSITY.comment=Overall density of rain fog. Affect visibility of sky and ground
+option.RF_GROUND_EXTRA_DENSITY=Rain fog ground extra density
+option.RF_GROUND_EXTRA_DENSITY.comment=Affect visibility of ground
+option.RAIN_BLOOM_FOG_DENSITY=Rain bloom fog density
+option.RAIN_BLOOM_FOG_DENSITY.comment=Blurs distant object when rain. Only work when player is outdoor
 # VolumetricLight
 option.VL_STRENGTH=Volumetric light strength
 option.VL_SAMPLES=Volumetric light samples

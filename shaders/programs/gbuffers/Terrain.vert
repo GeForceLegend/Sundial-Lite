@@ -1,3 +1,5 @@
+#extension GL_ARB_shading_language_packing : enable
+
 #if MC_VERSION >= 11700
 in vec3 vaPosition;
 in vec4 mc_Entity;
@@ -65,6 +67,9 @@ void main() {
         }
         else if (mc_Entity.x == 513 || abs(mc_Entity.x - 669) < 5.5) {
             materialID = MAT_TORCH;
+        }
+        else if (mc_Entity.x == 514) {
+            materialID = MAT_LAVA;
         }
         else if (mc_Entity.x == 630) {
             isEmissive = uint(gl_Normal.y > 0.5 && abs(blockPos.y - 0.9375) < 0.01);

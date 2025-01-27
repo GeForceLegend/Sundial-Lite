@@ -1,4 +1,5 @@
 #extension GL_ARB_gpu_shader5 : enable
+#extension GL_ARB_shading_language_packing: enable
 
 layout(location = 0) out vec4 texBuffer3;
 
@@ -111,6 +112,10 @@ void main() {
         n -= 0.166666 * float(isTargetWater);
         n = mix(n, f0ToIor(gbufferData.metalness) , step(0.001, gbufferData.metalness));
         float LdotH = clamp(dot(worldNormal, -waterWorldDir), 0.0, 1.0);
+        #ifdef DISTANT_HORIZONS
+            solidDepth -= float(solidDepth > 1.0);
+        #endif
+        waterDistance = mix(waterDistance, 114514.0, step(0.999999, solidDepth));
         if (isEyeInWater == 1 ^^ isTargetWater) {
             solidColor.rgb = waterFogTotal(solidColor.rgb, worldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
             n *= 1.0 - 0.25 * float(isEyeInWater);
@@ -126,13 +131,15 @@ void main() {
                 solidColor.rgb = netherFogTotal(solidColor.rgb, waterDistance);
             #elif defined THE_END
                 solidColor.rgb = endFogTotal(solidColor.rgb, waterDistance);
-                if (solidDepth - float(solidDepth > 1.0) > 0.999999)
+                if (solidDepth> 0.999999)
                     solidColor.rgb += endStars(worldDir);
             #else
-                solidColor.rgb *= airAbsorption(waterDistance);
+                vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, worldDir);
+                float atmosphereDepth = mix(waterDistance * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 500.0 + 500.0 * float(intersectionData.z > 0.0), step(0.999999, solidDepth));
                 #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
-                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, worldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
+                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, worldDir, skyColorUp, atmosphereDepth, gbufferData.lightmap.y);
                 #endif
+                solidColor.rgb *= airAbsorption(waterDistance);
             #endif
             n = mix(n, 1.0 / n, float(isTargetWater));
         }
@@ -175,37 +182,39 @@ void main() {
 
     vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, waterWorldDir);
     waterDepth -= float(waterDepth > 1.0);
-    float waterViewDepthFar = mix(waterViewDepthNoLimit, 500.0 + 500.0 * float(intersectionData.z > 0.0), step(0.999999, waterDepth));
+    float waterViewDepth = mix(waterViewDepthNoLimit, 114514.0, step(0.999999, waterDepth));
     if (isEyeInWater == 0) {
         #ifdef NETHER
-            solidColor.rgb *= vec3(netherFogAbsorption(waterViewDepthFar));
-            solidColor.rgb += netherFogScattering(waterViewDepthFar);
+            solidColor.rgb *= vec3(netherFogAbsorption(waterViewDepth));
+            solidColor.rgb += netherFogScattering(waterViewDepth);
         #elif defined THE_END
-            solidColor.rgb *= vec3(endFogAbsorption(waterViewDepthFar));
-            solidColor.rgb += endFogScattering(waterViewDepthFar);
+            solidColor.rgb *= vec3(endFogAbsorption(waterViewDepth));
+            solidColor.rgb += endFogScattering(waterViewDepth);
             if (waterDepth > 0.999999) {
                 solidColor.rgb += endStars(waterWorldDir);
             }
         #else
-            solidColor.rgb *= vec3(airAbsorption(waterViewDepthFar));
             #ifdef SHADOW_AND_SKY
                 #ifdef ATMOSPHERE_SCATTERING_FOG
-                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, waterWorldDir, skyColorUp, waterViewDepthFar, eyeBrightnessSmooth.y / 240.0);
+                    vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, waterWorldDir);
+                    float atmosphereDepth = mix(waterViewDepthNoLimit * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 500.0 + 500.0 * float(intersectionData.z > 0.0), step(0.999999, waterDepth));
+                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, waterWorldDir, skyColorUp, atmosphereDepth, eyeBrightnessSmooth.y / 240.0);
                 #endif
             #endif
+            solidColor.rgb *= vec3(airAbsorption(waterViewDepth));
         #endif
     }
     else if (isEyeInWater == 1) {
-        solidColor.rgb *= waterFogAbsorption(waterViewDepthNoLimit);
-        solidColor.rgb += waterFogScattering(waterWorldDir, skyColorUp, waterViewDepthNoLimit, eyeBrightnessSmooth.y / 240.0);
+        solidColor.rgb *= waterFogAbsorption(waterViewDepth);
+        solidColor.rgb += waterFogScattering(waterWorldDir, skyColorUp, waterViewDepth, eyeBrightnessSmooth.y / 240.0);
     }
     else if (isEyeInWater == 2) {
-        solidColor.rgb *= vec3(lavaFogAbsorption(waterViewDepthNoLimit));
-        solidColor.rgb += lavaFogScattering(waterViewDepthNoLimit);
+        solidColor.rgb *= vec3(lavaFogAbsorption(waterViewDepth));
+        solidColor.rgb += lavaFogScattering(waterViewDepth);
     }
     else if (isEyeInWater == 3) {
-        solidColor.rgb *= vec3(snowFogAbsorption(waterViewDepthNoLimit));
-        solidColor.rgb += snowFogScattering(skyColorUp, waterViewDepthNoLimit, eyeBrightnessSmooth.y / 240.0);
+        solidColor.rgb *= vec3(snowFogAbsorption(waterViewDepth));
+        solidColor.rgb += snowFogScattering(skyColorUp, waterViewDepth, eyeBrightnessSmooth.y / 240.0);
     }
 
     texBuffer3 = solidColor;

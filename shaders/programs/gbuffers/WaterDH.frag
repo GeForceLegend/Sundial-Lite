@@ -1,4 +1,5 @@
 #extension GL_ARB_gpu_shader5 : enable
+#extension GL_ARB_shading_language_packing : enable
 
 layout(location = 0) out vec4 gbufferData0;
 layout(location = 1) out vec4 gbufferData1;
@@ -45,7 +46,7 @@ void main() {
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
         vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
         #if RAIN_PUDDLE == 1
-            wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
+            wetStrength = (1.0 - rawData.metalness) * clamp(mix(worldNormal.y, abs(worldNormal.y), float(rawData.materialID == MAT_WATER)) * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
         #elif RAIN_PUDDLE == 2
             wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, 0.0, outdoor);
         #endif

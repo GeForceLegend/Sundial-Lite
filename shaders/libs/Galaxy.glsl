@@ -27,9 +27,9 @@ vec2 toSpherical(vec3 p) {
   return vec2(t, ph);
 }
 
-vec3 endStars(vec3 rd) {
+float endStars(vec3 rd) {
   vec2 sp = toSpherical(rd.xzy);
-  vec3 col = vec3(0.0);
+  float col = 0.0;
 
   const float m = LAYERS;
 
@@ -51,7 +51,7 @@ vec3 endStars(vec3 rd) {
 
     float scol = mix(8.0*h2, 0.25*h2*h2, s);
 
-    vec3 ccol = col + exp(-(6000.0/mix(2.0, 0.25, s))*max(l-0.001, 0.0))*scol;
+    float ccol = col + exp(-(6000.0/mix(2.0, 0.25, s))*max(l-0.001, 0.0))*scol;
     col = h3 < y ? ccol : col;
   }
 

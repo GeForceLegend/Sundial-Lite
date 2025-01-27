@@ -13,4 +13,5 @@
 #define MAT_LAVA_CAULDRON 12
 #define MAT_CAULDRON 13
 #define MAT_END_PORTAL 14
+#define MAT_LAVA 16
 #define MAT_PARTICLE 100

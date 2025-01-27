@@ -41,15 +41,9 @@ void decodeNormals(vec4 rawData, inout vec3 normal, inout vec3 geoNormal) {
     geoNormal = normalize(vec3(rawData.zw, normalZ.y));
 }
 
-float packUp2x8Bits(float rawData0, float rawData1) {
-    float data;
-    vec2 dataSet = vec2(rawData0, rawData1);
-    dataSet = floor(dataSet * 255.0);
-
-    data = dataSet.x * 256.0 + dataSet.y;
-    data /= 65535.0;
-
-    return data;
+vec2 pack4x8To2x16(vec4 rawData) {
+    uint data = packUnorm4x8(rawData.yxwz);
+    return vec2((data & 0x0000FFFFu) / 65535.0, (data >> 16u) / 65535.0);
 }
 
 vec2 unpack16Bit(float rawData) {
@@ -126,10 +120,8 @@ void packUpGbufferDataSolid(in GbufferData rawData, out vec4 data0, out vec4 dat
 
     // colortex2 RGBA16
     data2 = vec4(
-        packUp2x8Bits(rawData.lightmap.x, rawData.lightmap.y),
-        packUp2x8Bits(rawData.smoothness, rawData.metalness),
-        packUp2x8Bits(rawData.porosity, rawData.emissive),
-        packUp2x8Bits(rawData.materialID / 255.0, rawData.parallaxOffset)
+        pack4x8To2x16(vec4(rawData.lightmap.x, rawData.lightmap.y, rawData.smoothness, rawData.metalness)),
+        pack4x8To2x16(vec4(rawData.porosity, rawData.emissive, rawData.materialID / 255.0, rawData.parallaxOffset))
     );
 }
 

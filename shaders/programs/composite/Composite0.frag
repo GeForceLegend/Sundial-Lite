@@ -1,4 +1,5 @@
 #extension GL_ARB_gpu_shader5 : enable
+#extension GL_ARB_shading_language_packing : enable
 
 layout(location = 0) out vec4 texBuffer0;
 layout(location = 1) out vec4 texBuffer4;
@@ -246,7 +247,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
             #ifdef THE_END
                 reflectionColor.rgb = endFogTotal(reflectionColor.rgb, reflectionColor.w);
                 if (hitSky) {
-                    reflectionColor.rgb += endStars(tracedRay.direction);
+                    reflectionColor.rgb += endStars(rayDir) * exp2(50.0 * (gbufferData.smoothness - 1.0));
                 }
             #elif defined NETHER
                 reflectionColor.rgb = netherFogTotal(reflectionColor.rgb, reflectionColor.w);
@@ -267,7 +268,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         else if (isEyeInWater == 3) {
             reflectionColor.rgb = snowFogTotal(reflectionColor.rgb, skyColorUp, reflectionColor.w, eyeBrightnessSmooth.y / 240.0);
         }
-        reflectionColor.rgb *= brdfWeight;
+        reflectionColor.rgb = max(vec3(0.0), reflectionColor.rgb * brdfWeight);
         reflectionColor.w /= far;
     }
     return reflectionColor;

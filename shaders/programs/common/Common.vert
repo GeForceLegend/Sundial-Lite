@@ -24,8 +24,9 @@ out vec2 texcoord;
 #endif
 
 void main() {
-    gl_Position = ftransform();
-    texcoord = gl_MultiTexCoord0.st;
+    ivec2 offset = ivec2((min(gl_VertexID, 2) & 1) << 1, gl_VertexID & 2);
+    texcoord = offset;
+    gl_Position = vec4(offset * 2.0 - 1.0, 0.0, 1.0);
 
     #ifdef SHADOW_MATRIX
         shadowModelViewProjection = shadowProjection * shadowModelView;

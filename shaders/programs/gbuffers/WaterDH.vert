@@ -12,7 +12,7 @@ flat out float materialID;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
-#include "/libs/GbufferData.glsl"
+#include "/libs/Materials.glsl"
 
 void main() {
     viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;

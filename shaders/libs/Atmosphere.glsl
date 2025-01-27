@@ -1,8 +1,8 @@
 const vec3 ozoneAbsorption = vec3(2.1e-6,5.0e-6,0.2e-6);
-const vec3 pureRayleighBeta = vec3(5.2e-6, 12.1e-6, 29.6e-6);
-const vec3 rayLeighBeta = pureRayleighBeta + ozoneAbsorption;
+const vec3 purerayleighBeta = vec3(5.2e-6, 12.1e-6, 29.6e-6);
+const vec3 rayleighBeta = purerayleighBeta + ozoneAbsorption;
 const float mieBeta = 2.1e-5;
-const vec3 totalBeta = rayLeighBeta + mieBeta;
+const vec3 totalBeta = rayleighBeta + mieBeta;
 const float rayLeighScaledHeight = 8500.0;
 const float mieScaledHeight = 1200.0;
 const vec2 scaledHeight = vec2(rayLeighScaledHeight, mieScaledHeight);
@@ -53,7 +53,7 @@ vec2 chapmanOpticalDepth(float originHeight, vec2 c, vec2 cExpH, float cosZenith
 vec3 sampleInScattering(float originHeight, vec2 c, vec2 cExpH, float cosZenith) {
     vec2 opticalDepth = chapmanOpticalDepth(originHeight, c, cExpH, cosZenith);
 
-    vec3 inScattering = exp2(-opticalDepth.x * rayLeighBeta - opticalDepth.y * rainyMieBeta);
+    vec3 inScattering = exp2(-opticalDepth.x * rayleighBeta - opticalDepth.y * rainyMieBeta);
 
     return inScattering;
 }
@@ -79,8 +79,8 @@ void sampleInScatteringDoubleSide(float originHeight, vec2 c, vec2 cExpH, float 
     vec2 sunOpticalDepth, moonOpticalDepth;
     chapmanOpticalDepthDoubleSide(originHeight, c, cExpH, cosZenith, sunOpticalDepth, moonOpticalDepth);
 
-    sunInScattering = exp2(-sunOpticalDepth.x * rayLeighBeta - sunOpticalDepth.y * rainyMieBeta);
-    moonInScattering = exp2(-moonOpticalDepth.x * rayLeighBeta - moonOpticalDepth.y * rainyMieBeta);
+    sunInScattering = exp2(-sunOpticalDepth.x * rayleighBeta - sunOpticalDepth.y * rainyMieBeta);
+    moonInScattering = exp2(-moonOpticalDepth.x * rayleighBeta - moonOpticalDepth.y * rainyMieBeta);
 }
 
 vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir, vec3 sunDir, vec3 intersectionData, float sunLightStrength, out vec3 atmosphere) {
@@ -157,8 +157,8 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir
                 sunOpticalDepth += opticalDepth;
                 moonOpticalDepth += opticalDepth;
 
-                vec3 currSunInScattering = exp2(-sunOpticalDepth.x * rayLeighBeta - sunOpticalDepth.y * rainyMieBeta);
-                vec3 currMoonInScattering = exp2(-moonOpticalDepth.x * rayLeighBeta - moonOpticalDepth.y * rainyMieBeta);
+                vec3 currSunInScattering = exp2(-sunOpticalDepth.x * rayleighBeta - sunOpticalDepth.y * rainyMieBeta);
+                vec3 currMoonInScattering = exp2(-moonOpticalDepth.x * rayleighBeta - moonOpticalDepth.y * rainyMieBeta);
 
                 vec3 currRayleighInScattering = currSunInScattering * prevRelativeDensity.x * sunRayleigh + currMoonInScattering * prevRelativeDensity.x * moonRayleigh;
                 totalRayleighInScattering += stepLength * (prevRayleighInScattering + currRayleighInScattering);
@@ -168,7 +168,7 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir
                 prevMieInScattering = currMieInScattering;
             }
 
-            vec3 totalInScattering = totalRayleighInScattering * pureRayleighBeta + totalMieInScattering * rainyMieBeta;
+            vec3 totalInScattering = totalRayleighInScattering * purerayleighBeta + totalMieInScattering * rainyMieBeta;
             totalInScattering *= 0.5;
 
             atmosphere = totalInScattering * sunLightStrength;
@@ -223,7 +223,7 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
             sunOpticalDepth += opticalDepth;
             moonOpticalDepth += opticalDepth;
 
-            vec3 currSunInScattering = exp2(-sunOpticalDepth.x * rayLeighBeta - sunOpticalDepth.y * rainyMieBeta);
+            vec3 currSunInScattering = exp2(-sunOpticalDepth.x * rayleighBeta - sunOpticalDepth.y * rainyMieBeta);
             vec3 currSunRayleighInScattering = currSunInScattering * prevRelativeDensity.x;
             totalSunRayleighInScattering += stepLength * (prevSunRayleighInScattering + currSunRayleighInScattering);
             prevSunRayleighInScattering = currSunRayleighInScattering;
@@ -231,7 +231,7 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
             totalSunMieInScattering += stepLength * (prevSunMieInScattering + currSunMieInScattering);
             prevSunMieInScattering = currSunMieInScattering;
 
-            vec3 currMoonInScattering = exp2(-moonOpticalDepth.x * rayLeighBeta - moonOpticalDepth.y * rainyMieBeta);
+            vec3 currMoonInScattering = exp2(-moonOpticalDepth.x * rayleighBeta - moonOpticalDepth.y * rainyMieBeta);
             vec3 currMoonRayleighInScattering = currMoonInScattering * prevRelativeDensity.x;
             totalMoonRayleighInScattering += stepLength * (prevMoonRayleighInScattering + currMoonRayleighInScattering);
             prevMoonRayleighInScattering = currMoonRayleighInScattering;
@@ -249,7 +249,7 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
         vec3 totalRayleighInScattering = totalSunRayleighInScattering + totalMoonRayleighInScattering;
         vec3 totalMieInScattering = totalSunMieInScattering + totalMoonMieInScattering;
 
-        vec3 totalInScattering = totalRayleighInScattering * pureRayleighBeta + totalMieInScattering * rainyMieBeta;
+        vec3 totalInScattering = totalRayleighInScattering * purerayleighBeta + totalMieInScattering * rainyMieBeta;
         totalInScattering *= 0.5;
 
         result = totalInScattering * sunLightStrength;
@@ -259,9 +259,12 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
 
 vec3 solidAtmosphereScattering(vec3 color, vec3 worldDir, vec3 skyColor, float worldDepth, float skyLight) {
     const float a = 0.1;
-    vec3 absorption = exp2(-vec3(worldDepth * totalBeta * 2.5 * 1.44269502));
-    float scatterPhase = sqrt(0.3848 - a * a + 2.0 * a * worldDir.y);
-    vec3 scattering = skyLight * scatterPhase * skyColor * sunColor * (1.0 - absorption) * 30.0 * exp2((-WORLD_BASIC_HEIGHT - cameraPosition.y) / 1200.0);
+    vec3 absorption = exp2(-vec3(worldDepth * rainyMieBeta * (1.0 + RF_DENSITY * 3.0 * weatherStrength * weatherStrength) * 10.0 * 1.44269502 * exp2((-WORLD_BASIC_HEIGHT - cameraPosition.y) / 1200.0)));
+    vec3 scatteringColor = skyLight * (
+        0.1 * skyColor * (1.0 - weatherStrength * (1.0 - RF_SKY_BRIGHTNESS)) +
+        sunColor * miePhase(dot(worldDir, shadowDirection), 0.4, 0.16) * (1.0 - weatherStrength * (1.0 - RF_SUN_BRIGHTNESS))
+    );
+    vec3 scattering = scatteringColor * (1.0 - absorption) * 30.0;
     return color * absorption + scattering;
 }
 

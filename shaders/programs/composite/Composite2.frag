@@ -1,3 +1,5 @@
+#extension GL_ARB_shading_language_packing: enable
+
 layout(location = 0) out vec4 texBuffer4;
 
 in vec2 texcoord;

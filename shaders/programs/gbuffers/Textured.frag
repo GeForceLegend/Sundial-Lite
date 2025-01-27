@@ -1,3 +1,5 @@
+#extension GL_ARB_shading_language_packing : enable
+
 layout(location = 0) out vec4 gbufferData0;
 layout(location = 1) out vec4 gbufferData1;
 layout(location = 2) out vec4 gbufferData2;

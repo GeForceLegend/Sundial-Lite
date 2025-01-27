@@ -1,3 +1,4 @@
+#extension GL_ARB_gpu_shader5 : enable
 #extension GL_ARB_shading_language_packing : enable
 
 layout(location = 0) out vec4 gbufferData0;
@@ -14,6 +15,7 @@ flat in vec3 viewNormal;
 #include "/libs/Uniform.glsl"
 #include "/libs/GbufferData.glsl"
 #include "/libs/Common.glsl"
+#include "/libs/Water.glsl"
 #include "/libs/Parallax.glsl"
 
 void main() {
@@ -38,7 +40,7 @@ void main() {
 
     vec3 viewPos = screenToViewPos(gl_FragCoord.st * texelSize, gl_FragCoord.z);
     float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
-    vec3 viewDir = viewPos * (-inversesqrt(dot(viewPos, viewPos)));
+    vec3 viewDir = viewPos * (-viewDepthInv);
     vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
     float parallaxOffset = 0.0;
     vec2 texcoord = texlmcoord.st;
@@ -99,14 +101,14 @@ void main() {
         if (rawData.materialID == MAT_TORCH) {
             emissive *= 0.57 * length(rawData.albedo.rgb);
         }
-        else if (rawData.materialID == MAT_CAULDRON) {
-            rawData.smoothness += step(1e-6, abs(color.r - color.b) * (1e-3 - rawData.smoothness));
-        }
         else if (rawData.materialID == MAT_GLOWING_BERRIES) {
             emissive *= clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0);
         }
         rawData.emissive += emissive;
     #endif
+    bool isCauldronWater = rawData.materialID == MAT_CAULDRON && abs(color.r - color.b) > 1e-5;
+    rawData.smoothness += float(rawData.smoothness < 1e-3 && isCauldronWater);
+    rawData.albedo.rgb *= 1.0 - 0.5 * float(isCauldronWater);
 
     #ifdef MOD_LIGHT_DETECTION
         if (rawData.lightmap.x > 0.99999) {
@@ -123,7 +125,7 @@ void main() {
         (0.5 * float(rawData.materialID == MAT_GRASS) + 0.7 * float(rawData.materialID == MAT_LEAVES || rawData.materialID == MAT_GLOWING_BERRIES));
 
     float wetStrength = 0.0;
-    if (rainyStrength > 0.0) {
+    if (rainyStrength > 0.0 && rawData.materialID != MAT_LAVA) {
         float porosity = rawData.porosity * 255.0 / 64.0;
         porosity *= step(porosity, 1.0);
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
@@ -146,47 +148,45 @@ void main() {
         rippleNormal = rainRippleNormal(mcPos);
         rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
     #endif
-    #ifdef PARALLAX_BASED_NORMAL
-        #ifdef PARALLAX
-            if (parallaxOffset > 0.0
+    if (
+        true
+        #ifdef PARALLAX_BASED_NORMAL
+            #ifdef PARALLAX
+                && (parallaxOffset == 0.0
                 #ifdef VOXEL_PARALLAX
-                    && parallaxTexNormal.z < 0.5
+                    || parallaxTexNormal.z > 0.5
                 #endif
-            ) {
-                #ifdef VOXEL_PARALLAX
-                    rawData.normal = tbnMatrix * parallaxTexNormal;
-                #else
-                    #ifdef SMOOTH_PARALLAX
-                        vec3 parallaxNormal = heightBasedNormal(normals, texcoord, baseCoord, atlasTexSize, atlasTexelOffset, maxTextureResolution, true);
-                        rawData.normal = mix(parallaxNormal, rippleNormal, wetStrength);
-                        rawData.normal = normalize(tbnMatrix * rawData.normal);
-                    #else
-                        const float eps = 1e-4;
-                        float rD = textureGrad(normals, calculateOffsetCoord(texcoord + vec2(eps * tileCoordSize.x, 0.0), baseCoord, tileCoordSize, atlasTiles), texGradX, texGradY).a;
-                        float lD = textureGrad(normals, calculateOffsetCoord(texcoord - vec2(eps * tileCoordSize.x, 0.0), baseCoord, tileCoordSize, atlasTiles), texGradX, texGradY).a;
-                        float uD = textureGrad(normals, calculateOffsetCoord(texcoord + vec2(0.0, eps * tileCoordSize.y), baseCoord, tileCoordSize, atlasTiles), texGradX, texGradY).a;
-                        float dD = textureGrad(normals, calculateOffsetCoord(texcoord - vec2(0.0, eps * tileCoordSize.y), baseCoord, tileCoordSize, atlasTiles), texGradX, texGradY).a;
-                        rawData.normal = vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3));
-                        rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
-                        rawData.normal = normalize(tbnMatrix * rawData.normal);
-                    #endif
-                #endif
-                rawData.normal = normalize(mix(tbnMatrix[2], rawData.normal, 1.0 / (1.0 + 4.0 * pow(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY)), 0.1))));
-            }
-            else
+                )
+            #endif
         #endif
-    #endif
-    {
-        #ifdef SMOOTH_NORMAL
-            normalData = bilinearNormalSample(normals, texcoord, baseCoord, tileCoordSize, atlasTiles, atlasTexSize, atlasTexelOffset, true);
+    ) {
+        #ifdef CAULDRON_WAVE
+            #if WATER_TYPE == 0
+                if (isCauldronWater) {
+                    rawData.albedo = vec4(color.rgb * 0.1, 1.0);
+                    vec3 tangentDir = normalize(transpose(tbnMatrix) * viewPos.xyz);
+                    rawData.normal = waterWave(mcPos / 32.0, tangentDir);
+                    rawData.normal.xy += rippleNormal.xy * wetStrength;
+                    rawData.smoothness = 1.0;
+                    rawData.metalness = 0.0;
+                    rawData.porosity = 0.0;
+                    rawData.emissive = 0.0;
+                }
+                else
+            #endif
         #endif
-        #ifdef MC_NORMAL_MAP
-            rawData.normal = NORMAL_FORMAT(normalData.xyz);
-            rawData.normal.xy *= NORMAL_STRENGTH;
-        #else
-            rawData.normal = vec3(0.0, 0.0, 1.0);
-        #endif
-        rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
+        {
+            #ifdef SMOOTH_NORMAL
+                normalData = bilinearNormalSample(normals, texcoord, baseCoord, tileCoordSize, atlasTiles, atlasTexSize, atlasTexelOffset, true);
+            #endif
+            #ifdef MC_NORMAL_MAP
+                rawData.normal = NORMAL_FORMAT(normalData.xyz);
+                rawData.normal.xy *= NORMAL_STRENGTH;
+            #else
+                rawData.normal = vec3(0.0, 0.0, 1.0);
+            #endif
+            rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
+        }
         rawData.normal = normalize(tbnMatrix * rawData.normal);
 
         float NdotV = dot(rawData.normal, viewDir);
@@ -197,6 +197,27 @@ void main() {
             weight = clamp(min(max(NdotV, dot(viewDir, tbnMatrix[2])), 1.0 - weight), 0.0, 1.0);
             rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
         }
+    }
+    else {
+        #ifdef VOXEL_PARALLAX
+            rawData.normal = tbnMatrix * parallaxTexNormal;
+        #else
+            #ifdef SMOOTH_PARALLAX
+                vec3 parallaxNormal = heightBasedNormal(normals, texcoord, baseCoord, atlasTexSize, atlasTexelOffset, maxTextureResolution, true);
+                rawData.normal = mix(parallaxNormal, rippleNormal, wetStrength);
+                rawData.normal = normalize(tbnMatrix * rawData.normal);
+            #else
+                const float eps = 1e-4;
+                float rD = textureGrad(normals, calculateOffsetCoord(texcoord + vec2(eps * tileCoordSize.x, 0.0), baseCoord, tileCoordSize, atlasTiles), texGradX, texGradY).a;
+                float lD = textureGrad(normals, calculateOffsetCoord(texcoord - vec2(eps * tileCoordSize.x, 0.0), baseCoord, tileCoordSize, atlasTiles), texGradX, texGradY).a;
+                float uD = textureGrad(normals, calculateOffsetCoord(texcoord + vec2(0.0, eps * tileCoordSize.y), baseCoord, tileCoordSize, atlasTiles), texGradX, texGradY).a;
+                float dD = textureGrad(normals, calculateOffsetCoord(texcoord - vec2(0.0, eps * tileCoordSize.y), baseCoord, tileCoordSize, atlasTiles), texGradX, texGradY).a;
+                rawData.normal = vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3));
+                rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
+                rawData.normal = normalize(tbnMatrix * rawData.normal);
+            #endif
+        #endif
+        rawData.normal = normalize(mix(tbnMatrix[2], rawData.normal, 1.0 / (1.0 + 4.0 * pow(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY)), 0.1))));
     }
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);

@@ -1,4 +1,5 @@
 #extension GL_ARB_gpu_shader5 : enable
+#extension GL_ARB_shading_language_packing : enable
 
 layout(location = 0) out vec4 gbufferData0;
 layout(location = 1) out vec4 gbufferData1;
@@ -76,10 +77,11 @@ void main() {
     float wetStrength = 0.0;
     if (rainyStrength > 0.0) {
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
+        float normalY = mix(worldNormal.y, abs(worldNormal.y), float(rawData.materialID == MAT_WATER));
         #if RAIN_PUDDLE == 1
-            wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
+            wetStrength = (1.0 - rawData.metalness) * clamp(normalY * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
         #elif RAIN_PUDDLE == 2
-            wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, 0.0, outdoor);
+            wetStrength = groundWetStrength(mcPos, normalY, rawData.metalness, 0.0, outdoor);
         #endif
         rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
     }
@@ -104,6 +106,10 @@ void main() {
                 rawData.albedo.rgb = color.rgb;
                 vec3 tangentDir = normalize(transpose(tbnMatrix) * viewPos.xyz);
                 rawData.normal = waterWave(mcPos / 32.0, tangentDir);
+                rawData.smoothness = 1.0;
+                rawData.metalness = 0.0;
+                rawData.porosity = 0.0;
+                rawData.emissive = 0.0;
             }
             else
         #endif

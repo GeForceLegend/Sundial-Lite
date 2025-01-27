@@ -1,4 +1,5 @@
 #extension GL_ARB_gpu_shader5 : enable
+#extension GL_ARB_shading_language_packing: enable
 
 layout(location = 0) out vec4 gbufferData4;
 
