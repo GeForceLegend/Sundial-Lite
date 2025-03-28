@@ -84,8 +84,6 @@ float bayer64Temporal(vec2 a) {
 }
 
 float smooth2DNoise(vec2 coord) {
-    coord = coord;
-
     vec2 whole = floor(coord);
     vec2 part = coord - whole;
 

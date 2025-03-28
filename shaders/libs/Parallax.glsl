@@ -4,6 +4,7 @@ vec3 rainRippleNormal(vec3 position) {
     uv.y -= offsetY + 59.0;
     uv.y *= 1.0 / 60.0;
     vec3 normal = textureLod(gaux2, uv, 0.0).xyz * 2.0 - 1.0;
+    normal.xy *= rainStrength;
     normal.z /= RIPPLE_STRENGTH;
     return normal;
 }

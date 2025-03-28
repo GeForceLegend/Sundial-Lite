@@ -80,16 +80,6 @@ vec3 directionDistributionFast(vec2 noise, vec3 normal, vec3 viewDir, float roug
     return direction;
 }
 
-vec2 projIntersection(vec4 origin, vec4 direction, vec2 targetCoord) {
-    vec2 intersection = (targetCoord * origin.ww - origin.xy) / (direction.xy - targetCoord * direction.ww);
-    float depthLimit = far;
-    #ifdef DISTANT_HORIZONS
-        depthLimit = dhFarPlane;
-    #endif
-    intersection = mix(intersection, vec2(depthLimit + 32.0), step(intersection, vec2(0.0)));
-    return intersection;
-}
-
 vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float firstWeight) {
     vec3 viewPos;
     #ifdef DISTANT_HORIZONS
@@ -191,7 +181,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         }
         rayDir = mat3(gbufferModelViewInverse) * rayDir;
         vec3 worldPos = viewToWorldPos(viewPos);
-        vec3 intersectionData = planetIntersectionData(worldPos, rayDir);
+        vec4 intersectionData = planetIntersectionData(worldPos, rayDir);
         if (!hitSky) {
             vec3 sampleViewPos;
             #ifdef DISTANT_HORIZONS
@@ -227,12 +217,12 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                 skylightColor = singleAtmosphereScattering(vec3(0.0), worldPos, rayDir, sunDirection, intersectionData, 30.0, atmosphere);
                 vec4 planeCloud = vec4(0.0);
                 #ifdef PLANE_CLOUD
-                    planeCloud = planeClouds(worldPos, rayDir, sunDirection, skyColorUp, intersectionData);
+                    planeCloud = planeClouds(worldPos, rayDir, sunDirection, skyColorUp, intersectionData.xyz);
                     skylightColor = mix(skylightColor, planeCloud.rgb, planeCloud.a * float(worldPos.y + cameraPosition.y < PLANE_CLOUD_HEIGHT));
                 #endif
                 #ifdef CLOUD_IN_REFLECTION
                     float cloudDepth;
-                    skylightColor = sampleClouds(skylightColor, atmosphere, worldPos, rayDir, shadowDirection, sunDirection, skyColorUp, intersectionData, 0.0, cloudDepth).rgb;
+                    skylightColor = sampleClouds(skylightColor, atmosphere, worldPos, rayDir, shadowDirection, sunDirection, skyColorUp, intersectionData.xyz, 0.0, cloudDepth).rgb;
                 #endif
                 if (worldPos.y + cameraPosition.y >= PLANE_CLOUD_HEIGHT) {
                     skylightColor = mix(skylightColor, planeCloud.rgb, planeCloud.a);

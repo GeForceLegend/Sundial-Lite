@@ -18,7 +18,7 @@ uniform sampler2D gaux1;
 const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
 const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 
-vec3 waterCaustic(vec3 mcPos, vec3 lightDir) {
+float waterCaustic(vec3 mcPos, vec3 lightDir) {
 
     float causticStrength = 0.5;
 
@@ -45,9 +45,7 @@ vec3 waterCaustic(vec3 mcPos, vec3 lightDir) {
         causticStrength = dist * sqrt(dist) * (3.0 - 2.0 * dist) * 0.9 + 0.1;
     #endif
 
-    vec3 caustic = vec3(causticStrength);
-
-    return caustic;
+    return causticStrength;
 }
 
 vec3 shadowCoordToWorldPos(vec3 shadowCoord) {
@@ -83,10 +81,10 @@ void main() {
         vec3 mcPos = worldPos + cameraPosition;
         mcPos.y += 128.0;
         float floorMcHeight = floor(mcPos.y / 2.0);
-        shadowColor1 = vec4(1.0, 1.0, mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0);
+        shadowColor1 = vec4(1.0);
         if (shadowOffset.y < -0.5) {
-            vec3 caustic = waterCaustic(mcPos, shadowDirection);
-            albedo = vec4(caustic, 1.0);
+            float caustic = waterCaustic(mcPos, shadowDirection);
+            albedo = vec4(caustic, mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, 1.0);
         }
         shadowColor0 = albedo;
     #else

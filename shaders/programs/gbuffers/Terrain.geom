@@ -15,7 +15,7 @@ out vec3 color;
 flat out uvec3 blockData;
 flat out vec3 viewNormal;
 
-// #define SKYLIGHT_FIX
+#define SKYLIGHT_FIX
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -34,11 +34,12 @@ void main() {
     vec3 tangent = dPosPerpY * (vTexlmCoord[0].x - vTexlmCoord[1].x) + dPosPerpX * (vTexlmCoord[1].x - vTexlmCoord[2].x);
     vec3 bitangent = dPosPerpY * (vTexlmCoord[0].y - vTexlmCoord[1].y) + dPosPerpX * (vTexlmCoord[1].y - vTexlmCoord[2].y);
 
+    vec3 normal = mat3(gbufferModelView) * worldNormal;
     float bitangentLenInv = inversesqrt(dot(bitangent, bitangent));
     bitangentLenInv = signMul(bitangentLenInv, dot(cross(worldNormal, tangent), bitangent));
+    tangent = mat3(gbufferModelView) * tangent;
     vec4 tangentData = vec4(tangent, bitangentLenInv);
     uvec3 data = uvec3(vMaterial[0], packHalf2x16(tangentData.xy), packHalf2x16(tangentData.zw));
-    vec3 normal = mat3(gbufferModelView) * worldNormal;
 
     #ifdef SKYLIGHT_FIX
         #ifdef SHADOW_AND_SKY

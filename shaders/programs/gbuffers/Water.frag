@@ -77,12 +77,16 @@ void main() {
     float wetStrength = 0.0;
     if (rainyStrength > 0.0) {
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
-        float normalY = mix(worldNormal.y, abs(worldNormal.y), float(rawData.materialID == MAT_WATER));
-        #if RAIN_PUDDLE == 1
-            wetStrength = (1.0 - rawData.metalness) * clamp(normalY * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
-        #elif RAIN_PUDDLE == 2
-            wetStrength = groundWetStrength(mcPos, normalY, rawData.metalness, 0.0, outdoor);
-        #endif
+        if (rawData.materialID == MAT_WATER) {
+            wetStrength = outdoor * clamp(abs(worldNormal.y) * 10.0 - 0.1, 0.0, 1.0);
+        }
+        else {
+            #if RAIN_PUDDLE == 1
+                wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
+            #elif RAIN_PUDDLE == 2
+                wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, 0.0, outdoor);
+            #endif
+        }
         rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
     }
 
@@ -104,7 +108,7 @@ void main() {
         #if WATER_TYPE == 0
             if (rawData.materialID == MAT_WATER) {
                 rawData.albedo.rgb = color.rgb;
-                vec3 tangentDir = normalize(transpose(tbnMatrix) * viewPos.xyz);
+                vec3 tangentDir = transpose(tbnMatrix) * viewPos.xyz;
                 rawData.normal = waterWave(mcPos / 32.0, tangentDir);
                 rawData.smoothness = 1.0;
                 rawData.metalness = 0.0;
@@ -145,7 +149,7 @@ void main() {
             weight = clamp(min(max(NdotV, dot(viewDir, rawData.geoNormal)), 1.0 - weight), 0.0, 1.0);
             rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
         }
-        rawData.normal = mix(rawData.geoNormal, rawData.normal, exp2(-0.0002 * length(viewPos.xyz) / max(1e-6, dot(rawData.geoNormal, viewDir))));
+        rawData.normal = mix(rawData.geoNormal, rawData.normal, exp2(-0.0002 / max(1e-6, dot(rawData.geoNormal, viewDir) * viewDepthInv)));
     #endif
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);

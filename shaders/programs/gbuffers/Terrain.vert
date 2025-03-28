@@ -31,6 +31,9 @@ void main() {
     vColor = gl_Color.rgb * gl_Color.a;
     vTexlmCoord.st = gl_MultiTexCoord0.st;
     vTexlmCoord.pq = gl_MultiTexCoord1.st / 240.0;
+    #ifdef IS_IRIS
+        vTexlmCoord.pq = clamp(gl_MultiTexCoord1.st / 232.0 - 8.0 / 232.0, 0.0, 1.0);
+    #endif
 
     uint isEmissive = uint(511.5 < mc_Entity.x && mc_Entity.x < 1023.5);
     int materialID = MAT_OPAQUE;

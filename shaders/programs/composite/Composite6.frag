@@ -26,18 +26,18 @@ float volumetricFogDensity(vec3 position) {
     float heightClamp = pow2(2.0 / VOLUMETRIC_FOG_THICKNESS * position.y - 2.0 * VOLUMETRIC_FOG_CENTER_HEIGHT / VOLUMETRIC_FOG_THICKNESS);
     float result = 0.0;
     if (heightClamp < 1.0) {
-        vec3 wind = vec3(2.0, 0.0, 1.0) * frameTimeCounter / VOLUMETRIC_FOG_SCALE * 0.001;
+        vec3 wind = vec3(2.0, 0.0, 1.0) * frameTimeCounter / VOLUMETRIC_FOG_SCALE * 0.001 * VOLUMETRIC_FOG_SPEED ;
         vec3 fogPosition = position / VOLUMETRIC_FOG_SCALE * 0.001 + wind;
 
-        float weight = 1.0;
+        const float weights = (1.0 - pow(VOLUMETRIC_FOG_OCTAVE_FADE, VOLUMETRIC_FOG_OCTAVES)) / (1.0 - VOLUMETRIC_FOG_OCTAVE_FADE);
+        float weight = 1.0 / weights;
         float density = 0.0;
         for (int i = 0; i < VOLUMETRIC_FOG_OCTAVES; i++) {
             density += smooth3DNoise(fogPosition) * weight;
             fogPosition = fogPosition * VOLUMETRIC_FOG_OCTAVE_SCALE + wind;
             weight *= VOLUMETRIC_FOG_OCTAVE_FADE;
         }
-        const float weights = (1.0 - pow(VOLUMETRIC_FOG_OCTAVE_FADE, VOLUMETRIC_FOG_OCTAVES)) / (1.0 - VOLUMETRIC_FOG_OCTAVE_FADE);
-        density = clamp(pow2(density / weights) + VOLUMETRIC_FOG_AMOUNT - 1.0 - VOLUMETRIC_FOG_AMOUNT * heightClamp, 0.0, 1.0);
+        density = clamp(pow2(density) + VOLUMETRIC_FOG_AMOUNT - 1.0 - VOLUMETRIC_FOG_AMOUNT * heightClamp, 0.0, 1.0);
         result = density;
     }
     return result;
@@ -87,7 +87,7 @@ void main() {
             float noise = bayer64Temporal(gl_FragCoord.xy);
             float maxAllowedDistance = far;
             #ifdef DISTANT_HORIZONS
-                maxAllowedDistance = dhFarPlane;
+                maxAllowedDistance = dhRenderDistance * 1.01;
             #endif
             maxAllowedDistance = pow2(maxAllowedDistance + 32.0) / (1.0 - min(waterWorldDir.y * waterWorldDir.y, 0.5));
             maxAllowedDistance = min(maxAllowedDistance, 25000000.0 * exp(-12.0 * length(absorptionBeta)));
@@ -147,7 +147,7 @@ void main() {
                 #endif
                 singleLight *= rayAbsorption;
                 #ifdef VOLUMETRIC_FOG
-                    float volumetricFogAbsorption = exp2(stepLength * sampleVolumetricFogDensity * dot(rayAbsorption, vec3(1.0)));
+                    float volumetricFogAbsorption = exp2(stepLength * sampleVolumetricFogDensity);
                     rayAbsorption *= volumetricFogAbsorption;
                     absorption *= volumetricFogAbsorption;
                 #endif

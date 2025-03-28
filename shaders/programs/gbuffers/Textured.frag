@@ -292,6 +292,7 @@ void main() {
             #endif
         } else {
             float wetStrength = 0.0;
+            vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
             if (rainyStrength > 0.0) {
                 float porosity = rawData.porosity * 255.0 / 64.0;
                 porosity *= step(porosity, 1.0);
@@ -308,13 +309,13 @@ void main() {
                     wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, porosity, outdoor);
                 #endif
                 rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
+
+                #ifdef RAIN_RIPPLES
+                    rippleNormal = rainRippleNormal(mcPos);
+                    rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
+                #endif
             }
 
-            vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
-            #ifdef RAIN_RIPPLES
-                rippleNormal = rainRippleNormal(mcPos);
-                rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
-            #endif
             #ifdef PARALLAX_BASED_NORMAL
                 #if defined ENTITY_PARALLAX && defined PARALLAX
                     if (parallaxOffset > 0.0

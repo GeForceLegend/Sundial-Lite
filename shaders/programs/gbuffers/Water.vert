@@ -45,6 +45,9 @@ void main() {
     color = gl_Color;
     texlmcoord.st = gl_MultiTexCoord0.st;
     texlmcoord.pq = gl_MultiTexCoord1.st / 240.0;
+    #ifdef IS_IRIS
+        texlmcoord.pq = clamp(gl_MultiTexCoord1.st / 232.0 - 8.0 / 232.0, 0.0, 1.0);
+    #endif
 
     isEmissive = floor(mc_Entity.x / 512.0);
     materialID = MAT_STAINED_GLASS;

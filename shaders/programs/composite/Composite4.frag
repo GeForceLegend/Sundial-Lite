@@ -37,7 +37,7 @@ void main() {
     vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
     float worldDepth = inversesqrt(dot(worldPos, worldPos));
     vec3 worldDir = worldPos * worldDepth;
-    vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, worldDir);
+    vec4 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, worldDir);
 
     vec4 solidColor = texelFetch(colortex3, texel, 0);
 
@@ -54,7 +54,7 @@ void main() {
             backDepth = 0.0;
             solidColor.rgb = singleAtmosphereScattering(solidColor.rgb, gbufferModelViewInverse[3].xyz, worldDir, sunDirection, intersectionData, (30.0), backColor);
             #ifdef PLANE_CLOUD
-                planeCloud = planeClouds(gbufferModelViewInverse[3].xyz, worldDir, sunDirection, skyColorUp, intersectionData);
+                planeCloud = planeClouds(gbufferModelViewInverse[3].xyz, worldDir, sunDirection, skyColorUp, intersectionData.xyz);
             #endif
             if (gbufferModelViewInverse[3].y + cameraPosition.y + WORLD_BASIC_HEIGHT - 500.0 < PLANE_CLOUD_HEIGHT) {
                 solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
@@ -62,7 +62,7 @@ void main() {
         }
         float cloudDepth;
         solidColor = sampleClouds(
-            solidColor.rgb, backColor, gbufferModelViewInverse[3].xyz, worldDir, shadowDirection, sunDirection, skyColorUp, intersectionData, backDepth, cloudDepth
+            solidColor.rgb, backColor, gbufferModelViewInverse[3].xyz, worldDir, shadowDirection, sunDirection, skyColorUp, intersectionData.xyz, backDepth, cloudDepth
         );
 
         if (gbufferModelViewInverse[3].y + cameraPosition.y + WORLD_BASIC_HEIGHT - 500.0 >= PLANE_CLOUD_HEIGHT) {

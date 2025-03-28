@@ -134,7 +134,7 @@ void main() {
                 if (solidDepth> 0.999999)
                     solidColor.rgb += endStars(worldDir);
             #else
-                vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, worldDir);
+                vec4 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, worldDir);
                 float atmosphereDepth = mix(waterDistance * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 500.0 + 500.0 * float(intersectionData.z > 0.0), step(0.999999, solidDepth));
                 #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
                     solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, worldDir, skyColorUp, atmosphereDepth, gbufferData.lightmap.y);
@@ -157,7 +157,8 @@ void main() {
         solidColor.rgb = mix(rawSolidColor, solidColor.rgb, vec3(solidColor.w)) * stainedColor;
         solidColor.rgb += gbufferData.albedo.rgb * gbufferData.emissive * BLOCK_LIGHT_BRIGHTNESS + texelFetch(colortex4, texel, 0).rgb * solidColor.w;
         #ifdef SHADOW_AND_SKY
-            float NdotL = dot(worldNormal, shadowDirection);
+            float isTargetParticle = 1.0 - float(isTargetNotParticle);
+            float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);
             if (NdotL > 0.0) {
                 float shadowLightFactor = 1.0;
                 #ifdef LIGHT_LEAKING_FIX
@@ -180,7 +181,6 @@ void main() {
         #endif
     }
 
-    vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, waterWorldDir);
     waterDepth -= float(waterDepth > 1.0);
     float waterViewDepth = mix(waterViewDepthNoLimit, 114514.0, step(0.999999, waterDepth));
     if (isEyeInWater == 0) {
@@ -196,7 +196,7 @@ void main() {
         #else
             #ifdef SHADOW_AND_SKY
                 #ifdef ATMOSPHERE_SCATTERING_FOG
-                    vec3 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, waterWorldDir);
+                    vec4 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, waterWorldDir);
                     float atmosphereDepth = mix(waterViewDepthNoLimit * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 500.0 + 500.0 * float(intersectionData.z > 0.0), step(0.999999, waterDepth));
                     solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, waterWorldDir, skyColorUp, atmosphereDepth, eyeBrightnessSmooth.y / 240.0);
                 #endif

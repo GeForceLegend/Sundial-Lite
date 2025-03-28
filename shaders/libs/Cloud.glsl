@@ -5,9 +5,7 @@ const float CLOUD_BLOCKY_TOP_HEIGHT = CLOUD_BLOCKY_HEIGHT + CLOUD_BLOCKY_THICKNE
 const float CLOUD_REALISTIC_CENTER_THICKNESS = CLOUD_REALISTIC_THICKNESS * CLOUD_REALISTIC_CENTER;
 const float CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE = CLOUD_REALISTIC_THICKNESS * CLOUD_REALISTIC_SHADOWLIGHT_STEPSCALE;
 const float CLOUD_REALISTIC_SHADOW_LIGHT_SAMPLE_LENGTH = CLOUD_REALISTIC_SHADOWLIGHT_SAMPLES * CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE + 0.5 * CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
-const float CLOUD_REALISTIC_SKY_LIGHT_STEP_SIZE = CLOUD_REALISTIC_THICKNESS * CLOUD_REALISTIC_SKYLIGHT_STEPSCALE;
 const float CLOUD_REALISTIC_SAMPLE_DENSITY = 0.001 * CLOUD_REALISTIC_DENSITY;
-const float CLOUD_REALISTIC_SKY_DENSITY = CLOUD_REALISTIC_SKY_LIGHT_STEP_SIZE * CLOUD_REALISTIC_SAMPLE_DENSITY;
 
 const float cloudBottomHeight = earthRadius + CLOUD_REALISTIC_HEIGHT + 500.0;
 const float cloudTopHeight = earthRadius + CLOUD_REALISTIC_HEIGHT + CLOUD_REALISTIC_THICKNESS + 500.0;
@@ -139,12 +137,12 @@ float realisticCloudDensity(vec3 cloudPos, vec3 wind, float cloudDistance, int o
     #endif
 
     cloudPos += frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0);
-    float density = baseCloudNoise(cloudPos.xz * 0.00001 * CLOUD_SCALE);
+    float density = baseCloudNoise(cloudPos.xz * 0.00001 / CLOUD_SCALE);
     float weight = 1.0;
     for (int i = 0; i < octaves; i++) {
         cloudPos = cloudPos * CLOUD_REALISTIC_OCTAVE_SCALE + wind;
         weight *= CLOUD_REALISTIC_OCTAVE_FADE;
-        density += smooth3DNoise(cloudPos * 0.000015 * CLOUD_SCALE) * weight;
+        density += smooth3DNoise(cloudPos * 0.000015 / CLOUD_SCALE) * weight;
     }
 
     float heightClamp = pow2(
@@ -169,12 +167,10 @@ float atmosphereAbsorption(float RdotP, float cloudDistance) {
 
 #ifdef LQ_REALISTIC_CLOUD
     const float cloudDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, (CLOUD_REALISTIC_OCTAVES + 1) / 2 + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
-    const float cloudSkyDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, (CLOUD_REALISTIC_SKYLIGHT_OCTAVES + 1) / 2 + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
-    const float cloudShadowDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, (CLOUD_REALISTIC_SKYLIGHT_OCTAVES + 1) / 2 + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
+    const float cloudShadowDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, (CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES + 1) / 2 + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
 #else
     const float cloudDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
-    const float cloudSkyDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_SKYLIGHT_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
-    const float cloudShadowDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_SKYLIGHT_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
+    const float cloudShadowDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
 #endif
 
 vec4 sampleRealisticCloud(vec3 cloudPos, vec3 sunDir, vec3 atmosphere) {
@@ -218,17 +214,20 @@ vec4 sampleRealisticCloud(vec3 cloudPos, vec3 sunDir, vec3 atmosphere) {
         moonlightStrength *= CLOUD_REALISTIC_BASIC_SHADOWLIGHT + exp2(-sqrt(moonlightOpticalDepth * CLOUD_REALISTIC_SAMPLE_DENSITY * 1.44269502 * 1.44269502));
         result.rgb += 8.0 * (sunlightStrength + moonlightStrength * nightBrightness);
 
-        float skylightOpticalDepth = 0.0;
-        vec3 skylightSamplePos = cloudPos;
-        for (int i = 0; i < CLOUD_REALISTIC_SKYLIGHT_SAMPLES; i++) {
-            skylightSamplePos.y += CLOUD_REALISTIC_SKY_LIGHT_STEP_SIZE;
-            skylightOpticalDepth += realisticCloudDensity(
-                skylightSamplePos, wind, sqrt(cloudDistance2 + (skylightSamplePos.y - cloudPos.y) * (skylightSamplePos.y + cloudPos.y)),
-                CLOUD_REALISTIC_SKYLIGHT_OCTAVES, cloudSkyDensityWeights
-            );
-        }
-        float skylightAbsorption = CLOUD_REALISTIC_BASIC_SKYLIGHT + exp2(-sqrt(skylightOpticalDepth * CLOUD_REALISTIC_SKY_DENSITY * 1.44269502 * 1.44269502));
-        result.rgb += atmosphere * skylightAbsorption;
+        float cloudHeight = -clamp(1.0 + (earthRadius + CLOUD_REALISTIC_HEIGHT + 500.0) / CLOUD_REALISTIC_CENTER_THICKNESS - cloudDistance / CLOUD_REALISTIC_CENTER_THICKNESS, 0.0, 1.0) +
+            clamp(
+                cloudDistance / (CLOUD_REALISTIC_THICKNESS - CLOUD_REALISTIC_CENTER_THICKNESS) -
+                (CLOUD_REALISTIC_CENTER_THICKNESS + earthRadius + CLOUD_REALISTIC_HEIGHT + 500.0) / (CLOUD_REALISTIC_THICKNESS - CLOUD_REALISTIC_CENTER_THICKNESS)
+            , 0.0, 1.0);
+        cloudHeight = cloudHeight * 0.5 + 0.5;
+        float skyLightStrength = cloudHeight;
+        skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
+        skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
+        skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
+        skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
+        const float cloudAbsorptionBeta = exp2(-CLOUD_REALISTIC_THICKNESS * CLOUD_REALISTIC_SAMPLE_DENSITY);
+        skyLightStrength += cloudAbsorptionBeta - skyLightStrength * cloudAbsorptionBeta;
+        result.rgb += atmosphere * (skyLightStrength + CLOUD_REALISTIC_BASIC_SKYLIGHT);
     }
     return result;
 }
@@ -370,7 +369,6 @@ float cloudShadowBlocky(vec3 worldPos, vec3 shadowDir) {
 }
 
 float baseCloudShadowNoise(vec2 coord) {
-    coord *= 64.0;
     vec2 whole = floor(coord);
     vec2 part = coord - whole;
     part *= part * (3.0 - 2.0 * part);
@@ -383,8 +381,6 @@ float baseCloudShadowNoise(vec2 coord) {
 }
 
 float cloudShadowNoise(vec3 position) {
-    position *= 64.0;
-
     vec3 whole = floor(position);
     vec3 part = position - whole;
 
@@ -413,16 +409,17 @@ float cloudShadowRealistic(vec3 worldPos, vec3 shadowDir) {
 
     float result = 1.0;
     if (hit) {
-        vec3 wind = CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0);
+        vec3 wind = CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0) * 0.000015 / CLOUD_SCALE * 64.0;
 
         vec3 cloudPos = worldPos + vec3(cameraPosition.x, 0.0, cameraPosition.z) + shadowDir * startIntersection;
         cloudPos += frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0);
-        float density = baseCloudShadowNoise(cloudPos.xz * 0.00001 * CLOUD_SCALE);
+        float density = baseCloudShadowNoise(cloudPos.xz * 0.00001 / CLOUD_SCALE * 64.0);
         float weight = 1.0;
+        cloudPos = cloudPos * CLOUD_REALISTIC_OCTAVE_SCALE * 0.000015 / CLOUD_SCALE * 64.0 + wind;
         for (int i = 0; i < CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES; i++) {
-            cloudPos = cloudPos * CLOUD_REALISTIC_OCTAVE_SCALE + wind;
             weight *= CLOUD_REALISTIC_OCTAVE_FADE;
-            density += cloudShadowNoise(cloudPos * 0.000015 * CLOUD_SCALE) * weight;
+            density += cloudShadowNoise(cloudPos) * weight;
+            cloudPos = cloudPos * CLOUD_REALISTIC_OCTAVE_SCALE + wind;
         }
         const float weights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
         density = clamp(density / weights + (CLOUD_REALISTIC_AMOUNT - 1.0) * (1.0 - weatherStrength * CLOUD_REALISTIC_RAIN_INCREAMENT) * CLOUD_REALISTIC_HARDNESS * 10.0, 0.0, 1.0);
@@ -467,7 +464,7 @@ vec4 planeClouds(vec3 worldPos, vec3 worldDir, vec3 sunDirection, vec3 skyColorU
         float weight = 1.0;
         float weights = 0.0;
         for (int i = 0; i < PLANE_CLOUD_OCTAVES; i++) {
-            cloudDensity += weight * smooth2DNoise(cloudPos * 0.0001 * PLANE_CLOUD_SCALE);
+            cloudDensity += weight * smooth2DNoise(cloudPos * 0.0001 / PLANE_CLOUD_SCALE);
             cloudPos = cloudPos * PLANE_CLOUD_OCTAVE_SCALE + wind;
             weights += weight;
             weight *= PLANE_CLOUD_OCTAVE_FADE;

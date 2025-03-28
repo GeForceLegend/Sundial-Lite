@@ -6,13 +6,13 @@
     }
 
     vec3 distortShadowCoord(vec3 shadowCoord) {
-        float shadowBias = 4.0 * (1.0 - SHADOW_DISTORTION_STRENGTH) + length(shadowCoord.xy) * SHADOW_DISTORTION_STRENGTH * 4.0;
-        shadowCoord.xy = shadowCoord.xy / shadowBias + 0.75;
+        float invCoordLen = inversesqrt(dot(shadowCoord.xy, shadowCoord.xy));
+        float shadowDistortion = invCoordLen / (4.0 * (1.0 - SHADOW_DISTORTION_STRENGTH) * invCoordLen + SHADOW_DISTORTION_STRENGTH * 4.0);
+        shadowCoord.xy = shadowCoord.xy * shadowDistortion + 0.75;
         return shadowCoord;
     }
 
-    float waterShadowHeight(vec2 waterShadowCoord, float lod) {
-        vec2 depthData = textureLod(shadowcolor1, waterShadowCoord, lod).zw;
+    float waterShadowHeight(vec2 depthData, float lod) {
         float waterHeight = (1.0 - depthData.y) * 510.0 - 128.0 + depthData.x * 2.0;
         return waterHeight;
     }
@@ -23,13 +23,14 @@
         #ifdef WATER_CAUSTIC
             float waterShadow = textureLod(shadowtex0, waterShadowCoord, lod);
             if (waterShadow < 1.0) {
-                float waterHeight = waterShadowHeight(waterShadowCoord.st, lod);
+                vec3 casuticData = textureLod(shadowcolor0, waterShadowCoord.st, lod).xyz;
+                float waterHeight = waterShadowHeight(casuticData.yz, lod);
 
                 float waterShadowHeightInv = inversesqrt(0.4375 + 0.5625 * lightDir.y * lightDir.y);
                 vec3 mcPos = worldPos + cameraPosition;
                 float waterDepth = (waterHeight - mcPos.y) * waterShadowHeightInv;
 
-                float causticStrength = textureLod(shadowcolor0, waterShadowCoord.st, lod).r;
+                float causticStrength = casuticData.r;
                 causticStrength = mix(causticStrength * 4.0, 1.0, clamp(exp(-0.3 * waterDepth), 0.0, 1.0));
                 caustic = causticStrength * clamp(waterFogAbsorption(waterDepth), 0.0, 1.0);
                 caustic = mix(caustic, vec3(1.0), vec3(waterShadow));

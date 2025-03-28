@@ -209,6 +209,16 @@ float viewToScreenDepth(float depth) {
     return depth * 0.5 + 0.5;
 }
 
+vec2 projIntersection(vec4 origin, vec4 direction, vec2 targetCoord) {
+    vec2 intersection = (targetCoord * origin.ww - origin.xy) / (direction.xy - targetCoord * direction.ww);
+    float depthLimit = far;
+    #ifdef DISTANT_HORIZONS
+        depthLimit = dhRenderDistance * 1.01;
+    #endif
+    intersection = mix(intersection, vec2(depthLimit + 32.0), step(intersection, vec2(0.0)));
+    return intersection;
+}
+
 #ifdef DISTANT_HORIZONS
     vec3 screenToViewPosDH(vec2 coord, float depth) {
         vec3 projPos = vec3(coord.xy, depth) * 2.0 - 1.0;

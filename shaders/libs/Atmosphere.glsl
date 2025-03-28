@@ -1,6 +1,6 @@
 const vec3 ozoneAbsorption = vec3(2.1e-6,5.0e-6,0.2e-6);
-const vec3 purerayleighBeta = vec3(5.2e-6, 12.1e-6, 29.6e-6);
-const vec3 rayleighBeta = purerayleighBeta + ozoneAbsorption;
+const vec3 pureRayleighBeta = vec3(5.2e-6, 12.1e-6, 29.6e-6);
+const vec3 rayleighBeta = pureRayleighBeta + ozoneAbsorption;
 const float mieBeta = 2.1e-5;
 const vec3 totalBeta = rayleighBeta + mieBeta;
 const float rayLeighScaledHeight = 8500.0;
@@ -14,14 +14,16 @@ const float atmosphereHeight = earthRadius + 100000.0;
 const float sunRadius = 0.02;
 const vec2 earthScaledHeight = 1.44269502 * earthRadius / scaledHeight;
 
-vec3 planetIntersectionData(vec3 worldPos, vec3 worldDir) {
+vec4 planetIntersectionData(vec3 worldPos, vec3 worldDir) {
     worldPos.y += max(300.0 + earthRadius, cameraPosition.y + WORLD_BASIC_HEIGHT + earthRadius);
     float R2 = dot(worldPos, worldPos);
     float RdotP = dot(worldPos, worldDir);
     float RdotP2 = RdotP * RdotP - R2;
     float d = sqrt(RdotP2 + earthRadius * earthRadius);
+    float rayHeight = sqrt(R2 + RdotP * abs(RdotP));
     float intersection = max(-1.0, -RdotP - d);
-    return vec3(RdotP, RdotP2, intersection);
+    float skyWeight = clamp(rayHeight / 300.0 - earthRadius / 300.0, 0.0, 1.0);
+    return vec4(RdotP, RdotP2, intersection, skyWeight * skyWeight);
 }
 
 float rayleighPhase(float cosAngle) {
@@ -83,7 +85,7 @@ void sampleInScatteringDoubleSide(float originHeight, vec2 c, vec2 cExpH, float 
     moonInScattering = exp2(-moonOpticalDepth.x * rayleighBeta - moonOpticalDepth.y * rainyMieBeta);
 }
 
-vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir, vec3 sunDir, vec3 intersectionData, float sunLightStrength, out vec3 atmosphere) {
+vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir, vec3 sunDir, vec4 intersectionData, float sunLightStrength, out vec3 atmosphere) {
     atmosphere = vec3(0.0);
     vec3 result = skyLightColor;
 
@@ -98,15 +100,17 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir
         if (atmosphereLength > 0.0) {
             float groundLength = intersectionData.z;
             float hitSky = clamp(-1e+10 * groundLength, 0.0, 1.0);
-            atmosphereLength = mix(groundLength, atmosphereLength, hitSky);
+            float originHeight2 = dot(originPos, originPos);
+            groundLength = max(groundLength, uintBitsToFloat(floatBitsToUint(-sqrt(originHeight2 - earthRadius * earthRadius)) ^ (floatBitsToUint(groundLength) & 0x80000000u)));
+            atmosphereLength = mix(groundLength, atmosphereLength, intersectionData.w);
             b += d;
             b = min(0.0, b);
             originPos -= worldDir * b;
             atmosphereLength += b;
             vec3 samplePosition = originPos;
-            result *= hitSky;
+            result *= intersectionData.w;
 
-            float originHeight2 = dot(samplePosition, samplePosition);
+            originHeight2 = dot(samplePosition, samplePosition);
             float originHeightInv = inversesqrt(originHeight2);
             float originHeight = originHeight2 * originHeightInv * 1.44269502;
             vec2 c = inversesqrt(originHeightInv) * inversesqrt(scaledHeight);
@@ -168,7 +172,7 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir
                 prevMieInScattering = currMieInScattering;
             }
 
-            vec3 totalInScattering = totalRayleighInScattering * purerayleighBeta + totalMieInScattering * rainyMieBeta;
+            vec3 totalInScattering = totalRayleighInScattering * pureRayleighBeta + totalMieInScattering * rainyMieBeta;
             totalInScattering *= 0.5;
 
             atmosphere = totalInScattering * sunLightStrength;
@@ -249,7 +253,7 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
         vec3 totalRayleighInScattering = totalSunRayleighInScattering + totalMoonRayleighInScattering;
         vec3 totalMieInScattering = totalSunMieInScattering + totalMoonMieInScattering;
 
-        vec3 totalInScattering = totalRayleighInScattering * purerayleighBeta + totalMieInScattering * rainyMieBeta;
+        vec3 totalInScattering = totalRayleighInScattering * pureRayleighBeta + totalMieInScattering * rainyMieBeta;
         totalInScattering *= 0.5;
 
         result = totalInScattering * sunLightStrength;

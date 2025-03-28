@@ -5,6 +5,7 @@ uniform float blindness;
 uniform float frameTime;
 uniform float nightVision;
 uniform float alphaTestRef;
+uniform float rainStrength;
 uniform float rainyMieBeta;
 uniform float rainyStrength;
 uniform float darknessFactor;
@@ -63,6 +64,7 @@ uniform mat4 gbufferPreviousProjection;
     uniform mat4 dhProjectionInverse;
     uniform mat4 dhPreviousProjection;
 
+    uniform int dhRenderDistance;
     uniform float dhFarPlane;
 #endif
 
