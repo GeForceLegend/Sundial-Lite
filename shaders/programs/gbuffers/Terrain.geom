@@ -43,7 +43,8 @@ void main() {
 
     #ifdef SKYLIGHT_FIX
         #ifdef SHADOW_AND_SKY
-            vec3 skyLightDir = dPosPerpY * (vTexlmCoord[0].w - vTexlmCoord[1].w) + dPosPerpX * (vTexlmCoord[1].w - vTexlmCoord[2].w);
+            float fixDirection = signI(vTexlmCoord[0].w + vTexlmCoord[1].w + vTexlmCoord[2].w - 1.5);
+            vec3 skyLightDir = fixDirection * (dPosPerpY * (vTexlmCoord[0].w - vTexlmCoord[1].w) + dPosPerpX * (vTexlmCoord[1].w - vTexlmCoord[2].w));
 
             vec3 skyLightDirSigned = uintBitsToFloat((floatBitsToUint(skyLightDir) & 0x80000000u) | 0x3F800000u);
             vec3 skyLightFixStrengthRaw = skyLightDir * step(vec3(1.8 / 15.0), abs(skyLightDir));
@@ -57,15 +58,18 @@ void main() {
             vec3 maximumLightPos = skyLightDirSigned * ceil(maximumLightVertex - vec3(1e-3));
             float maximumLight = dot(maximumLightPos, skyLightFixStrength);
 
-            vec4 minimumLightVertex = vec4(vWorldPos[0], vTexlmCoord[0].w);
+            vec4 minimumLightVertex = vec4(vWorldPos[0], vTexlmCoord[0].w * fixDirection);
             skyLightFixStrength += skyLightFixStrengthAlt;
-            if (vTexlmCoord[0].w > vTexlmCoord[1].w) {
-                minimumLightVertex = vec4(vWorldPos[1], vTexlmCoord[1].w);
+            float minimumLight1 = vTexlmCoord[1].w * fixDirection;
+            if (minimumLightVertex.w > minimumLight1) {
+                minimumLightVertex = vec4(vWorldPos[1], minimumLight1);
             }
-            if (minimumLightVertex.w > vTexlmCoord[2].w) {
+            if (minimumLightVertex.w > vTexlmCoord[2].w * fixDirection) {
                 minimumLightVertex.xyz = vWorldPos[2];
             }
             maximumLight += dot(minimumLightVertex.xyz, skyLightFixStrengthAlt);
+            maximumLight *= fixDirection;
+            skyLightFixStrength *= fixDirection;
         #endif
     #endif
 

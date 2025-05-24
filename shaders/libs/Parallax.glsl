@@ -194,7 +194,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
         #endif
 
         if (startHeight < 1.0) {
-            vec3 stepSize = viewVector / PARALLAX_QUALITY;
+            vec3 stepSize = viewVector / (PARALLAX_QUALITY * abs(viewVector.z));
             stepSize.xy *= textureResolution * PARALLAX_DEPTH * 0.2;
             float stepScale = 2.0 / PARALLAX_QUALITY;
 

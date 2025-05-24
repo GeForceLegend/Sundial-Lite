@@ -59,7 +59,7 @@ void main() {
             #endif
         #endif
 
-        if (abs(mc_Entity.x - 188.5) < 1.0 || mc_Entity.x == 265) {
+        if (abs(mc_Entity.x - 188.5) < 1.0 || mc_Entity.x == 265 || abs(mc_Entity.x - 225.5) < 31 || abs(mc_Entity.x - 736.5) < 31) {
             materialID = MAT_GRASS;
         }
         else if (mc_Entity.x == 2) {
@@ -67,6 +67,9 @@ void main() {
         }
         else if (mc_Entity.x == 119) {
             materialID = MAT_CAULDRON;
+            if (abs(gl_Color.r - gl_Color.b) > 1e-5) {
+                materialID = MAT_WATER;
+            }
         }
         else if (mc_Entity.x == 513 || abs(mc_Entity.x - 669) < 5.5) {
             materialID = MAT_TORCH;

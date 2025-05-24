@@ -36,47 +36,60 @@ vec3 reflectionWeight(vec3 viewDir, vec3 lightDir, float metalness, vec3 n, vec3
     return F;
 }
 
-// https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
-vec3 SampleVNDFGGX(
-    vec3 viewerDirection, // Direction pointing towards the viewer, oriented such that +Z corresponds to the surface normal
-    float roughness, // Roughness parameter
-    vec2 xy // Pair of uniformly distributed numbers in [0, 1)
-) {
-    // Transform viewer direction to the hemisphere configuration
-    viewerDirection = normalize(vec3(roughness * viewerDirection.xy, viewerDirection.z));
-
-    // Sample a reflection direction off the hemisphere
+// https://www.shadertoy.com/view/MX3XDf MIT Licence
+// Did some trick to prevent NaN when normal is vec3(0.0, 0.0, -1.0)
+vec3 IsotropicGGX(vec2 u, vec3 wi, float alpha, vec3 n, float NdotV, out float pdfRatio)
+{
+    //preliminary variables
+    float a2 = alpha * alpha;
+    float z2 = NdotV * NdotV;
+    // warp to the hemisphere configuration
+    vec3 wiStd = mix(wi, NdotV * n, vec3(1.0 + alpha));
+    float t = inversesqrt((1.0 - z2) * a2 + z2);
+    wiStd *= t;
+    NdotV *= t;
+    //compute lower bound for scaling
+    float s = 1. + sqrt(1.0 - z2);
+    float s2 = s * s;
+    float k = (s2 - a2 * s2) / (s2 + a2 * z2);
+    //calculate ratio of bounded and unbounded vndf
+    pdfRatio = (k * NdotV + 1.0) / (NdotV + 1.0);
+    //construct spherical cap
+    vec3 cStd;
+    float b = k * dot(wiStd, n); //z axis
+    float inversed = signI(n.z);
+    cStd.z = (1.0 - u.y - u.y * b) * inversed;
     const float tau = 6.2831853; // 2 * pi
-    float phi = tau * xy.x;
-    float cosTheta = 1.0 - xy.y - xy.y * viewerDirection.z;
-    float sinTheta = sqrt(clamp(1.0 - cosTheta * cosTheta, 0.0, 1.0));
-    vec3 reflected = vec3(vec2(cos(phi), sin(phi)) * sinTheta, cosTheta);
-
-    // Evaluate halfway direction
-    // This gives the normal on the hemisphere
-    vec3 halfway = reflected + viewerDirection;
-
-    // Transform the halfway direction back to hemiellispoid configuation
-    // This gives the final sampled normal
-    return normalize(vec3(roughness * halfway.xy, halfway.z));
+    float phi = tau * u.x;
+    cStd.x = cos(phi);
+    cStd.y = sin(phi);
+    cStd.xy *= sqrt(clamp(1. - cStd.z * cStd.z, 0.0, 1.0));
+    //reflect sample to align with normal
+    vec3 wr = vec3(n.xy, n.z + inversed);
+    vec3 c = (dot(wr, cStd) / abs(wr.z)) * wr - cStd;
+    // compute halfway direction as standard normal
+    vec3 wmStd = c + wiStd;
+    vec3 wmStd_z = n * dot(n, wmStd);
+    vec3 wmStd_xy = wmStd_z - wmStd;
+    // warp back to the ellipsoid configuration
+    return normalize(wmStd_z + alpha * wmStd_xy);
 }
 
-vec3 directionDistributionFull(vec2 noise, vec3 viewDir, float roughness, mat3 tbnMatrix) {
-    mat3 tbnMatrixInv = transpose(tbnMatrix);
-    vec3 tangentDir = tbnMatrixInv * viewDir;
-    vec3 tangentNormal = SampleVNDFGGX(-tangentDir, roughness, noise);
-    vec3 reflectionNormal = tbnMatrix * tangentNormal;
-    return reflect(viewDir, reflectionNormal);
-}
-
-vec3 directionDistributionFast(vec2 noise, vec3 normal, vec3 viewDir, float roughness, float NdotV) {
-    vec3 rayDir = reflect(viewDir, normal);
-    float distributionAngle = 2 * PI * noise.x;
-    vec3 distributionDir1 = normalize(cross(rayDir, viewDir));
-    vec3 distributionDir2 = sin(distributionAngle) * cross(rayDir, distributionDir1);
-    vec3 distributionDir = cos(distributionAngle) * distributionDir1 + distributionDir2 * NdotV;
-    float distributionStrength = noise.y * roughness;
-    vec3 direction = normalize(distributionDir * distributionStrength + rayDir);
+vec3 directionDistribution(vec2 noise, vec3 normal, vec3 viewDir, float roughness, float NdotV, out float pdfRatio) {
+    vec3 direction;
+    #ifdef FULL_REFLECTION
+        vec3 distributedNormal = IsotropicGGX(noise, -viewDir, roughness, normal, NdotV, pdfRatio);
+        direction = reflect(viewDir, distributedNormal);
+    #else
+        vec3 rayDir = reflect(viewDir, normal);
+        float distributionAngle = 2 * PI * noise.x;
+        vec3 distributionDir1 = normalize(cross(rayDir, viewDir));
+        vec3 distributionDir2 = sin(distributionAngle) * cross(rayDir, distributionDir1);
+        vec3 distributionDir = cos(distributionAngle) * distributionDir1 + distributionDir2 * NdotV;
+        float distributionStrength = noise.y * roughness;
+        direction = normalize(distributionDir * distributionStrength + rayDir);
+        pdfRatio = 1.0;
+    #endif
     return direction;
 }
 
@@ -101,19 +114,13 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
     float basicRoughness = pow2(1.0 - gbufferData.smoothness);
     vec2 noise = nextVec2(noiseGenerator);
     float gbufferNdotV = clamp(dot(-viewDir, gbufferData.normal), 0.0, 1.0);
-    #ifdef FULL_REFLECTION
-        vec3 distributionDir1 = normalize(cross(gbufferData.normal, vec3(1.0)));
-        vec3 distributionDir2 = cross(gbufferData.normal, distributionDir1);
-        mat3 basicTbnMatrix = mat3(distributionDir1, distributionDir2, gbufferData.normal);
-        vec3 rayDir = directionDistributionFull(noise, viewDir, basicRoughness, basicTbnMatrix);
-    #else
-        vec3 rayDir = directionDistributionFast(noise, gbufferData.normal, viewDir, basicRoughness, gbufferNdotV);
-    #endif
+    float pdfRatio;
+    vec3 rayDir = directionDistribution(noise, gbufferData.normal, viewDir, basicRoughness, gbufferNdotV, pdfRatio);
     if (dot(rayDir, gbufferData.geoNormal) < 1e-5) {
         rayDir = reflect(rayDir, gbufferData.geoNormal);
     }
 
-    vec3 brdfWeight = reflectionWeight(viewDir, rayDir, gbufferData.metalness, gbufferN, gbufferK);
+    vec3 brdfWeight = reflectionWeight(viewDir, rayDir, gbufferData.metalness, gbufferN, gbufferK) * pdfRatio;
     vec3 metalWeight = metalColor(gbufferData.albedo.rgb, gbufferNdotV, gbufferData.metalness, gbufferData.smoothness) * firstWeight;
 
     vec3 totalWeight = brdfWeight * metalWeight.rgb;

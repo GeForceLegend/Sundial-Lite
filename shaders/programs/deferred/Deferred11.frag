@@ -196,6 +196,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         float maximumThickness = 0.0005 * viewLength + 0.03 * float(materialID == MAT_HAND);
         float maximumThicknessDH = 0.05 * viewLength;
         float depthMultiplicator = mix(1.0, 1.0 / MC_HAND_DEPTH, float(materialID == MAT_HAND));
+        sampleCoord.zw -= vec2(maximumThickness, maximumThicknessDH);
 
         for (int i = 0; i < 12; i++) {
             if (any(greaterThan(abs(sampleCoord.xy - 0.5), vec2(0.5))) || shadow < 0.01) {
@@ -206,21 +207,30 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             #ifdef DISTANT_HORIZONS
                 if (sampleDepth == 1.0) {
                     float sampleDepthDH = textureLod(dhDepthTex0, sampleCoord.st, 0.0).r;
-                    hit = abs(sampleCoord.w - sampleDepthDH - maximumThicknessDH) < maximumThicknessDH && sampleDepthDH < 1.0;
+                    hit = abs(sampleCoord.w - sampleDepthDH) < maximumThicknessDH && sampleDepthDH < 1.0;
                 }
                 else
             #endif
             {
-                float sampleParallaxOffset = textureLod(colortex3, sampleCoord.st, 0.0).w;
-                sampleDepth = sampleDepth * depthMultiplicator - 0.5 * depthMultiplicator + 0.5;
-                sampleDepth += sampleParallaxOffset / 512.0;
-                hit = abs(sampleCoord.z - sampleDepth - maximumThickness) < maximumThickness && sampleDepth < 1.0;
+                float sampleParallaxOffset = textureLod(colortex3, sampleCoord.st, 0.0).w / 512.0 - 0.5 * depthMultiplicator + 0.5;
+                sampleDepth = sampleDepth * depthMultiplicator + sampleParallaxOffset;
+                hit = abs(sampleCoord.z - sampleDepth) < maximumThickness && sampleDepth < 1.0;
+                if (hit) {
+                    vec2 sampleTexelCoord = sampleCoord.xy * screenSize + 0.5;
+                    vec2 sampleTexel = floor(sampleTexelCoord);
+                    vec4 sh = textureGather(depthtex1, sampleTexel * texelSize, 0);
+                    vec2 fpc = sampleTexelCoord - sampleTexel;
+                    vec2 x = mix(sh.wx, sh.zy, vec2(fpc.x));
+                    float sampleDepth = mix(x.x, x.y, fpc.y);
+                    sampleDepth = sampleDepth * depthMultiplicator + sampleParallaxOffset;
+                    hit = abs(sampleCoord.z - sampleDepth) < maximumThickness;
+                }
             }
             shadow *= mix(1.0, absorption, float(hit));
             sampleCoord += stepSize;
         }
 
-        shadow = mix(shadow, 1.0, shadowWeight);
+        shadow = clamp(mix(shadow, 1.0, shadowWeight), 0.0, 1.0);
 
         return shadow;
     }

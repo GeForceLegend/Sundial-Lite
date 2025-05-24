@@ -155,7 +155,7 @@ void main() {
 
         stainedColor = mix(vec3(1.0), stainedColor, vec3(solidColor.w));
         solidColor.rgb = mix(rawSolidColor, solidColor.rgb, vec3(solidColor.w)) * stainedColor;
-        solidColor.rgb += gbufferData.albedo.rgb * gbufferData.emissive * BLOCK_LIGHT_BRIGHTNESS + texelFetch(colortex4, texel, 0).rgb * solidColor.w;
+        solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * gbufferData.emissive * BLOCK_LIGHT_BRIGHTNESS + texelFetch(colortex4, texel, 0).rgb * solidColor.w;
         #ifdef SHADOW_AND_SKY
             float isTargetParticle = 1.0 - float(isTargetNotParticle);
             float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);

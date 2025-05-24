@@ -235,7 +235,8 @@ void main() {
             vec4 texAlbedo = textureGrad(gtexture, texcoord, texGradX, texGradY);
         #endif
         #ifdef MC_NORMAL_MAP
-            vec4 normalData = textureGrad(normals, texcoord, texGradX, texGradY);
+            vec2 grad = min(abs(texGradX) , abs(texGradY));
+            vec4 normalData = textureGrad(normals, texcoord, grad, grad);
             #ifdef LABPBR_TEXTURE_AO
                 texAlbedo.rgb *= pow(normalData.b, 1.0 / 2.2);
             #endif
@@ -327,9 +328,7 @@ void main() {
                             rawData.normal = tbnMatrix * parallaxTexNormal;
                         #else
                             #ifdef SMOOTH_PARALLAX
-                                vec3 parallaxNormal = heightBasedNormal(normals, texcoord, baseCoord, albedoTexSize, atlasTexelOffset, float(ENTITY_TEXTURE_RESOLUTION), clampCoord);
-                                rawData.normal = mix(parallaxNormal, rippleNormal, wetStrength);
-                                rawData.normal = normalize(tbnMatrix * rawData.normal);
+                                rawData.normal = heightBasedNormal(normals, texcoord, baseCoord, albedoTexSize, atlasTexelOffset, float(ENTITY_TEXTURE_RESOLUTION), clampCoord);
                             #else
                                 const float eps = 1e-4;
                                 vec2 coordrD = texcoord + vec2(eps * tileCoordSize.x, 0.0);
@@ -342,14 +341,14 @@ void main() {
                                     coorduD = calculateOffsetCoord(coorduD, baseCoord, tileCoordSize, atlasTiles);
                                     coorddD = calculateOffsetCoord(coorddD, baseCoord, tileCoordSize, atlasTiles);
                                 }
-                                float rD = textureGrad(normals, coordrD, texGradX, texGradY).a;
-                                float lD = textureGrad(normals, coordlD, texGradX, texGradY).a;
-                                float uD = textureGrad(normals, coorduD, texGradX, texGradY).a;
-                                float dD = textureGrad(normals, coorddD, texGradX, texGradY).a;
+                                float rD = textureGrad(normals, coordrD, grad, grad).a;
+                                float lD = textureGrad(normals, coordlD, grad, grad).a;
+                                float uD = textureGrad(normals, coorduD, grad, grad).a;
+                                float dD = textureGrad(normals, coorddD, grad, grad).a;
                                 rawData.normal = vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3));
-                                rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
-                                rawData.normal = normalize(tbnMatrix * rawData.normal);
                             #endif
+                            rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
+                            rawData.normal = normalize(tbnMatrix * rawData.normal);
                         #endif
                         rawData.normal = normalize(mix(rawData.geoNormal, rawData.normal, 1.0 / (1.0 + 4.0 * pow(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY)), 0.1))));
                     } else

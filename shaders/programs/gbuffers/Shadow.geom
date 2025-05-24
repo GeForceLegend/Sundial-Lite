@@ -28,7 +28,7 @@ void main() {
         vec3 screenPos0 = vec3(gl_in[0].gl_Position.xy, 0.0);
         vec3 screenPos1 = vec3(gl_in[1].gl_Position.xy, 0.0);
         vec3 screenPos2 = vec3(gl_in[2].gl_Position.xy, 0.0);
-    
+
         vec2 shadowOffsetCenter = vShadowOffset[0];
         vec4 positionOffset = vec4(0.0);
         #ifdef TRANSPARENT
