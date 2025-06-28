@@ -49,8 +49,9 @@ float waterCaustic(vec3 mcPos, vec3 lightDir) {
 }
 
 vec3 shadowCoordToWorldPos(vec3 shadowCoord) {
-    float shadowBias = (1.0 - SHADOW_DISTORTION_STRENGTH) / (1.0 - length(shadowCoord.st) * SHADOW_DISTORTION_STRENGTH);
-    shadowCoord.st *= shadowBias;
+    float clipLengthInv = inversesqrt(dot(shadowCoord.xy, shadowCoord.xy));
+    float shadowDistortion = pow(distortionStrength + 1.0, 1.0 / clipLengthInv) / distortionStrength - 1.0 / distortionStrength;
+    shadowCoord.xy *= shadowDistortion * clipLengthInv;
 
     vec3 shadowViewPos = vec3(shadowProjectionInverse[0].x, shadowProjectionInverse[1].y, shadowProjectionInverse[2].z) * shadowCoord + shadowProjectionInverse[3].xyz;
     vec3 shadowPos = mat3(shadowModelViewInverse) * shadowViewPos + shadowModelViewInverse[3].xyz;

@@ -145,16 +145,6 @@ float fresnel(float LdotH, float LdotH2, float n) {
     return kR;
 }
 
-float fresnel(float LdotH, float LdotH2, float metalness, float n) {
-    float kR = fresnel(LdotH, LdotH2, n);
-    return mix(kR, 1.0, metalness);
-}
-
-vec3 fresnel(float LdotH, float LdotH2, float metalness, vec3 albedo, float n) {
-    float kR = fresnel(LdotH, LdotH2, n);
-    return mix(vec3(kR), albedo, vec3(metalness));
-}
-
 // https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
 vec3 fresnelFull(float LdotH, float LdotH2, vec3 n, vec3 k, float metalness) {
     float sinR2 = 1.0 - LdotH2;
@@ -166,13 +156,11 @@ vec3 fresnelFull(float LdotH, float LdotH2, vec3 n, vec3 k, float metalness) {
     vec3 t1 = a2b2 + LdotH2;
     vec3 a = sqrt(2.0 * max(a2b2 + t0, 0.0));
     vec3 t2 = a * LdotH;
-    vec3 rs = 0.5 * (t1 - t2) / (t1 + t2);
 
     vec3 t3 = LdotH2 * a2b2 + sinR2 * sinR2;
     vec3 t4 = t2 * sinR2;
-    vec3 rp = rs * (t3 - t4) / (t3 + t4);
 
-    vec3 kR = rs + rp;
+    vec3 kR = t3 * (t1 - t2) / ((t1 + t2) * (t3 + t4));
     #ifndef LABPBR_F0
         kR = mix(kR, vec3(1.0), metalness);
     #endif

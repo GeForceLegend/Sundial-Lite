@@ -42,9 +42,10 @@ void main() {
         #endif
 
         gl_Position = gl_ProjectionMatrix * viewPos;
-        float shadowBias = 1.0 - SHADOW_DISTORTION_STRENGTH + length(gl_Position.xy) * SHADOW_DISTORTION_STRENGTH;
-        gl_Position.xy /= shadowBias;
-        gl_Position.xy = gl_Position.xy * 0.5 + 0.5 + vShadowOffset;
+        float clipLengthInv = inversesqrt(dot(gl_Position.xy, gl_Position.xy));
+        float shadowDistortion = log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0) * 0.5;
+        gl_Position.xy *= max(0.0, clipLengthInv * shadowDistortion);
+        gl_Position.xy = gl_Position.xy + 0.5 + vShadowOffset;
         gl_Position.z *= 0.2;
 
         vShadowOffset *= 0.5 * realShadowMapResolution;

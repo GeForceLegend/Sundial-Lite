@@ -20,14 +20,14 @@ vec3 calculateBloomBase(vec2 coord) {
     uvec2 levelU = floatBitsToUint(1.0 - coord) & 0x7F800000u;
     vec3 result = vec3(0.0);
     if (levelU.x == levelU.y && levelU.x >= 0x3C000000u) {
-        float lod = 127.0 - float(levelU.x >> 23);
-        float expLevel = uintBitsToFloat(0x3F800000u + 0x3F800000u - levelU.x);
-        float levelOffset = float(1.0 - 2.0 * uintBitsToFloat(levelU.x));
+        float lod = 126.0 - float(levelU.x >> 23);
+        float expLevel = uintBitsToFloat(0x7F000000u - levelU.x);
+        float levelOffset = 1.0 - 2.0 * uintBitsToFloat(levelU.x);
         vec2 bloomTexel = texelSize * expLevel * 0.5;
         vec2 centerCoord = (coord - levelOffset) * expLevel;
-        vec2 lodSize = floor(screenSize * uintBitsToFloat(levelU.x));
-        centerCoord *= (lodSize + 1.0) / lodSize;
-        lod -= 1.0;
+        vec2 lodSize = screenSize * uintBitsToFloat(levelU.x);
+        vec2 lodSizeFloor = floor(lodSize);
+        centerCoord = (centerCoord - 1.0) * lodSizeFloor / (lodSizeFloor + 0.5 * clamp(1.0 - (lodSize - lodSizeFloor) * 1e+5, 0.0, 1.0)) + 1.0;
 
         vec3 bloomColor = textureLod(colortex3, centerCoord, lod).rgb * 4.0;
         bloomColor += textureLod(colortex3, centerCoord + vec2(-1.0, 1.0) * bloomTexel, lod).rgb;

@@ -23,12 +23,11 @@ in vec2 texcoord;
 
     vec3 worldPosToShadowCoord(vec3 worldPos) {
         vec4 shadowCoord = shadowProjection * shadowModelView * vec4(worldPos, 1.0);
-        shadowCoord /= shadowCoord.w;
-        float shadowBias = 1.0 - SHADOW_DISTORTION_STRENGTH + length(shadowCoord.xy) * SHADOW_DISTORTION_STRENGTH;
-        shadowCoord.xy /= shadowBias;
-        shadowCoord.z *= 0.2;
-        shadowCoord = shadowCoord * 0.5 + 0.5;
-        shadowCoord.xy = shadowCoord.xy * 0.5 + 0.5;
+        float clipLengthInv = inversesqrt(dot(shadowCoord.xy, shadowCoord.xy));
+        float shadowDistortion = log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0) * (1024 / realShadowMapResolution);
+        shadowCoord.xy *= clipLengthInv * shadowDistortion;
+        shadowCoord.xy = shadowCoord.xy * 0.25 + 0.75;
+        shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
         return shadowCoord.xyz;
     }
 #endif
@@ -50,7 +49,7 @@ void main() {
     float sunlightStrength = 0.0;
     #ifdef SHADOW_AND_SKY
         vec3 shadowCoord = worldPosToShadowCoord(worldPos);
-        sunlightStrength = texture(shadowtex0, shadowCoord) * (1.0 - sqrt(weatherStrength));
+        sunlightStrength = texture(shadowtex0, shadowCoord);
         #ifdef CLOUD_SHADOW
             sunlightStrength *= cloudShadow(worldPos, shadowDirection);
         #endif

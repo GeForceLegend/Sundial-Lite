@@ -24,23 +24,21 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 float volumetricFogDensity(vec3 position) {
     position += cameraPosition;
     float heightClamp = pow2(2.0 / VOLUMETRIC_FOG_THICKNESS * position.y - 2.0 * VOLUMETRIC_FOG_CENTER_HEIGHT / VOLUMETRIC_FOG_THICKNESS);
-    float result = 0.0;
+    float density = 0.0;
     if (heightClamp < 1.0) {
         vec3 wind = vec3(2.0, 0.0, 1.0) * frameTimeCounter / VOLUMETRIC_FOG_SCALE * 0.001 * VOLUMETRIC_FOG_SPEED ;
         vec3 fogPosition = position / VOLUMETRIC_FOG_SCALE * 0.001 + wind;
 
         const float weights = (1.0 - pow(VOLUMETRIC_FOG_OCTAVE_FADE, VOLUMETRIC_FOG_OCTAVES)) / (1.0 - VOLUMETRIC_FOG_OCTAVE_FADE);
         float weight = 1.0 / weights;
-        float density = 0.0;
         for (int i = 0; i < VOLUMETRIC_FOG_OCTAVES; i++) {
             density += smooth3DNoise(fogPosition) * weight;
             fogPosition = fogPosition * VOLUMETRIC_FOG_OCTAVE_SCALE + wind;
             weight *= VOLUMETRIC_FOG_OCTAVE_FADE;
         }
         density = clamp(pow2(density) + VOLUMETRIC_FOG_AMOUNT - 1.0 - VOLUMETRIC_FOG_AMOUNT * heightClamp, 0.0, 1.0);
-        result = density;
     }
-    return result;
+    return density;
 }
 
 void main() {
@@ -62,9 +60,9 @@ void main() {
             }
             float waterViewDepth = length(waterViewPos);
             vec3 waterWorldPos = viewToWorldPos(waterViewPos);
-            vec3 waterWorldDir = normalize(waterWorldPos - gbufferModelViewInverse[3].xyz);
+            float waterWorldDistanceInv = inversesqrt(dot(waterViewPos, waterViewPos));
+            vec3 waterWorldDir = waterWorldDistanceInv * (waterWorldPos - gbufferModelViewInverse[3].xyz);
 
-            float waterWorldDistance = dot(waterViewPos, waterViewPos);
             float basicWeight = 1.0;
             vec3 absorptionBeta = vec3(blindnessFactor + 0.003);
             float LdotV = dot(waterWorldDir, shadowDirection);
@@ -77,11 +75,12 @@ void main() {
             }
             else {
                 float timeStrength = pow(clamp(1.0 - shadowDirection.y, 0.0, 1.0), 5.0);
-                float timeVLStrength = (timeStrength * (MORNING_VL_STRENGTH - NOON_VL_STRENGTH) + NOON_VL_STRENGTH) * clamp(exp(-(cameraPosition.y + WORLD_BASIC_HEIGHT) / 1200.0), 0.0, 1.0);;
-                basicWeight *= timeVLStrength;
+                float timeVLStrength = (timeStrength * (MORNING_VL_STRENGTH - NOON_VL_STRENGTH) + NOON_VL_STRENGTH);
+                float heightDensity = clamp(exp(-(cameraPosition.y + WORLD_BASIC_HEIGHT) / 1200.0), 0.0, 1.0);
+                basicWeight *= timeVLStrength * heightDensity;
                 airScattering *= miePhase(LdotV, 0.6, 0.36);
 
-                volumetricFogScattering = VOLUMETRIC_FOG_DENSITY * (timeStrength * (VOLUMETRIC_FOG_MORNING_DENSITY - VOLUMETRIC_FOG_NOON_DENSITY) + VOLUMETRIC_FOG_NOON_DENSITY);
+                volumetricFogScattering = heightDensity * VOLUMETRIC_FOG_DENSITY * (timeStrength * (VOLUMETRIC_FOG_MORNING_DENSITY - VOLUMETRIC_FOG_NOON_DENSITY) + VOLUMETRIC_FOG_NOON_DENSITY);
             }
 
             float noise = bayer64Temporal(gl_FragCoord.xy);
@@ -89,22 +88,22 @@ void main() {
             #ifdef DISTANT_HORIZONS
                 maxAllowedDistance = dhRenderDistance * 1.01;
             #endif
-            maxAllowedDistance = pow2(maxAllowedDistance + 32.0) / (1.0 - min(waterWorldDir.y * waterWorldDir.y, 0.5));
-            maxAllowedDistance = min(maxAllowedDistance, 25000000.0 * exp(-12.0 * length(absorptionBeta)));
+            maxAllowedDistance = (maxAllowedDistance + 32.0) * inversesqrt(1.0 - min(waterWorldDir.y * waterWorldDir.y, 0.5));
+            maxAllowedDistance = min(maxAllowedDistance, 5000.0 * exp(-6.0 * length(absorptionBeta)));
 
             vec3 origin = gbufferModelViewInverse[3].xyz;
-            vec3 originShadowCoordNoBias = worldPosToShadowCoordNoBias(origin);
-            vec3 target = (waterWorldPos - origin) * sqrt(min(waterWorldDistance, maxAllowedDistance) / (waterWorldDistance + 1e-5));
-            vec3 targetShadowCoordNoBias = worldPosToShadowCoordNoBias(target + origin);
+            vec3 originShadowCoordNoDistort = worldPosToShadowCoordNoBias(origin);
+            vec3 target = (waterWorldPos - origin) * clamp(maxAllowedDistance * waterWorldDistanceInv, 0.0, 1.0);
+            vec3 targetShadowCoordNoDistort = worldPosToShadowCoordNoBias(target + origin);
             vec3 stepSize = target / (VL_SAMPLES + 1.0);
-            vec3 shadowCoordStepSize = (targetShadowCoordNoBias - originShadowCoordNoBias) / (VL_SAMPLES + 1.0);
+            vec3 shadowCoordStepSize = (targetShadowCoordNoDistort - originShadowCoordNoDistort) / (VL_SAMPLES + 1.0);
             vec3 samplePos = origin + stepSize * noise;
-            vec3 sampleShadowCoordNoBias = originShadowCoordNoBias + shadowCoordStepSize * noise;
+            vec3 sampleShadowCoordNoDistort = originShadowCoordNoDistort + shadowCoordStepSize * noise;
             float stepLength = length(stepSize);
 
             basicWeight *= stepLength;
             absorptionBeta *= stepLength * 1.44269502;
-            vec3 rayAbsorption = exp2(-absorptionBeta * noise) * basicWeight;
+            vec3 rayAbsorption = exp2(-absorptionBeta * noise) * basicWeight * 0.02;
             vec3 stepAbsorption = exp2(-absorptionBeta);
             vec3 skyScattering = (sunColor * 2.0 + skyColorUp) * eyeBrightnessSmooth.y / 1000.0;
             stepLength *= -0.01 * 1.44269502 / max(1e-5, basicWeight);
@@ -114,7 +113,7 @@ void main() {
                 #ifdef CLOUD_SHADOW
                     singleLight *= cloudShadow(samplePos, shadowDirection);
                 #endif
-                vec3 sampleShadowCoord = distortShadowCoord(sampleShadowCoordNoBias);
+                vec3 sampleShadowCoord = distortShadowCoord(sampleShadowCoordNoDistort);
                 if (all(lessThan(
                     abs(sampleShadowCoord - vec3(vec2(0.75), 0.5)),
                     vec3(vec2(0.25), 0.5))
@@ -154,9 +153,8 @@ void main() {
                 rayAbsorption *= stepAbsorption;
                 volumetricLight += singleLight;
                 samplePos += stepSize;
-                sampleShadowCoordNoBias += shadowCoordStepSize;
+                sampleShadowCoordNoDistort += shadowCoordStepSize;
             }
-            volumetricLight *= 0.02;
         }
     #endif
 

@@ -15,7 +15,6 @@ void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
     vec3 geoNormal = decodeNormal(texelFetch(colortex1, texel, 0).zw);
     vec2 gbufferData = unpack16Bit(texelFetch(colortex2, texel, 0).a);
-    float parallaxDepthDiff = -0.2 * PARALLAX_DEPTH * viewPos.z * gbufferData.y / max(1e-5, dot(viewPos, -geoNormal));
     float materialID = round(gbufferData.x * 255.0);
     bool isHand = materialID == MAT_HAND;
     vec3 parallaxViewPos = viewPos;
@@ -24,9 +23,9 @@ void main() {
         parallaxDepthOrigin = depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
         parallaxViewPos = screenToViewPos(texcoord, parallaxDepthOrigin);
     }
-    float parallaxViewDepth = parallaxViewPos.z + parallaxDepthDiff * normalize(parallaxViewPos).z;
+    float parallaxViewDepth = parallaxViewPos.z + 0.2 * PARALLAX_DEPTH * parallaxViewPos.z * gbufferData.y / max(1e-5, dot(parallaxViewPos, -geoNormal));
     float parallaxDepth = viewToScreenDepth(-parallaxViewDepth);
-    parallaxDepthDiff = (parallaxDepth - parallaxDepthOrigin) * 512.0;
+    float parallaxDepthDiff = (parallaxDepth - parallaxDepthOrigin) * 512.0;
 
     texBuffer3 = vec4(0.0, 0.0, 0.0, parallaxDepthDiff);
 }

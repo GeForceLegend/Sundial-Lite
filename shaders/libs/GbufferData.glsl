@@ -159,13 +159,15 @@ vec3 screenToViewPos(vec2 coord, float depth) {
     #ifdef TAA
         projPos.xy -= taaOffset;
     #endif
-    vec4 viewPos = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw) * projPos.xyzz + gbufferProjectionInverse[3];
-    return viewPos.xyz / viewPos.w;
+    vec3 viewDirection = vec3(vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * projPos.xy, gbufferProjectionInverse[3].z);
+    float viewDepth = gbufferProjectionInverse[2].w * projPos.z + gbufferProjectionInverse[3].w;
+    return viewDirection / viewDepth;
 }
 
 vec3 projectionToViewPos(vec3 projPos) {
-    vec4 viewPos = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw) * projPos.xyzz + gbufferProjectionInverse[3];
-    return viewPos.xyz / viewPos.w;
+    vec3 viewDirection = vec3(vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * projPos.xy, gbufferProjectionInverse[3].z);
+    float viewDepth = gbufferProjectionInverse[2].w * projPos.z + gbufferProjectionInverse[3].w;
+    return viewDirection / viewDepth;
 }
 
 vec3 viewToProjectionPos(vec3 viewPos) {

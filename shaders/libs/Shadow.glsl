@@ -6,9 +6,10 @@
     }
 
     vec3 distortShadowCoord(vec3 shadowCoord) {
-        float invCoordLen = inversesqrt(dot(shadowCoord.xy, shadowCoord.xy));
-        float shadowDistortion = invCoordLen / (4.0 * (1.0 - SHADOW_DISTORTION_STRENGTH) * invCoordLen + SHADOW_DISTORTION_STRENGTH * 4.0);
-        shadowCoord.xy = shadowCoord.xy * shadowDistortion + 0.75;
+        float clipLengthInv = inversesqrt(dot(shadowCoord.xy, shadowCoord.xy));
+        float shadowDistortion = log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0) * 0.25;
+        shadowCoord.xy *= clipLengthInv * shadowDistortion;
+        shadowCoord.xy = shadowCoord.xy + 0.75;
         return shadowCoord;
     }
 
@@ -42,10 +43,11 @@
 
     vec3 worldPosToShadowCoord(vec3 worldPos) {
         vec3 shadowCoord = mat3(shadowModelViewProjection) * worldPos + shadowModelViewProjection[3].xyz;
-        float shadowBias = 1.0 - SHADOW_DISTORTION_STRENGTH + length(shadowCoord.xy) * SHADOW_DISTORTION_STRENGTH;
-        shadowCoord.xy /= shadowBias;
-        shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
+        float clipLengthInv = inversesqrt(dot(shadowCoord.xy, shadowCoord.xy));
+        float shadowDistortion = log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0) * (1024 / realShadowMapResolution);
+        shadowCoord.xy *= clipLengthInv * shadowDistortion;
         shadowCoord.xy = shadowCoord.xy * 0.25 + 0.75;
+        shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
         return shadowCoord.xyz;
     }
 
@@ -59,7 +61,7 @@
         if (weatherStrength < 0.999) {
             vec3 sssShadowCoord = worldPosToShadowCoordNoBias(worldPos);
             float normalFactor = clamp(pow(NdotL, pow2(1.0 - min(0.3, smoothness))), 0.0, 1.0);
-            worldPos += geoNormal * ((dot(worldPos, worldPos) * 4e-5 + 2e-2) * (1.0 + sqrt(1.0 - NdotL))) * 4096.0 / realShadowMapResolution;
+            worldPos += geoNormal * ((length(worldPos) * 2e-3 + 2e-2) * (1.0 + sqrt(1.0 - NdotL))) * 4096.0 / realShadowMapResolution;
             vec3 shadowCoord = worldPosToShadowCoord(worldPos);
             NdotL = abs(dot(geoNormal, shadowDirection));
             NdotL = NdotL + (1.0 - NdotL) * clamp(porosity * 255.0 / 191.0 - 64.0 / 191.0, 0.0, 1.0);

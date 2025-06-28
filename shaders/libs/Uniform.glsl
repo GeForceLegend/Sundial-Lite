@@ -72,7 +72,7 @@ const float PI = 3.1415926535897;
 
 #ifdef SETTINGS
     float nightBrightness = mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);
-    vec3 sunColor = sunlightColor * (sunDirection.y > 0.0 ? 1.0 : nightBrightness);
+    vec3 sunColor = sunlightColor * clamp(nightBrightness + clamp(sunDirection.y * 1e+5, 0.0, 1.0), 0.0, 1.0);
 #endif
 
 #ifndef MC_GL_ARB_shading_language_packing

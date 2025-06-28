@@ -68,22 +68,19 @@ void main() {
             normal = waterWave(mcPos / 32.0, tangentDir);
             normal.xy += rippleNormal.xy * wetStrength;
             normal = normalize(tbnMatrix * normal);
-
-            vec3 viewDir = viewPos.xyz * (-viewDepthInv);
-            float NdotV = dot(normal, viewDir);
-            if (NdotV < 1e-6) {
-                vec3 edgeNormal = normal - viewDir * NdotV;
-                float weight = 1.0 - NdotV;
-                weight = sin(min(weight, PI / 2.0));
-                weight = clamp(min(max(NdotV, dot(viewDir, rawData.geoNormal)), 1.0 - weight), 0.0, 1.0);
-                normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
-            }
-            normal = mix(tbnMatrix[2], normal, exp2(-0.0002 / max(1e-6, dot(tbnMatrix[2], viewDir) * viewDepthInv)));
         } else
     #endif
     {
-        normal = mix(normal, tbnMatrix * rippleNormal, wetStrength);
+        normal = normalize(mix(normal, tbnMatrix * rippleNormal, wetStrength));
     }
+    vec3 viewDir = viewPos.xyz * (-viewDepthInv);
+    float NdotV = dot(normal, viewDir);
+    vec3 edgeNormal = normal - viewDir * NdotV;
+    float curveStart = dot(viewDir, tbnMatrix[2]);
+    float weight = clamp(curveStart - curveStart * exp(NdotV / curveStart - 1.0), 0.0, 1.0);
+    weight = max(NdotV, curveStart) - weight;
+    normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
+    normal = mix(tbnMatrix[2], normal, exp2(-0.0002 / max(1e-6, dot(tbnMatrix[2], viewDir) * viewDepthInv)));
     rawData.normal = normal;
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);

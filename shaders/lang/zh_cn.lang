@@ -124,6 +124,7 @@ option.SHADOW_DISTORTION_STRENGTH.comment=拉高此设置会提升近处阴影�
 option.sunPathRotation=太阳轨迹角度
 option.sunPathRotation.comment=太阳轨迹相较于原版的旋转角度
 option.PCSS_SAMPLES=软阴影采样数
+option.SCREEN_SPACE_SHADOW_SAMPLES=屏幕空间衔接阴影采样数
 option.PCSS=软阴影
 option.SCREEN_SPACE_SHADOW=屏幕空间衔接阴影
 option.TRANSPARENT_SHADOW=半透明物体阴影

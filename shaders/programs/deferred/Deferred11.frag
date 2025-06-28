@@ -17,6 +17,7 @@ uniform vec4 projShadowDirection;
 
 #define PCSS
 #define PCSS_SAMPLES 9 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 25 30 36]
+#define SCREEN_SPACE_SHADOW_SAMPLES 12 // [4 5 6 7 8 9 10 12 14 16 18 20 25 30 35 40 45 50]
 #define SCREEN_SPACE_SHADOW
 
 const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
@@ -37,7 +38,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec3 offset = mat3(shadowModelViewProjection) * worldOffsetDir;
         offset *= inversesqrt(max(1e-5, dot(offset.xy, offset.xy)));
         offset *= clamp(inversesqrt(dot(offset, offset)) * 3.333333, 0.0, 1.0) * 400.0 / shadowDistance / realShadowMapResolution;
-        offset.z *= 0.25;
+        offset.z *= 0.1;
         return offset;
     }
 
@@ -47,14 +48,15 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec3 result = vec3(0.0);
         if (weatherStrength < 0.999) {
             vec3 sssShadowCoord = worldPosToShadowCoordNoBias(worldPos);
-            float normalOffsetLen = (dot(worldPos, worldPos) * 4e-5 + 2e-2) * (1.0 + sqrt(1.0 - NdotL));
+            float normalOffsetLen = (length(worldPos) * 2e-3 + 2e-2) * (1.0 + sqrt(1.0 - NdotL));
             vec3 normalOffset = mat3(shadowModelViewProjection) * (worldGeoNormal * normalOffsetLen * 4096.0 / realShadowMapResolution);
             normalOffset.z *= 0.1;
 
             vec3 basicShadowCoordNoBias = sssShadowCoord + normalOffset;
-            float distortFactor = 1.0 - SHADOW_DISTORTION_STRENGTH + length(basicShadowCoordNoBias.xy) * SHADOW_DISTORTION_STRENGTH;
+            float clipLengthInv = inversesqrt(dot(basicShadowCoordNoBias.xy, basicShadowCoordNoBias.xy));
+            float distortFactor = clipLengthInv * log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0);
             vec3 basicShadowCoord = basicShadowCoordNoBias;
-            basicShadowCoord.st = basicShadowCoord.st * 0.25 / distortFactor + 0.75;
+            basicShadowCoord.st = basicShadowCoord.st * 0.25 * distortFactor + 0.75;
 
             float normalFactor = clamp(pow(NdotL, pow2(1.0 - smoothness * 0.3)), 0.0, 1.0);
             float basicSunlight = 8.0 * SUNLIGHT_BRIGHTNESS - 8.0 * SUNLIGHT_BRIGHTNESS * sqrt(weatherStrength);
@@ -84,7 +86,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                     offsetX += 1.0;
                 }
                 if (depthSum < 8.9999) {
-                    float filterRadius = min(avgOcclusionDepth * 40.0 / 9.0, 2.0) + distortFactor * 2.4 * shadowDistance / 120.0;
+                    float filterRadius = min(avgOcclusionDepth * 80.0 / 9.0, 4.0) + 0.02 * shadowDistance / distortFactor;
 
                     vec3 waterShadowCoord = basicShadowCoord - vec3(0.0, 0.5, 0.0);
                     vec3 caustic = waterCaustic(waterShadowCoord, worldPos, shadowDirection, 1.0);
@@ -183,22 +185,23 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         float porosityScale = (1.0 - clamp(porosity - 0.25, 0.0, 1.0));
         const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
         float absorptionBeta = -0.5 / max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5);
-        stepSize *= porosityScale * 0.003;
+        stepSize *= porosityScale * 0.003 * 12.0 / SCREEN_SPACE_SHADOW_SAMPLES;
 
-        targetCoord = originCoord + stepSize * 12.0;
+        targetCoord = originCoord + stepSize * SCREEN_SPACE_SHADOW_SAMPLES;
         vec3 targetViewPos = projectionToViewPos(targetCoord.xyz);
         float sampleLength = length(targetViewPos - viewPos);
         float absorption = exp2(absorptionBeta * porosityScale * sampleLength * 0.01) * step(0.25, porosity) * (1.0 - clamp(NdotL * 10.0, 0.0, 1.0) * porosityScale);
-        float shadowWeight = clamp(-NdotL * 10.0, 0.0, 1.0) * clamp(1.0 - 1.0 / viewLength / shadowDistance, 0.0, 1.0);
+        float shadowWeight = clamp(1.0 - abs(NdotL) * 10.0, 0.0, 1.0) * clamp(1.0 - 1.0 / viewLength / shadowDistance, 0.0, 1.0);
 
         vec4 sampleCoord = originCoord + noise.x * stepSize;
+        sampleCoord.zw -= 2e-7;
 
         float maximumThickness = 0.0005 * viewLength + 0.03 * float(materialID == MAT_HAND);
         float maximumThicknessDH = 0.05 * viewLength;
         float depthMultiplicator = mix(1.0, 1.0 / MC_HAND_DEPTH, float(materialID == MAT_HAND));
         sampleCoord.zw -= vec2(maximumThickness, maximumThicknessDH);
 
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < SCREEN_SPACE_SHADOW_SAMPLES; i++) {
             if (any(greaterThan(abs(sampleCoord.xy - 0.5), vec2(0.5))) || shadow < 0.01) {
                 break;
             }
@@ -323,7 +326,7 @@ void main() {
                 );
             vec2 noise = blueNoiseTemporal(texcoord).xy;
             #ifdef SCREEN_SPACE_SHADOW
-                shadow *= screenSpaceShadow(viewPos, dot(worldNormal, shadowDirection), viewLength, gbufferData.porosity, noise, gbufferData.materialID);
+                shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, gbufferData.materialID);
             #endif
             #ifdef CLOUD_SHADOW
                 shadow *= cloudShadow(worldPos, shadowDirection);

@@ -110,7 +110,10 @@ void main() {
         vec3 rawSolidColor = solidColor.rgb;
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         n -= 0.166666 * float(isTargetWater);
-        n = mix(n, f0ToIor(gbufferData.metalness) , step(0.001, gbufferData.metalness));
+        #ifdef LABPBR_F0
+            n = mix(n, f0ToIor(gbufferData.metalness) , step(0.001, gbufferData.metalness));
+            gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
+        #endif
         float LdotH = clamp(dot(worldNormal, -waterWorldDir), 0.0, 1.0);
         #ifdef DISTANT_HORIZONS
             solidDepth -= float(solidDepth > 1.0);

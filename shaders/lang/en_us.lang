@@ -116,6 +116,7 @@ option.SHADOW_DISTORTION_STRENGTH=Shadow distortion strength
 option.SHADOW_DISTORTION_STRENGTH.comment=Set higher for better closer shadow quality. Set lower for better distance shadow quality
 option.sunPathRotation=Sun path rotation
 option.PCSS_SAMPLES=PCSS samples
+option.SCREEN_SPACE_SHADOW_SAMPLES=Screen space shadow samples
 option.PCSS=Percentage closer soft shadow
 option.SCREEN_SPACE_SHADOW=Screen space shadow
 option.TRANSPARENT_SHADOW=Transparent shadow

@@ -131,7 +131,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
 
 #ifdef MC_NORMAL_MAP
     vec2 perPixelParallax(
-        vec2 coord, vec3 viewVector, vec2 albedoTexSize, ivec2 baseTexelCoord, int tileResolution, bool clampCoord,
+        vec2 coord, vec3 viewVector, vec2 albedoTexSize, vec2 atlasTexelSize, ivec2 baseTexelCoord, int tileResolution, bool clampCoord,
         inout vec3 parallaxTexNormal, inout float parallaxOffset
     ) {
         vec2 parallaxCoord = coord;
@@ -139,7 +139,6 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
         float sampleHeight = textureLod(normals, coord, 0.0).a;
 
         if (sampleHeight < 0.999) {
-            vec2 atlasTexelSize = 1.0 / albedoTexSize;
             vec3 stepDir = viewVector;
             stepDir.xy *= PARALLAX_DEPTH * tileResolution * 0.2;
             stepDir = normalize(stepDir);
@@ -181,9 +180,9 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
     }
 
     vec2 calculateParallax(
-        vec2 coord, vec3 viewVector, vec2 albedoTexSize, vec2 albedoTexelSize, ivec2 baseCoord, int textureResolution, bool clampCoord, inout float parallaxOffset
+        vec2 texelCoord, vec3 viewVector, vec2 albedoTexelSize, ivec2 baseCoord, int textureResolution, bool clampCoord, inout float parallaxOffset
     ) {
-        vec3 parallaxCoord = vec3(coord * albedoTexSize, 1.0);
+        vec3 parallaxCoord = vec3(texelCoord, 1.0);
         int tileBits = textureResolution - 1;
 
         #ifdef SMOOTH_PARALLAX

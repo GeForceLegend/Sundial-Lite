@@ -302,7 +302,7 @@ vec4 realisticCloud(
             float cloudDensity = 1.0 - cloudTransmittance;
             float cloudFalloff = exp(-startIntersection / CLOUD_REALISTIC_FADE_DISTANCE);
             cloudColor = cloudColor * cloudFalloff + (1.0 - cloudDensity * cloudFalloff) * atmosphere;
-            cloudColor = mix(baseColor, cloudColor, cloudDensity * clamp(exp(-startIntersection * 1.44269502 / CLOUD_REALISTIC_FADE_DISTANCE + 1.44269502), 0.0, 1.0));
+            cloudColor = mix(baseColor, cloudColor, cloudDensity * clamp(cloudFalloff * 2.7, 0.0, 1.0));
             result = vec4(cloudColor, cloudDensity * cloudFalloff);
         } else {
             cloudDepth = -1.0;
@@ -409,33 +409,32 @@ float cloudShadowRealistic(vec3 worldPos, vec3 shadowDir) {
     float startIntersection = mix(cloudIntersection.x, cloudIntersection.y, float(worldPos.y < cloudCenterHeight));
     bool hit = cloudIntersection.y >= 0.0 || worldPos.y < cloudCenterHeight;
 
-    float result = 1.0;
+    float cloudTransmittance = 1.0;
     if (hit) {
         vec3 wind = CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0) * 0.000015 / CLOUD_SCALE * 64.0;
 
         vec3 cloudPos = worldPos + vec3(cameraPosition.x + CLOUD_REALISTIC_OFFSET_X, 0.0, cameraPosition.z + CLOUD_REALISTIC_OFFSET_Z) + shadowDir * startIntersection;
         cloudPos += frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0);
-        float density = baseCloudShadowNoise(cloudPos.xz * 0.00001 / CLOUD_SCALE * 64.0);
+        cloudTransmittance = baseCloudShadowNoise(cloudPos.xz * 0.00001 / CLOUD_SCALE * 64.0);
         float weight = 1.0;
         cloudPos = cloudPos * CLOUD_REALISTIC_OCTAVE_SCALE * 0.000015 / CLOUD_SCALE * 64.0 + wind;
         for (int i = 0; i < CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES; i++) {
             weight *= CLOUD_REALISTIC_OCTAVE_FADE;
-            density += cloudShadowNoise(cloudPos) * weight;
+            cloudTransmittance += cloudShadowNoise(cloudPos) * weight;
             cloudPos = cloudPos * CLOUD_REALISTIC_OCTAVE_SCALE + wind;
         }
         const float weights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
         const float baseCloudAmount = CLOUD_REALISTIC_AMOUNT * CLOUD_REALISTIC_HARDNESS * 10.0;
         float cloudAmount = baseCloudAmount + weatherStrength * CLOUD_REALISTIC_RAIN_INCREAMENT * baseCloudAmount;
-        density = density / weights + cloudAmount - CLOUD_REALISTIC_HARDNESS * 10.0;
-        float thickness = sqrt(clamp(density / cloudAmount, 0.0, 1.0));
+        cloudTransmittance = cloudTransmittance / weights + cloudAmount - CLOUD_REALISTIC_HARDNESS * 10.0;
+        float thickness = sqrt(clamp(cloudTransmittance / cloudAmount, 0.0, 1.0));
 
-        float cloudTransmittance = exp2(thickness * clamp(density, 0.0, 1.0) * -CLOUD_REALISTIC_SAMPLE_DENSITY * CLOUD_REALISTIC_THICKNESS * 1.44269502);
+        cloudTransmittance = exp2(thickness * clamp(cloudTransmittance, 0.0, 1.0) * -CLOUD_REALISTIC_SAMPLE_DENSITY * CLOUD_REALISTIC_THICKNESS * 1.44269502);
 
         const float fadeFactor = -1.44269502 * 5.0;
         cloudTransmittance = mix(1.0, cloudTransmittance, clamp(exp2(startIntersection * fadeFactor / CLOUD_REALISTIC_FADE_DISTANCE - 0.5 * fadeFactor), 0.0, 1.0));
-        result = cloudTransmittance;
     }
-    return result;
+    return cloudTransmittance;
 }
 
 float cloudShadow(vec3 worldPos, vec3 shadowDir) {
