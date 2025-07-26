@@ -8,8 +8,13 @@ layout(location = 2) out vec4 gbufferData2;
 in vec4 texlmcoord;
 in vec3 color;
 
-flat in uvec3 blockData;
+flat in uint material;
+flat in uvec2 blockData;
 flat in vec3 viewNormal;
+flat in vec4 skyLightFix;
+flat in vec4 coordRange;
+
+#define SKYLIGHT_FIX
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -21,25 +26,27 @@ flat in vec3 viewNormal;
 void main() {
     GbufferData rawData;
 
-    vec2 atlasTexSize = vec2(atlasSize);
+    vec2 albedoTexSize = vec2(atlasSize);
     #ifdef MC_ANISOTROPIC_FILTERING
-        atlasTexSize *= spriteBounds.zw - spriteBounds.xy;
+        albedoTexSize *= spriteBounds.zw - spriteBounds.xy;
     #endif
-    vec4 viewTangent = vec4(unpackHalf2x16(blockData.y), unpackHalf2x16(blockData.z));
+    vec2 albedoTexelSize = uintBitsToFloat(0x7F000000u - floatBitsToUint(albedoTexSize));
+
+    vec4 viewTangent = vec4(unpackHalf2x16(blockData.x), unpackHalf2x16(blockData.y));
     float tangentLenInv = inversesqrt(dot(viewTangent.xyz, viewTangent.xyz));
     vec3 tangent = viewTangent.xyz * tangentLenInv;
     vec3 bitangent = cross(viewNormal, tangent) * signI(viewTangent.w);
     mat3 tbnMatrix = mat3(tangent, bitangent, viewNormal);
 
-    vec2 atlasTexelSize = uintBitsToFloat(0x7F000000u - floatBitsToUint(atlasTexSize));
-    ivec2 textureResolutionFixed = (0x3FC00000 - floatBitsToInt(vec2(tangentLenInv, abs(viewTangent.w)) * atlasTexelSize)) >> 23;
-    textureResolutionFixed = ivec2(1) << textureResolutionFixed;
-    int maxTextureResolution = max(textureResolutionFixed.x, textureResolutionFixed.y);
-    float textureResolutionInv = uintBitsToFloat(0x7F000000u - floatBitsToUint(float(maxTextureResolution)));
-    vec2 texelCoord = texlmcoord.st * atlasTexSize;
-    ivec2 baseCoordI = ivec2(floor(texelCoord * textureResolutionInv)) * maxTextureResolution;
-
     vec3 viewPos = screenToViewPos(gl_FragCoord.st * texelSize, gl_FragCoord.z);
+    vec3 worldPos = viewToWorldPos(viewPos) + cameraPosition;
+    vec2 lightLevel = texlmcoord.pq;
+    #ifdef SKYLIGHT_FIX
+        lightLevel.y = clamp(lightLevel.y + skyLightFix.w - dot(worldPos, skyLightFix.xyz), 0.0, 1.0);
+    #endif
+    vec2 pixelScale = vec2(tangentLenInv, abs(viewTangent.w)) * albedoTexelSize;
+    vec2 quadSize = 1.0 / coordRange.zw;
+
     float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
     vec3 viewDir = viewPos * (-viewDepthInv);
     float parallaxOffset = 0.0;
@@ -47,33 +54,30 @@ void main() {
     #ifdef PARALLAX
         vec3 parallaxTexNormal = vec3(0.0, 0.0, 1.0);
         #if WATER_TYPE == 0 && defined CAULDRON_WAVE
-            if ((blockData.x >> 1) != MAT_WATER)
+            if ((material >> 1) != MAT_WATER)
         #endif
         {
             vec3 textureViewer = -viewDir * tbnMatrix;
-            textureViewer.xy *= textureResolutionFixed * textureResolutionInv;
+            textureViewer.xy /= vec2(tangentLenInv, abs(viewTangent.w));
             #ifdef VOXEL_PARALLAX
-                texcoord = perPixelParallax(texlmcoord.st, textureViewer, atlasTexSize, atlasTexelSize, baseCoordI, maxTextureResolution, true, parallaxTexNormal, parallaxOffset);
+                texcoord = perPixelParallax(texlmcoord.st, textureViewer, albedoTexSize, albedoTexelSize, coordRange, parallaxTexNormal, parallaxOffset);
             #else
-                texcoord = calculateParallax(texelCoord, textureViewer, atlasTexelSize, baseCoordI, maxTextureResolution, true, parallaxOffset);
+                texcoord = calculateParallax(texlmcoord.st, textureViewer, coordRange, quadSize, albedoTexSize, albedoTexelSize, parallaxOffset);
             #endif
         }
     #endif
-    vec2 baseCoord = vec2(baseCoordI) * atlasTexelSize;
 
     vec2 texGradX = dFdx(texlmcoord.st);
     vec2 texGradY = dFdy(texlmcoord.st);
-    vec2 atlasTiles = atlasTexSize * textureResolutionInv;
-    vec2 tileCoordSize = maxTextureResolution * atlasTexelSize;
     #if ANISOTROPIC_FILTERING_QUALITY > 0 && !defined MC_ANISOTROPIC_FILTERING
-        vec4 albedoData = anisotropicFilter(texcoord, atlasTexSize, atlasTexelSize, texGradX, texGradY, baseCoord, tileCoordSize, atlasTiles, true);
+        vec4 albedoData = anisotropicFilter(texcoord, albedoTexSize, albedoTexelSize, texGradX, texGradY, coordRange, quadSize);
     #else
         vec4 albedoData = textureGrad(gtexture, texcoord, texGradX, texGradY);
     #endif
     if (albedoData.w < alphaTestRef) discard;
 
+    vec2 grad = min(abs(texGradX) , abs(texGradY));
     #ifdef MC_NORMAL_MAP
-        vec2 grad = min(abs(texGradX) , abs(texGradY));
         vec4 normalData = textureGrad(normals, texcoord, grad, grad);
         #ifdef LABPBR_TEXTURE_AO
             albedoData.rgb *= pow(normalData.b, 1.0 / 2.2);
@@ -82,14 +86,14 @@ void main() {
 
     albedoData.rgb *= color;
     rawData.albedo = albedoData;
-    rawData.lightmap = texlmcoord.pq;
+    rawData.lightmap = lightLevel;
     rawData.normal = tbnMatrix[2];
     rawData.geoNormal = tbnMatrix[2];
     rawData.smoothness = 0.0;
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;
     rawData.emissive = 0.0;
-    rawData.materialID = blockData.x >> 1;
+    rawData.materialID = material >> 1;
     rawData.parallaxOffset = parallaxOffset;
     rawData.depth = 0.0;
 
@@ -103,7 +107,7 @@ void main() {
     #endif
 
     #ifdef HARDCODED_EMISSIVE
-        float emissive = step(rawData.emissive, 1e-3) * (blockData.x & 1u);
+        float emissive = step(rawData.emissive, 1e-3) * (material & 1u);
         if (rawData.materialID == MAT_TORCH) {
             emissive *= 0.57 * length(rawData.albedo.rgb);
         }
@@ -114,7 +118,6 @@ void main() {
     #endif
     bool isCauldronWater = rawData.materialID == MAT_WATER;
     rawData.smoothness += float(rawData.smoothness < 1e-3 && isCauldronWater);
-    rawData.albedo.rgb *= 1.0 - 0.5 * float(isCauldronWater);
 
     #ifdef MOD_LIGHT_DETECTION
         if (rawData.lightmap.x > 0.99999) {
@@ -131,7 +134,6 @@ void main() {
         (0.5 * float(rawData.materialID == MAT_GRASS) + 0.7 * float(rawData.materialID == MAT_LEAVES || rawData.materialID == MAT_GLOWING_BERRIES));
 
     float wetStrength = 0.0;
-    vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
     vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
     if (rainyStrength > 0.0 && rawData.materialID != MAT_LAVA) {
         float porosity = rawData.porosity * 255.0 / 64.0;
@@ -145,17 +147,17 @@ void main() {
         #if RAIN_PUDDLE == 1
             wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);
         #elif RAIN_PUDDLE == 2
-            wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, porosity, outdoor);
+            wetStrength = groundWetStrength(worldPos, worldNormal.y, rawData.metalness, porosity, outdoor);
         #endif
         rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
 
         #ifdef RAIN_RIPPLES
-            rippleNormal = rainRippleNormal(mcPos);
+            rippleNormal = rainRippleNormal(worldPos);
             rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
         #endif
     }
 
-    vec2 atlasTexelOffset = 0.5 * atlasTexelSize;
+    vec2 quadTexelSize = albedoTexelSize * quadSize;
     if (
         true
         #ifdef PARALLAX_BASED_NORMAL
@@ -171,9 +173,9 @@ void main() {
         #ifdef CAULDRON_WAVE
             #if WATER_TYPE == 0
                 if (isCauldronWater) {
-                    rawData.albedo = vec4(color.rgb * 0.1, 1.0);
+                    rawData.albedo = vec4(color.rgb * 0.2, 1.0);
                     vec3 tangentDir = transpose(tbnMatrix) * viewPos.xyz;
-                    rawData.normal = waterWave(mcPos / 32.0, tangentDir);
+                    rawData.normal = waterWave(worldPos / 32.0, tangentDir);
                     rawData.normal.xy += rippleNormal.xy * wetStrength;
                     rawData.smoothness = 1.0;
                     rawData.metalness = 0.0;
@@ -185,7 +187,7 @@ void main() {
         #endif
         {
             #ifdef SMOOTH_NORMAL
-                normalData = bilinearNormalSample(normals, texcoord, baseCoord, tileCoordSize, atlasTiles, atlasTexSize, atlasTexelOffset, true);
+                normalData = bilinearNormalSample(normals, texcoord, coordRange, quadTexelSize, albedoTexSize);
             #endif
             #ifdef MC_NORMAL_MAP
                 rawData.normal = NORMAL_FORMAT(normalData.xyz);
@@ -211,13 +213,14 @@ void main() {
             #endif
         #else
             #ifdef SMOOTH_PARALLAX
-                rawData.normal = heightBasedNormal(normals, texcoord, baseCoord, atlasTexSize, atlasTexelOffset, maxTextureResolution, true);
+                rawData.normal = heightBasedNormal(normals, texcoord, coordRange, quadTexelSize, albedoTexSize, pixelScale);
             #else
                 const float eps = 1e-4;
-                float rD = textureGrad(normals, calculateOffsetCoord(texcoord + vec2(eps * tileCoordSize.x, 0.0), baseCoord, tileCoordSize, atlasTiles), grad, grad).a;
-                float lD = textureGrad(normals, calculateOffsetCoord(texcoord - vec2(eps * tileCoordSize.x, 0.0), baseCoord, tileCoordSize, atlasTiles), grad, grad).a;
-                float uD = textureGrad(normals, calculateOffsetCoord(texcoord + vec2(0.0, eps * tileCoordSize.y), baseCoord, tileCoordSize, atlasTiles), grad, grad).a;
-                float dD = textureGrad(normals, calculateOffsetCoord(texcoord - vec2(0.0, eps * tileCoordSize.y), baseCoord, tileCoordSize, atlasTiles), grad, grad).a;
+                vec2 tileCoord = (texcoord - coordRange.xy) * quadSize;
+                float rD = textureGrad(normals, clampCoordRange(tileCoord + vec2(eps * quadTexelSize.x, 0.0), coordRange), grad, grad).a;
+                float lD = textureGrad(normals, clampCoordRange(tileCoord - vec2(eps * quadTexelSize.x, 0.0), coordRange), grad, grad).a;
+                float uD = textureGrad(normals, clampCoordRange(tileCoord + vec2(0.0, eps * quadTexelSize.y), coordRange), grad, grad).a;
+                float dD = textureGrad(normals, clampCoordRange(tileCoord - vec2(0.0, eps * quadTexelSize.y), coordRange), grad, grad).a;
                 rawData.normal = vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3));
             #endif
             rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);

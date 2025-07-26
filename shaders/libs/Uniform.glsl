@@ -22,6 +22,10 @@ uniform vec3 sunlightColor;
 uniform vec3 cameraPosition;
 uniform vec3 cameraMovement;
 uniform vec3 shadowDirection;
+uniform vec3 shadowModelViewProj0;
+uniform vec3 shadowModelViewProj1;
+uniform vec3 shadowModelViewProj2;
+uniform vec3 shadowModelViewProj3;
 uniform vec4 spriteBounds;
 
 uniform sampler2D gtexture;
@@ -91,10 +95,5 @@ uint packHalf2x16(vec2 x) {
     uvec2 fracData = (data & 0x007FFFFFu) >> 13u;
     uvec2 result = signData | expData | fracData;
     return result.x | (result.y << 16u);
-}
-
-uint packUnorm4x8(vec4 x) {
-    uvec4 ux = uvec4(round(clamp(x, 0.0, 1.0) * 255.0));
-    return ux.x + (ux.y << 8u) + (ux.z << 16u) + (ux.w << 24u);
 }
 #endif

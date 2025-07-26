@@ -15,7 +15,6 @@ in vec2 texcoord;
 
 #ifdef SHADOW_AND_SKY
     in vec3 skyColorUp;
-    in mat4 shadowModelViewProjection;
 #else
     const vec3 skyColorUp = vec3(0.0);
 #endif
@@ -128,11 +127,9 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
     if (dot(totalWeight, totalWeight) > 1e-6) {
         vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);
         vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos + gbufferProjection[3].xyz, -viewPos.z);
-        vec2 screenEdgeAA = projIntersection(originProjPos, projDirection, vec2(1.0));
-        vec2 screenEdgeBB = projIntersection(originProjPos, projDirection, vec2(-1.0));
+        float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
 
         vec4 sampleCoord = vec4(originProjPos.xyz / originProjPos.w * 0.5 + 0.5, 0.0);
-        float traceLength = min(min(screenEdgeAA.x, screenEdgeAA.y), min(screenEdgeBB.x, screenEdgeBB.y));
         vec4 targetProjPos = originProjPos + projDirection * traceLength;
         vec4 targetCoord = vec4(targetProjPos.xyz / targetProjPos.w * 0.5 + 0.5, 0.0);
 
@@ -173,9 +170,9 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                     stepScale *= 0.5;
                 }
 
-                bool hitTerrain = abs(refinementCoord.z - sampleDepth) < 4e-4 && sampleDepth < 1.0;
+                bool hitTerrain = abs(refinementCoord.z - sampleDepth) < abs(stepSize.z) && sampleDepth < 1.0;
                 #ifdef DISTANT_HORIZONS
-                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoord.w - sampleDepthDH) < 4e-2 && sampleDepthDH < 1.0);
+                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoord.w - sampleDepthDH) < abs(stepSize.w) && sampleDepthDH < 1.0);
                 #endif
                 if (hitTerrain && clamp(refinementCoord.st, 0.0, 1.0) == refinementCoord.st) {
                     sampleCoord = refinementCoord;

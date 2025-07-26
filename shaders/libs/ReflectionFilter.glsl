@@ -7,7 +7,7 @@ vec4 reflectionFilter(float offset, bool useNoise) {
     if (originSmoothness < 0.9975 && originReflectionDepth > 1e-5) {
         float routhness = pow2(1.0 - originSmoothness);
         float roughnessInv = 100.0 / max(routhness, 1e-5);
-        vec2 coordOffset = vec2(4.0 * offset * clamp(routhness * 20.0, 0.0, 1.0) * (1.0 - exp(-sqrt(originReflectionDepth) * 50.0)));
+        vec2 coordOffset = vec2(4.0 * offset * clamp(routhness * 20.0, 0.0, 1.0) * (1.0 - exp(-originReflectionDepth * 1000.0)));
         if (useNoise) {
             coordOffset *= blueNoiseTemporal(texcoord).x + 0.5;
         }

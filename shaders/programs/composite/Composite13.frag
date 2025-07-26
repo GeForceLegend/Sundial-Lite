@@ -33,6 +33,9 @@ const float wetnessHalflife = 100.0;
 const float drynessHalflife = 100.0;
 const float eyeBrightnessHalflife = 1.0;
 
+const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
+const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0 360.0 400.0 480.0 560.0 640.0]
+
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
     vec3 bloomColor = vec3(0.0);

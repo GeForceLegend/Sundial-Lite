@@ -6,7 +6,6 @@ layout(location = 1) out vec4 texBuffer3;
 layout(location = 2) out vec4 texBuffer4;
 
 in float prevExposure;
-in float smoothCenterDepth;
 in vec2 texcoord;
 
 // #define APERTURE_CORROSION
@@ -18,22 +17,6 @@ in vec2 texcoord;
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
-
-#ifdef FOCUS_IGNORE_HAND
-    uniform float centerDepthSmooth;
-#endif
-
-float circleOfConfusionRadius(vec2 coord, float sampleDepth, float focusDepth) {
-    sampleDepth = max(0.31, sampleDepth);
-    float circleRadius = clamp(abs((focusDepth - sampleDepth) / (sampleDepth * (focusDepth - FOCAL_LENGTH))) * APERTURE_DIAMETER_SCALE / MAX_BLUR_RADIUS, 0.0, 1.0);
-    #ifndef HAND_DOF
-        float materialID = round(unpack16Bit(textureLod(colortex2, coord, 0.0).a).x * 255.0);
-        if (materialID == MAT_HAND) {
-            circleRadius = 0.0;
-        }
-    #endif
-    return circleRadius;
-}
 
 float getFarthestPrevDepth(vec2 coord) {
     float farthest = 0.0;
@@ -153,20 +136,8 @@ void main() {
 
     vec4 centerData = texelFetch(colortex3, texel, 0);
     #ifdef DEPTH_OF_FIELD
-        float focusDepth = far;
-        #if FOCUS_MODE == 0
-            const float minFocalLength = max(FOCAL_LENGTH + 0.01, 0.3);
-            #ifdef FOCUS_IGNORE_HAND
-                focusDepth = max(minFocalLength, screenToViewDepth(centerDepthSmooth));
-            #else
-                focusDepth = max(minFocalLength, screenToViewDepth(smoothCenterDepth));
-            #endif
-        #elif FOCUS_MODE == 1
-            focusDepth = MANUAL_FOCUS_DEPTH;
-        #endif
-
         float centerDepth = centerData.w;
-        float centerCoCRadius = circleOfConfusionRadius(texcoord, centerDepth, focusDepth);
+        float centerCoCRadius = clamp(abs(centerData.w), 0.0, 1.0);
 
         const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
         const float strength = 15.0 * MAX_BLUR_RADIUS;
@@ -203,7 +174,7 @@ void main() {
             vec3 sampleColor = sampleData.rgb;
             float sampleDepth = sampleData.w;
             float sampleRadiusScaled = sampleRadius * maxSampleRadius;
-            float sampleCoC = circleOfConfusionRadius(sampleCoord, sampleDepth, focusDepth);
+            float sampleCoC = clamp(abs(sampleData.w), 0.0, 1.0);
             #ifdef APERTURE_CORROSION
                 vec2 sampleOffset = sampleRadius * angle;
                 vec2 scale = screenScale * (sampleCoord - 0.5);

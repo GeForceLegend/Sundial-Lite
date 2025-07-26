@@ -14,8 +14,8 @@ in vec4 viewPos;
 in vec4 texlmcoord;
 in vec3 mcPos;
 
-flat in vec2 midCoord;
 flat in float materialID;
+flat in vec4 coordRange;
 
 #define ENTITY_TEXTURE_RESOLUTION 16 // [4 8 16 32 64 128 256 512 1024 2048 4096 8192]
 
@@ -32,8 +32,6 @@ flat in float materialID;
 #if defined PARTICLE && defined ENTITY_PARALLAX
     #undef ENTITY_PARALLAX
 #endif
-
-uniform sampler2D gaux1;
 
 #ifdef END_PORTAL
     const vec3[] COLORS = vec3[](
@@ -194,44 +192,34 @@ void main() {
         #endif
 
         vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
-        vec2 atlasTexelSize = uintBitsToFloat(0x7F000000u - floatBitsToUint(albedoTexSize));
-        vec2 texelCoord = texcoord * albedoTexSize;
-        ivec2 baseCoordI = ivec2(floor(texelCoord / ENTITY_TEXTURE_RESOLUTION)) * ENTITY_TEXTURE_RESOLUTION;
+        vec2 albedoTexelSize = 1.0 / albedoTexSize;
+        int textureResolutionFixed = (floatBitsToInt(max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y)) & 0x7FC00000) >> 22;
+        textureResolutionFixed = ((textureResolutionFixed >> 1) + (textureResolutionFixed & 1)) - 0x0000007F;
+        textureResolutionFixed = 1 << textureResolutionFixed;
+        float parallaxScale = float(textureResolutionFixed) / ENTITY_TEXTURE_RESOLUTION;
+        vec2 pixelScale = albedoTexelSize * parallaxScale / textureScale;
+        vec2 quadSize = 1.0 / coordRange.zw;
         #if (defined ENTITY_PARALLAX && defined PARALLAX) || ANISOTROPIC_FILTERING_QUALITY > 0
-            ivec2 textureResolutionFixed = (floatBitsToInt(textureScale * albedoTexSize) & 0x7FC00000) >> 22;
-            textureResolutionFixed = ((textureResolutionFixed >> 1) + (textureResolutionFixed & 1)) - 0x0000007F;
-            textureResolutionFixed = ivec2(1) << textureResolutionFixed;
-            textureScale = vec2(textureResolutionFixed) / ENTITY_TEXTURE_RESOLUTION;
-
-            bool clampCoord = textureSize(gaux1, 0) == albedoTexSize;
-            #ifdef MC_ANISOTROPIC_FILTERING
-                clampCoord = (spriteBounds.zw - spriteBounds.xy) * textureSize(gaux1, 0) == albedoTexSize;
-            #endif
             #ifdef ENTITY_PARALLAX
                 #ifdef PARALLAX
                     float parallaxOffset = 0.0;
                     vec3 parallaxTexNormal = vec3(0.0, 0.0, 1.0);
                     vec3 textureViewer = -viewDir * tbnMatrix;
-                    float parallaxScale = 1.0 / max(textureScale.x, textureScale.y);
-                    textureViewer.xy *= textureScale * parallaxScale;
+                    textureViewer.xy *= textureScale / parallaxScale;
                     #ifdef VOXEL_PARALLAX
                         texcoord = perPixelParallax(
-                            texcoord, textureViewer, albedoTexSize, atlasTexelSize, baseCoordI, ENTITY_TEXTURE_RESOLUTION, clampCoord, parallaxTexNormal, parallaxOffset
+                            texcoord, textureViewer, albedoTexSize, albedoTexelSize, coordRange, parallaxTexNormal, parallaxOffset
                         );
                     #else
-                        texcoord = calculateParallax(texelCoord, textureViewer, atlasTexelSize, baseCoordI, ENTITY_TEXTURE_RESOLUTION, clampCoord, parallaxOffset);
+                        texcoord = calculateParallax(texcoord, textureViewer, coordRange, quadSize, albedoTexSize, albedoTexelSize, parallaxOffset);
                     #endif
-                    rawData.parallaxOffset = clamp(parallaxOffset * parallaxScale, 0.0, 1.0);
+                    rawData.parallaxOffset = clamp(parallaxOffset / parallaxScale, 0.0, 1.0);
                 #endif
             #endif
         #endif
-        vec2 baseCoord = vec2(baseCoordI) * atlasTexelSize;
 
-        vec2 atlasTiles = albedoTexSize / ENTITY_TEXTURE_RESOLUTION;
-        vec2 atlasTexelOffset = 0.5 * atlasTexelSize;
-        vec2 tileCoordSize = 1.0 / atlasTiles;
         #if ANISOTROPIC_FILTERING_QUALITY > 0 && !defined PARTICLE && !defined MC_ANISOTROPIC_FILTERING
-            vec4 texAlbedo = anisotropicFilter(texcoord, albedoTexSize, atlasTexelSize, texGradX, texGradY, baseCoord, tileCoordSize, atlasTiles, clampCoord);
+            vec4 texAlbedo = anisotropicFilter(texcoord, albedoTexSize, albedoTexelSize, texGradX, texGradY, coordRange, quadSize);
         #else
             vec4 texAlbedo = textureGrad(gtexture, texcoord, texGradX, texGradY);
         #endif
@@ -318,6 +306,7 @@ void main() {
                 #endif
             }
 
+            vec2 quadTexelSize = albedoTexelSize * quadSize;
             #ifdef PARALLAX_BASED_NORMAL
                 #if defined ENTITY_PARALLAX && defined PARALLAX
                     if (rawData.parallaxOffset > 0.0
@@ -329,23 +318,14 @@ void main() {
                             rawData.normal = tbnMatrix * parallaxTexNormal;
                         #else
                             #ifdef SMOOTH_PARALLAX
-                                rawData.normal = heightBasedNormal(normals, texcoord, baseCoord, albedoTexSize, atlasTexelOffset, float(ENTITY_TEXTURE_RESOLUTION), clampCoord);
+                                rawData.normal = heightBasedNormal(normals, texcoord, coordRange, quadTexelSize, albedoTexSize, pixelScale);
                             #else
                                 const float eps = 1e-4;
-                                vec2 coordrD = texcoord + vec2(eps * tileCoordSize.x, 0.0);
-                                vec2 coordlD = texcoord - vec2(eps * tileCoordSize.x, 0.0);
-                                vec2 coorduD = texcoord + vec2(0.0, eps * tileCoordSize.y);
-                                vec2 coorddD = texcoord - vec2(0.0, eps * tileCoordSize.y);
-                                if (clampCoord) {
-                                    coordrD = calculateOffsetCoord(coordrD, baseCoord, tileCoordSize, atlasTiles);
-                                    coordlD = calculateOffsetCoord(coordlD, baseCoord, tileCoordSize, atlasTiles);
-                                    coorduD = calculateOffsetCoord(coorduD, baseCoord, tileCoordSize, atlasTiles);
-                                    coorddD = calculateOffsetCoord(coorddD, baseCoord, tileCoordSize, atlasTiles);
-                                }
-                                float rD = textureGrad(normals, coordrD, grad, grad).a;
-                                float lD = textureGrad(normals, coordlD, grad, grad).a;
-                                float uD = textureGrad(normals, coorduD, grad, grad).a;
-                                float dD = textureGrad(normals, coorddD, grad, grad).a;
+                                vec2 tileCoord = (texcoord - coordRange.xy) * quadTexelSize;
+                                float rD = textureGrad(normals, clampCoordRange(tileCoord + vec2(eps * quadTexelSize.x, 0.0), coordRange), grad, grad).a;
+                                float lD = textureGrad(normals, clampCoordRange(tileCoord - vec2(eps * quadTexelSize.x, 0.0), coordRange), grad, grad).a;
+                                float uD = textureGrad(normals, clampCoordRange(tileCoord + vec2(0.0, eps * quadTexelSize.y), coordRange), grad, grad).a;
+                                float dD = textureGrad(normals, clampCoordRange(tileCoord - vec2(0.0, eps * quadTexelSize.y), coordRange), grad, grad).a;
                                 rawData.normal = vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3));
                             #endif
                             rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
@@ -357,7 +337,7 @@ void main() {
             #endif
             {
                 #ifdef SMOOTH_NORMAL
-                    normalData = bilinearNormalSample(normals, texcoord, baseCoord, tileCoordSize, atlasTiles, albedoTexSize, atlasTexelOffset, clampCoord);
+                    normalData = bilinearNormalSample(normals, texcoord, coordRange, quadTexelSize, albedoTexSize);
                 #else
                 #endif
                 #ifdef MC_NORMAL_MAP

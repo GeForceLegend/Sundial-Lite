@@ -1,6 +1,9 @@
+const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
+const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
+
 #ifdef SHADOW_AND_SKY
     vec3 worldPosToShadowCoordNoBias(vec3 worldPos) {
-        vec3 shadowCoord = mat3(shadowModelViewProjection) * worldPos + shadowModelViewProjection[3].xyz;
+        vec3 shadowCoord = mat3(shadowModelViewProj0, shadowModelViewProj1, shadowModelViewProj2) * worldPos + shadowModelViewProj3;
         shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
         return shadowCoord.xyz;
     }
@@ -13,9 +16,10 @@
         return shadowCoord;
     }
 
-    float waterShadowHeight(vec2 depthData, float lod) {
-        float waterHeight = (1.0 - depthData.y) * 510.0 - 128.0 + depthData.x * 2.0;
-        return waterHeight;
+    vec3 worldPosToShadowCoord(vec3 worldPos) {
+        vec3 shadowCoord = worldPosToShadowCoordNoBias(worldPos);
+        shadowCoord = distortShadowCoord(shadowCoord);
+        return shadowCoord;
     }
 
     vec3 waterCaustic(vec3 waterShadowCoord, vec3 worldPos, vec3 lightDir, float lod) {
@@ -25,7 +29,7 @@
             float waterShadow = textureLod(shadowtex0, waterShadowCoord, lod);
             if (waterShadow < 1.0) {
                 vec3 casuticData = textureLod(shadowcolor0, waterShadowCoord.st, lod).xyz;
-                float waterHeight = waterShadowHeight(casuticData.yz, lod);
+                float waterHeight = (1.0 - casuticData.z) * 510.0 - 128.0 + casuticData.y * 2.0;
 
                 float waterShadowHeightInv = inversesqrt(0.4375 + 0.5625 * lightDir.y * lightDir.y);
                 vec3 mcPos = worldPos + cameraPosition;
@@ -39,16 +43,6 @@
         #endif
 
         return caustic;
-    }
-
-    vec3 worldPosToShadowCoord(vec3 worldPos) {
-        vec3 shadowCoord = mat3(shadowModelViewProjection) * worldPos + shadowModelViewProjection[3].xyz;
-        float clipLengthInv = inversesqrt(dot(shadowCoord.xy, shadowCoord.xy));
-        float shadowDistortion = log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0) * (1024 / realShadowMapResolution);
-        shadowCoord.xy *= clipLengthInv * shadowDistortion;
-        shadowCoord.xy = shadowCoord.xy * 0.25 + 0.75;
-        shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
-        return shadowCoord.xyz;
     }
 
     float basicSunlight = (1.0 - sqrt(weatherStrength)) * 8.0 * SUNLIGHT_BRIGHTNESS;

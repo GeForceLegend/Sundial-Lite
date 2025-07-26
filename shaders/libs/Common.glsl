@@ -111,22 +111,13 @@ float luminanceLiner(vec3 color) {
     return dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));
 }
 
-float luminanceExp(vec3 color) {
-    color = pow(color, vec3(2.2));
-    return pow(luminanceLiner(color), 1.0 / 2.2);
-}
-
-vec2 centralizeCoord(vec2 coord) {
-    return (floor(coord * screenSize) + 0.5) * texelSize;
-}
-
 float f0ToIor(float f0) {
     return pow2(sqrt(f0) + 1.0) / max(1e-6, 1.0 - f0);
 }
 
-float distribution(float NoH, float roughness) {
+float distribution(float NoH2, float roughness) {
     float r2 = roughness * roughness;
-    float k = r2 / pow2(1.0 + NoH * NoH * (r2 - 1.0));
+    float k = r2 / pow2(1.0 + NoH2 * (r2 - 1.0));
     return k * (1.0 / PI);
 }
 
@@ -138,9 +129,10 @@ float geometry(float NdotV, float NdotL, float a) {
 
 float fresnel(float LdotH, float LdotH2, float n) {
     float sinR2 = 1.0 - LdotH2;
-    float cosR = sqrt(clamp(1.0 - sinR2 / (n * n), 0.0, 1.0));
-    float r1 = (n * LdotH - cosR) / (n * LdotH + cosR);
-    float r2 = (n * cosR - LdotH) / (n * cosR + LdotH);
+    float n2 = n * n;
+    float nCosR = sqrt(max(n2 - sinR2, 0.0));
+    float r1 = (n2 * LdotH - nCosR) / (n2 * LdotH + nCosR);
+    float r2 = (nCosR - LdotH) / (nCosR + LdotH);
     float kR = clamp(0.5 * (r1 * r1 + r2 * r2), 0.0, 1.0);
     return kR;
 }
@@ -231,9 +223,9 @@ vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 albedo, flo
 
     float roughness = pow2(1.0 - smoothness);
     vec3 reflectDir = viewDir + 2.0 * NdotV * normal;
-    float NdotH = sqrt(clamp(dot(reflectDir, lightDir) * 1.0001 * 0.5 + 0.0001 * 0.5 + 0.5, 0.0, 1.0));
+    float NdotH2 = clamp(dot(reflectDir, lightDir) * 1.0001 * 0.5 + 0.0001 * 0.5 + 0.5, 0.0, 1.0);
 
-    float D = clamp(distribution(NdotH, roughness) / 300.0, 0.0, 1.0) * 300.0;
+    float D = clamp(distribution(NdotH2, roughness) / 300.0, 0.0, 1.0) * 300.0;
     float V = geometry(NdotV, NdotL, roughness);
     vec3 F = fresnelFull(LdotH, LdotH2, n, k, metalness) * metalColor(albedo, LdotH, metalness, 1.0);
     return D * V * F;

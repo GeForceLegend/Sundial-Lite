@@ -63,7 +63,7 @@ void main() {
         vec4 albedo = textureLod(gtexture, texcoord, 0.0);
         albedo *= color;
         vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
-        if (any(greaterThan(abs(centerTexelOffset), vec2(1024.0))) || fwidth(shadowOffset.x) > 0.0
+        if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || fwidth(shadowOffset.x) > 0.0
             #ifdef ALPHA_TEST
                 || albedo.w < alphaTestRef
             #endif

@@ -20,16 +20,19 @@ out vec4 viewPos;
 out vec4 texlmcoord;
 out vec3 mcPos;
 
-flat out vec2 midCoord;
 flat out float materialID;
+flat out vec4 coordRange;
 
 #ifdef ENTITIES
     uniform vec4 entityColor;
 #endif
 
+uniform sampler2D gaux1;
+
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/Materials.glsl"
+#include "/libs/Common.glsl"
 
 void main() {
     viewPos = gl_ModelViewMatrix * gl_Vertex;
@@ -39,8 +42,25 @@ void main() {
     color = gl_Color;
     texlmcoord.st = vec2(gl_TextureMatrix[0] * gl_MultiTexCoord0);
     texlmcoord.pq = gl_MultiTexCoord1.st / 240.0;
-    midCoord = mc_midTexCoord.st;
     materialID = MAT_OPAQUE;
+
+    vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
+    bool clampCoord = textureSize(gaux1, 0) == albedoTexSize;
+    #ifdef MC_ANISOTROPIC_FILTERING
+        clampCoord = (spriteBounds.zw - spriteBounds.xy) * textureSize(gaux1, 0) == albedoTexSize;
+    #endif
+    vec2 minCoord = vec2(0.0);
+    vec2 coordSize = vec2(1.0);
+    if (clampCoord) {
+        vec2 vertexCoord = gl_MultiTexCoord0.st;
+        if (min(abs(mc_midTexCoord.s - gl_MultiTexCoord0.s), abs(mc_midTexCoord.t - gl_MultiTexCoord0.t)) < 1e-6) {
+            vec2 vertexCoord = gl_MultiTexCoord0.st + (mc_midTexCoord.st - gl_MultiTexCoord0.st).ts;
+        }
+        vec2 coordToCenter = abs(vertexCoord - mc_midTexCoord.st);
+        minCoord = mc_midTexCoord.st - coordToCenter;
+        coordSize = coordToCenter * 2.0;
+    }
+    coordRange = vec4(minCoord, coordSize);
 
     #ifdef ENTITIES
         color.rgb = mix(color.rgb, entityColor.rgb, vec3(entityColor.a));

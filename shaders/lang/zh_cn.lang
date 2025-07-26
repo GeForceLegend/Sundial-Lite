@@ -41,10 +41,10 @@ screen.Experimental=实验性效果
 
 # Texture
 option.TEXTURE_RESOLUTION=纹理分辨率
-option.TEXTURE_RESOLUTION.comment=将此选项调整为当前资源包的分辨率或者自动检测. 影响视差和各向异性过滤的渲染
+option.TEXTURE_RESOLUTION.comment=暂时无作用
 value.TEXTURE_RESOLUTION.0=自动检测
 option.ENTITY_TEXTURE_RESOLUTION=实体纹理分辨率
-option.ENTITY_TEXTURE_RESOLUTION.comment=将此选项调整为当前资源包的分辨率. 无法自动检测实体的纹理分辨率. 影响视差和各向异性过滤的渲染
+option.ENTITY_TEXTURE_RESOLUTION.comment=将此选项调整为当前资源包的分辨率. 无法自动检测实体的纹理分辨率. 影响实体视差
 option.ANISOTROPIC_FILTERING_QUALITY=各向异性过滤
 option.ANISOTROPIC_FILTERING_QUALITY.comment=请使用此设置而非Optifine/显卡驱动内的各向异性过滤. Optifine/显卡驱动内的各向异性过滤会导致显示错误
 value.ANISOTROPIC_FILTERING_QUALITY.0=关

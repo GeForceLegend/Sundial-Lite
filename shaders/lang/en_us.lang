@@ -35,10 +35,10 @@ screen.Experimental=Experimental effect
 
 # Texture
 option.TEXTURE_RESOLUTION=Texture resolution
-option.TEXTURE_RESOLUTION.comment=Set to Auto or resolution of current resource pack. Affect parallax and anisotropic filter
+option.TEXTURE_RESOLUTION.comment=No effect currently
 value.TEXTURE_RESOLUTION.0=Auto
 option.ENTITY_TEXTURE_RESOLUTION=Entity texture resolution
-option.ENTITY_TEXTURE_RESOLUTION.comment=Set to resolution of current resource pack. Entity texture resolution cannot set to Auto. Affect parallax and anisotropic filter
+option.ENTITY_TEXTURE_RESOLUTION.comment=Set to resolution of current resource pack. Entity texture resolution cannot set to Auto. Affect entity parallax
 option.ANISOTROPIC_FILTERING_QUALITY=Anisotropic filter
 option.ANISOTROPIC_FILTERING_QUALITY.comment=Use this but not settings in Optifine / graphics card drivers. Settings in Optifine / graphics card drivers will cause issues
 value.ANISOTROPIC_FILTERING_QUALITY.0=off

@@ -11,7 +11,6 @@ layout(location = 10) in vec4 mc_Entity;
 
 out vec4 vTexlmCoord;
 out vec3 vColor;
-out vec3 vWorldPos;
 
 out uint vMaterial;
 
@@ -25,7 +24,6 @@ uniform vec3 cameraPositionFract;
 
 void main() {
     vec3 viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
-    vWorldPos = viewToWorldPos(viewPos) + cameraPosition;
 
     gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
     vColor = gl_Color.rgb * gl_Color.a;
@@ -69,6 +67,7 @@ void main() {
             materialID = MAT_CAULDRON;
             if (abs(gl_Color.r - gl_Color.b) > 1e-5) {
                 materialID = MAT_WATER;
+                vColor *= 0.5;
             }
         }
         else if (mc_Entity.x == 513 || abs(mc_Entity.x - 669) < 5.5) {

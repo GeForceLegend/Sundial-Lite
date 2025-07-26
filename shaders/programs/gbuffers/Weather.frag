@@ -16,21 +16,7 @@ in vec2 texcoord;
 #include "/libs/Common.glsl"
 #include "/libs/Atmosphere.glsl"
 #include "/libs/Cloud.glsl"
-
-#ifdef SHADOW_AND_SKY
-    const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
-    const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
-
-    vec3 worldPosToShadowCoord(vec3 worldPos) {
-        vec4 shadowCoord = shadowProjection * shadowModelView * vec4(worldPos, 1.0);
-        float clipLengthInv = inversesqrt(dot(shadowCoord.xy, shadowCoord.xy));
-        float shadowDistortion = log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0) * (1024 / realShadowMapResolution);
-        shadowCoord.xy *= clipLengthInv * shadowDistortion;
-        shadowCoord.xy = shadowCoord.xy * 0.25 + 0.75;
-        shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
-        return shadowCoord.xyz;
-    }
-#endif
+#include "/libs/Shadow.glsl"
 
 void main() {
     vec4 albedoData = texture(gtexture, texcoord) * color;

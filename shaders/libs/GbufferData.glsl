@@ -41,21 +41,18 @@ void decodeNormals(vec4 rawData, inout vec3 normal, inout vec3 geoNormal) {
     geoNormal = normalize(vec3(rawData.zw, normalZ.y));
 }
 
-vec2 pack4x8To2x16(vec4 rawData) {
-    uint data = packUnorm4x8(rawData.yxwz);
-    return vec2((data & 0x0000FFFFu) / 65535.0, (data >> 16u) / 65535.0);
+float pack2x8Bit(vec2 x) {
+    x = clamp(x, 0.0, 1.0);
+    x = x * vec2(255.0 / 256.0) + vec2(256.5 / 256.0);
+    uvec2 u = floatBitsToUint(x);
+    uint p = (u.x & 0xFFFF8000u) + ((u.y & 0x007F8000u) >> 8) + 0x00000020u;
+    return clamp(uintBitsToFloat(p) * 65536.0 / 65535.0 - 65536.0 / 65535.0, 0.0, 1.0);
 }
 
-vec2 unpack16Bit(float rawData) {
-    rawData *= 65535.0;
-
-    vec2 data;
-    data.x = floor(rawData / 256.0);
-    data.y = rawData - data.x * 256.0;
-
-    data = clamp(data / 255.0, vec2(0.0), vec2(1.0));
-
-    return data;
+vec2 unpack16Bit(float x) {
+    uint u = floatBitsToUint(x * 65535.0 / 65536.0 + 65536.5 / 65536.0);
+    uvec2 p = (uvec2(u, u << 8) & 0x007f8000u) | 0x3f800000u;
+    return uintBitsToFloat(p) * 256.0 / 255.0 - 256.0 / 255.0;
 }
 
 void LabPBR(inout GbufferData dataSet, vec4 specularData) {
@@ -120,8 +117,10 @@ void packUpGbufferDataSolid(in GbufferData rawData, out vec4 data0, out vec4 dat
 
     // colortex2 RGBA16
     data2 = vec4(
-        pack4x8To2x16(vec4(rawData.lightmap.x, rawData.lightmap.y, rawData.smoothness, rawData.metalness)),
-        pack4x8To2x16(vec4(rawData.porosity, rawData.emissive, rawData.materialID / 255.0, rawData.parallaxOffset))
+        pack2x8Bit(vec2(rawData.lightmap.x, rawData.lightmap.y)),
+        pack2x8Bit(vec2(rawData.smoothness, rawData.metalness)),
+        pack2x8Bit(vec2(rawData.porosity, rawData.emissive)),
+        pack2x8Bit(vec2(rawData.materialID / 255.0, rawData.parallaxOffset))
     );
 }
 
@@ -212,13 +211,19 @@ float viewToScreenDepth(float depth) {
 }
 
 vec2 projIntersection(vec4 origin, vec4 direction, vec2 targetCoord) {
-    vec2 intersection = (targetCoord * origin.ww - origin.xy) / (direction.xy - targetCoord * direction.ww);
+    return (targetCoord * origin.ww - origin.xy) / (direction.xy - targetCoord * direction.ww);
+}
+
+float projIntersectionScreenEdge(vec4 origin, vec4 direction) {
+    uvec2 intersectionAA = floatBitsToUint(projIntersection(origin, direction, vec2(1.0)));
+    uvec2 intersectionBB = floatBitsToUint(projIntersection(origin, direction, vec2(-1.0)));
+    uint intersection = min(min(intersectionAA.x, intersectionAA.y), min(intersectionBB.x, intersectionBB.y));
     float depthLimit = far;
     #ifdef DISTANT_HORIZONS
         depthLimit = dhRenderDistance * 1.01;
     #endif
-    intersection = mix(intersection, vec2(depthLimit + 32.0), step(intersection, vec2(0.0)));
-    return intersection;
+    intersection = min(intersection, floatBitsToUint(depthLimit + 32.0));
+    return uintBitsToFloat(intersection);
 }
 
 #ifdef DISTANT_HORIZONS

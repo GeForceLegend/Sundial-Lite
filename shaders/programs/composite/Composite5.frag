@@ -7,17 +7,12 @@ in vec2 texcoord;
 
 #define REFRACTION_STRENGTH 1.0 // [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.5 6.0 6.5 7.0 7.5 8.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0]
 
-const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
-const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
-const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0 360.0 400.0 480.0 560.0 640.0]
-
 #include "/settings/CloudSettings.glsl"
 #include "/settings/GlobalSettings.glsl"
 #include "/settings/VolumetricLightSettings.glsl"
 
 #ifdef SHADOW_AND_SKY
     in vec3 skyColorUp;
-    in mat4 shadowModelViewProjection;
 #else
     const vec3 skyColorUp = vec3(0.0);
 #endif
@@ -171,13 +166,13 @@ void main() {
                     waterWorldPos, mat3(gbufferModelViewInverse) * gbufferData.geoNormal, NdotL, shadowLightFactor,
                     gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, 0.0
                 );
-                #ifdef CLOUD_SHADOW
-                    shadow *= cloudShadow(waterWorldPos, shadowDirection);
-                #endif
                 shadow *= sunlightSpecular(
                     waterWorldDir, shadowDirection, worldNormal, gbufferData.albedo.rgb,
                     gbufferData.smoothness * 0.995, gbufferData.metalness, NdotL, LdotH, vec3(n), vec3(0.0)
                 );
+                #ifdef CLOUD_SHADOW
+                    shadow *= cloudShadow(waterWorldPos, shadowDirection);
+                #endif
                 shadow *= sunColor;
                 solidColor.rgb += shadow;
             }

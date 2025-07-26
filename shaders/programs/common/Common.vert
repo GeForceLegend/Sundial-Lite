@@ -1,9 +1,5 @@
 out vec2 texcoord;
 
-#ifdef SHADOW_MATRIX
-    out mat4 shadowModelViewProjection;
-#endif
-
 #ifdef AVERAGE_EXPOSURE
     out float prevExposure;
 #endif
@@ -27,10 +23,6 @@ void main() {
     ivec2 offset = ivec2((min(gl_VertexID, 2) & 1) << 1, gl_VertexID & 2);
     texcoord = offset;
     gl_Position = vec4(offset * 2.0 - 1.0, 0.0, 1.0);
-
-    #ifdef SHADOW_MATRIX
-        shadowModelViewProjection = shadowProjection * shadowModelView;
-    #endif
 
     #ifdef AVERAGE_EXPOSURE
         prevExposure = texelFetch(colortex7, ivec2(0), 0).w;

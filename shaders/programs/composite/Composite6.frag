@@ -5,11 +5,6 @@ layout(location = 0) out vec4 texBuffer3;
 
 in vec2 texcoord;
 in vec3 skyColorUp;
-in mat4 shadowModelViewProjection;
-
-const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
-const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
-const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0 360.0 400.0 480.0 560.0 640.0]
 
 #include "/settings/CloudSettings.glsl"
 #include "/settings/GlobalSettings.glsl"
@@ -59,9 +54,9 @@ void main() {
                 waterViewPos = screenToViewPos(texcoord, waterDepth);
             }
             float waterViewDepth = length(waterViewPos);
-            vec3 waterWorldPos = viewToWorldPos(waterViewPos);
+            vec3 waterWorldPos = mat3(gbufferModelViewInverse) * waterViewPos;
             float waterWorldDistanceInv = inversesqrt(dot(waterViewPos, waterViewPos));
-            vec3 waterWorldDir = waterWorldDistanceInv * (waterWorldPos - gbufferModelViewInverse[3].xyz);
+            vec3 waterWorldDir = waterWorldDistanceInv * waterWorldPos;
 
             float basicWeight = 1.0;
             vec3 absorptionBeta = vec3(blindnessFactor + 0.003);
@@ -69,7 +64,7 @@ void main() {
             float volumetricFogScattering = 0.0;
             float airScattering = VL_STRENGTH;
             if (isEyeInWater == 1) {
-                absorptionBeta += waterAbsorptionBeta;
+                absorptionBeta = waterAbsorptionBeta + 0.003;
                 basicWeight *= 10.0 * WATER_VL_STRENGTH;
                 airScattering *= rayleighPhase(LdotV);
             }
@@ -88,17 +83,12 @@ void main() {
             #ifdef DISTANT_HORIZONS
                 maxAllowedDistance = dhRenderDistance * 1.01;
             #endif
-            maxAllowedDistance = (maxAllowedDistance + 32.0) * inversesqrt(1.0 - min(waterWorldDir.y * waterWorldDir.y, 0.5));
+            maxAllowedDistance = (maxAllowedDistance + 32.0) * inversesqrt(max(waterWorldDir.y * waterWorldDir.y, 0.5));
             maxAllowedDistance = min(maxAllowedDistance, 5000.0 * exp(-6.0 * length(absorptionBeta)));
 
-            vec3 origin = gbufferModelViewInverse[3].xyz;
-            vec3 originShadowCoordNoDistort = worldPosToShadowCoordNoBias(origin);
-            vec3 target = (waterWorldPos - origin) * clamp(maxAllowedDistance * waterWorldDistanceInv, 0.0, 1.0);
-            vec3 targetShadowCoordNoDistort = worldPosToShadowCoordNoBias(target + origin);
+            vec3 target = waterWorldPos * clamp(maxAllowedDistance * waterWorldDistanceInv, 0.0, 1.0);
             vec3 stepSize = target / (VL_SAMPLES + 1.0);
-            vec3 shadowCoordStepSize = (targetShadowCoordNoDistort - originShadowCoordNoDistort) / (VL_SAMPLES + 1.0);
-            vec3 samplePos = origin + stepSize * noise;
-            vec3 sampleShadowCoordNoDistort = originShadowCoordNoDistort + shadowCoordStepSize * noise;
+            vec3 samplePos = gbufferModelViewInverse[3].xyz + stepSize * noise;
             float stepLength = length(stepSize);
 
             basicWeight *= stepLength;
@@ -113,7 +103,7 @@ void main() {
                 #ifdef CLOUD_SHADOW
                     singleLight *= cloudShadow(samplePos, shadowDirection);
                 #endif
-                vec3 sampleShadowCoord = distortShadowCoord(sampleShadowCoordNoDistort);
+                vec3 sampleShadowCoord = worldPosToShadowCoord(samplePos);
                 if (all(lessThan(
                     abs(sampleShadowCoord - vec3(vec2(0.75), 0.5)),
                     vec3(vec2(0.25), 0.5))
@@ -153,7 +143,6 @@ void main() {
                 rayAbsorption *= stepAbsorption;
                 volumetricLight += singleLight;
                 samplePos += stepSize;
-                sampleShadowCoordNoDistort += shadowCoordStepSize;
             }
         }
     #endif

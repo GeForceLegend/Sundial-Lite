@@ -9,22 +9,14 @@ vec3 rainRippleNormal(vec3 position) {
     return normal;
 }
 
-ivec2 calculateOffsetTexel(ivec2 texel, ivec2 baseCoord, int tileBits) {
-    return baseCoord + (texel & tileBits);
-}
-
-vec2 calculateOffsetCoord(vec2 coord, vec2 baseCoord, vec2 tileCoordSize, vec2 atlasTiles) {
-    return baseCoord + min(coord - tileCoordSize * floor(coord * atlasTiles), tileCoordSize - 1e-6);
+vec2 clampCoordRange(vec2 coord, vec4 coordRange) {
+    return coordRange.xy + fract(coord) * coordRange.zw;
 }
 
 #ifdef MC_NORMAL_MAP
-    vec4 heightGather(sampler2D normalSampler, ivec2 texel, ivec2 baseCoord, int tileBits, bool clampCoord) {
-        ivec2 texel00 = texel;
-        ivec2 texel11 = texel00 + 1;
-        if (clampCoord) {
-            texel00 = calculateOffsetTexel(texel00, baseCoord, tileBits);
-            texel11 = calculateOffsetTexel(texel11, baseCoord, tileBits);
-        }
+    vec4 heightGather(sampler2D normalSampler, vec2 coord, vec2 coord00, vec4 coordRange, vec2 quadTexelSize, vec2 normalTexSize) {
+        ivec2 texel00 = ivec2(coord00);
+        ivec2 texel11 = ivec2(clampCoordRange(coord + 0.499 * quadTexelSize, coordRange) * normalTexSize);
         vec4 sh = vec4(
             texelFetch(normalSampler, ivec2(texel00.x, texel11.y), 0).a,
             texelFetch(normalSampler, texel11, 0).a,
@@ -35,37 +27,35 @@ vec2 calculateOffsetCoord(vec2 coord, vec2 baseCoord, vec2 tileCoordSize, vec2 a
         return sh;
     }
 
-    float bilinearHeightSample(sampler2D normalSampler, vec2 coord, ivec2 baseCoord, int tileBits, bool clampCoord) {
-        ivec2 texel = ivec2(floor(coord));
-        vec4 sh = heightGather(normalSampler, texel, baseCoord, tileBits, clampCoord);
-        vec2 fpc = fract(coord);
+    float bilinearHeightSample(sampler2D normalSampler, vec2 coord, vec4 coordRange, vec2 quadTexelSize, vec2 normalTexSize) {
+        vec2 coord00 = clampCoordRange(coord - 0.499 * quadTexelSize, coordRange) * normalTexSize;
+        vec4 sh = heightGather(normalSampler, coord, coord00, coordRange, quadTexelSize, normalTexSize);
+        vec2 fpc = fract(coord00);
         vec2 x = mix(sh.wx, sh.zy, vec2(fpc.x));
         return mix(x.x, x.y, fpc.y);
     }
 
-    vec3 heightBasedNormal(sampler2D normalSampler, vec2 coord, vec2 baseCoord, vec2 normalTexSize, vec2 textureTexel, float textureResolution, bool clampCoord) {
-        coord = coord * normalTexSize - 0.5;
-        ivec2 texel = ivec2(floor(coord - 0.5));
-        vec4 sh = heightGather(normalSampler, texel, ivec2(baseCoord * normalTexSize), int(textureResolution) - 1, clampCoord);
+    vec3 heightBasedNormal(sampler2D normalSampler, vec2 coord, vec4 coordRange, vec2 quadTexelSize, vec2 normalTexSize, vec2 pixelScale) {
+        vec2 tileCoord = (coord - coordRange.xy) / coordRange.zw;
+        vec2 coord00 = clampCoordRange(tileCoord - 0.499 * quadTexelSize, coordRange) * normalTexSize;
+        vec4 sh = heightGather(normalSampler, tileCoord, coord00, coordRange, quadTexelSize, normalTexSize);
 
-        vec2 fpc = fract(coord);
+        vec2 fpc = fract(coord00);
         sh.y = sh.x + sh.z - sh.w - sh.y;
         vec3 normal = vec3(
             sh.y * fpc.yx + (sh.w - sh.zx),
-            (8.0 / PARALLAX_DEPTH) / textureResolution
+            (5.0 / PARALLAX_DEPTH)
         );
+        normal.xy /= pixelScale;
 
         return normal;
     }
 
-    vec4 bilinearNormalSample(sampler2D normalSampler, vec2 coord, vec2 baseCoord, vec2 tileCoordSize, vec2 atlasTiles, vec2 normalTexSize, vec2 textureTexel, bool clampCoord) {
+    vec4 bilinearNormalSample(sampler2D normalSampler, vec2 coord, vec4 coordRange, vec2 quadTexelSize, vec2 normalTexSize) {
         vec4[4] sh;
-        vec2 coord00 = coord + vec2(-textureTexel.x, -textureTexel.y);
-        vec2 coord11 = coord + vec2( textureTexel.x,  textureTexel.y);
-        if (clampCoord) {
-            coord00 = calculateOffsetCoord(coord00, baseCoord, tileCoordSize, atlasTiles);
-            coord11 = calculateOffsetCoord(coord11, baseCoord, tileCoordSize, atlasTiles);
-        }
+        vec2 tileCoord = (coord - coordRange.xy) / coordRange.zw;
+        vec2 coord00 = clampCoordRange(tileCoord - 0.5 * quadTexelSize, coordRange);
+        vec2 coord11 = clampCoordRange(tileCoord + 0.5 * quadTexelSize, coordRange);
         sh = vec4[4](
             textureLod(normalSampler, vec2(coord00.x, coord11.y), 0.0),
             textureLod(normalSampler, coord11, 0.0),
@@ -81,7 +71,7 @@ vec2 calculateOffsetCoord(vec2 coord, vec2 baseCoord, vec2 tileCoordSize, vec2 a
     }
 #endif
 
-vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX, vec2 texGradY, vec2 baseCoord, vec2 tileCoordSize, vec2 atlasTiles, bool clampCoord) {
+vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX, vec2 texGradY, vec4 coordRange, vec2 quadSize) {
     //https://www.shadertoy.com/view/4lXfzn
     mat2 qd = inverse(mat2(texGradX * albedoTexSize, texGradY * albedoTexSize));
     qd = transpose(qd) * qd;
@@ -98,18 +88,14 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
     #if ANISOTROPIC_FILTERING_QUALITY > 1
         vec2 A = vec2(qd[0][1], qd[0][0] - V);
         A *= inversesqrt(V * dot(A, A)) / ANISOTROPIC_FILTERING_QUALITY;
-        A = max(vec2(0.0), abs(A)) * atlasTexelSize;
+        A = max(vec2(0.0), abs(A)) * atlasTexelSize * quadSize;
 
-        vec2 sampleCoord = coord + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * A;
+        vec2 sampleCoord = (coord - coordRange.xy) * quadSize + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * A;
         vec4 albedo = vec4(0.0);
         float opaque = 0.0;
         for (int i = 0; i < ANISOTROPIC_FILTERING_QUALITY; i++) {
             sampleCoord += A;
-            vec2 sampleCoordClamped = sampleCoord;
-            if (clampCoord) {
-                sampleCoordClamped = calculateOffsetCoord(sampleCoordClamped, baseCoord, tileCoordSize, atlasTiles);
-            }
-            vec4 albedoSample = textureLod(gtexture, sampleCoordClamped, l);
+            vec4 albedoSample = textureLod(gtexture, clampCoordRange(sampleCoord, coordRange), l);
             albedo.rgb += albedoSample.rgb * albedoSample.a;
             albedo.a += albedoSample.a;
             opaque = max(opaque, albedoSample.a);
@@ -120,9 +106,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
     #else
         vec2 noise = blueNoiseTemporal(gl_FragCoord.st * texelSize).xy - 0.5;
         vec2 sampleCoord = coord + noise.x * texGradX + noise.y * texGradY;
-        if (clampCoord) {
-            sampleCoord = calculateOffsetCoord(sampleCoord, baseCoord, tileCoordSize, atlasTiles);
-        }
+        sampleCoord = clampCoordRange((sampleCoord - coordRange.xy) * quadSize, coordRange);
         vec4 albedo = textureLod(gtexture, sampleCoord, l);
     #endif
 
@@ -131,27 +115,29 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
 
 #ifdef MC_NORMAL_MAP
     vec2 perPixelParallax(
-        vec2 coord, vec3 viewVector, vec2 albedoTexSize, vec2 atlasTexelSize, ivec2 baseTexelCoord, int tileResolution, bool clampCoord,
+        vec2 coord, vec3 viewVector, vec2 albedoTexSize, vec2 atlasTexelSize, vec4 coordRange,
         inout vec3 parallaxTexNormal, inout float parallaxOffset
     ) {
         vec2 parallaxCoord = coord;
         parallaxOffset = 0.0;
         float sampleHeight = textureLod(normals, coord, 0.0).a;
+        sampleHeight += clamp(1.0 - sampleHeight * 1e+10, 0.0, 1.0);
 
         if (sampleHeight < 0.999) {
             vec3 stepDir = viewVector;
-            stepDir.xy *= PARALLAX_DEPTH * tileResolution * 0.2;
+            stepDir.xy *= PARALLAX_DEPTH * albedoTexSize * 0.2;
             stepDir = normalize(stepDir);
             stepDir.z = -stepDir.z;
 
             coord *= albedoTexSize;
+            ivec2 basicTexel = ivec2(floor(coordRange.xy * albedoTexSize));
             ivec2 sampleTexel = ivec2(floor(coord));
-            ivec2 basicTexel = baseTexelCoord;
             vec2 stepLength = abs(1.0 / stepDir.xy);
             ivec2 dirSigned = (floatBitsToInt(stepDir.xy) >> 31) * 2 + 1;
             vec2 nextLength = (dirSigned * (0.5 - coord + sampleTexel) + 0.5) * stepLength;
-            int tileBits = tileResolution - 1;
+            ivec2 tileSize = ivec2(round(coordRange.zw * albedoTexSize));
             sampleHeight = 1.0 - sampleHeight;
+            sampleTexel -= basicTexel;
 
             for (int i = 0; i < PARALLAX_QUALITY; i++) {
                 float rayLength = min(nextLength.x, nextLength.y);
@@ -163,10 +149,9 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
                 ivec2 nextPixel = (floatBitsToInt(vec2(rayLength) - nextLength) >> 31) + 1;
                 nextLength += nextPixel * stepLength;
                 sampleTexel += nextPixel * dirSigned;
-                if (clampCoord) {
-                    sampleTexel = basicTexel + (sampleTexel & tileBits);
-                }
-                sampleHeight = texelFetch(normals, sampleTexel, 0).a;
+                sampleTexel = sampleTexel % tileSize;
+                sampleHeight = texelFetch(normals, sampleTexel + basicTexel, 0).a;
+                sampleHeight += clamp(1.0 - sampleHeight * 1e+10, 0.0, 1.0);
                 sampleHeight = 1.0 - sampleHeight;
                 if (rayHeight > sampleHeight) {
                     parallaxOffset = rayHeight;
@@ -174,38 +159,38 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
                     break;
                 }
             }
-            parallaxCoord = (sampleTexel + vec2(0.5)) * atlasTexelSize;
+            parallaxCoord = (sampleTexel + basicTexel + vec2(0.5)) * atlasTexelSize;
         }
         return parallaxCoord;
     }
 
     vec2 calculateParallax(
-        vec2 texelCoord, vec3 viewVector, vec2 albedoTexelSize, ivec2 baseCoord, int textureResolution, bool clampCoord, inout float parallaxOffset
+        vec2 coord, vec3 viewVector, vec4 coordRange, vec2 quadSize, vec2 albedoTexSize, vec2 albedoTexelSize, inout float parallaxOffset
     ) {
-        vec3 parallaxCoord = vec3(texelCoord, 1.0);
-        int tileBits = textureResolution - 1;
+        vec2 quadTexelSize = albedoTexelSize * quadSize;
 
+        vec3 parallaxCoord = vec3(coord, 1.0);
+
+        vec2 firstCoord = (coord - coordRange.xy) * quadSize;
         #ifdef SMOOTH_PARALLAX
-            float startHeight = bilinearHeightSample(normals, parallaxCoord.st - 0.5, baseCoord, tileBits, clampCoord);
+            float startHeight = bilinearHeightSample(normals, firstCoord, coordRange, quadTexelSize, albedoTexSize);
         #else
             float startHeight = texelFetch(normals, ivec2(parallaxCoord.st), 0).a;
             startHeight += clamp(1.0 - startHeight * 1e+10, 0.0, 1.0);
         #endif
 
         if (startHeight < 1.0) {
+            parallaxCoord.st = firstCoord;
             vec3 stepSize = viewVector / (PARALLAX_QUALITY * abs(viewVector.z));
-            stepSize.xy *= textureResolution * PARALLAX_DEPTH * 0.2;
+            stepSize.xy *= PARALLAX_DEPTH * 0.2 * quadSize;
             float stepScale = 2.0 / PARALLAX_QUALITY;
 
-            #ifdef SMOOTH_PARALLAX
-                parallaxCoord.st -= 0.5;
-            #endif
             for (int i = 0; i < PARALLAX_QUALITY; i++) {
                 parallaxCoord += stepSize * stepScale;
                 #ifdef SMOOTH_PARALLAX
-                    float sampleHeight = bilinearHeightSample(normals, parallaxCoord.st, baseCoord, tileBits, clampCoord);
+                    float sampleHeight = bilinearHeightSample(normals, parallaxCoord.st, coordRange, quadTexelSize, albedoTexSize);
                 #else
-                    float sampleHeight = texelFetch(normals, baseCoord + (ivec2(floor(parallaxCoord.st)) & tileBits), 0).a;
+                    float sampleHeight = textureLod(normals, clampCoordRange(parallaxCoord.st, coordRange), 0.0).a;
                     sampleHeight += clamp(1.0 - sampleHeight * 1e+10, 0.0, 1.0);
                 #endif
                 if (sampleHeight > parallaxCoord.z) {
@@ -218,9 +203,9 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
             for (int i = 0; i < PARALLAX_MAX_REFINEMENTS; i++) {
                 parallaxCoord += stepSize * stepScale;
                 #ifdef SMOOTH_PARALLAX
-                    float sampleHeight = bilinearHeightSample(normals, parallaxCoord.st, baseCoord, tileBits, clampCoord);
+                    float sampleHeight = bilinearHeightSample(normals, parallaxCoord.st, coordRange, quadTexelSize, albedoTexSize);
                 #else
-                    float sampleHeight = texelFetch(normals, baseCoord + (ivec2(floor(parallaxCoord.st)) & tileBits), 0).a;
+                    float sampleHeight = textureLod(normals, clampCoordRange(parallaxCoord.st, coordRange), 0.0).a;
                     sampleHeight += clamp(1.0 - sampleHeight * 1e+10, 0.0, 1.0);
                 #endif
                 if (sampleHeight > parallaxCoord.z) {
@@ -229,14 +214,9 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
                 }
             }
             parallaxCoord += 2.0 * stepSize * stepScale;
-            #ifdef SMOOTH_PARALLAX
-                parallaxCoord.st += 0.5;
-            #endif
-            if (clampCoord) {
-                parallaxCoord.st = vec2(baseCoord) + min(parallaxCoord.st - textureResolution * floor(parallaxCoord.st / textureResolution), textureResolution - 1e-3);
-            }
+            parallaxCoord.st = clampCoordRange(parallaxCoord.st, coordRange);
         }
         parallaxOffset = 1.0 - parallaxCoord.z;
-        return parallaxCoord.st * albedoTexelSize;
+        return parallaxCoord.st;
     }
 #endif
