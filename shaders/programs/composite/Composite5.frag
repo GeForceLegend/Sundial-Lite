@@ -66,6 +66,7 @@ void main() {
     float n = 1.5;
     if (waterDepth < solidDepth) {
         vec3 worldDir = waterWorldDir;
+        vec3 waterWorldPos = waterWorldDir * waterViewDepthNoLimit + gbufferModelViewInverse[3].xyz;
         bool isTargetWater = gbufferData.materialID == MAT_WATER;
         bool isTargetNotParticle = gbufferData.materialID != MAT_PARTICLE;
         if (isTargetNotParticle) {
@@ -100,7 +101,6 @@ void main() {
             }
         }
 
-        vec3 waterWorldPos = viewToWorldPos(waterViewPos);
         float waterDistance = distance(worldPos, waterWorldPos);
         vec3 rawSolidColor = solidColor.rgb;
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
@@ -153,7 +153,7 @@ void main() {
 
         stainedColor = mix(vec3(1.0), stainedColor, vec3(solidColor.w));
         solidColor.rgb = mix(rawSolidColor, solidColor.rgb, vec3(solidColor.w)) * stainedColor;
-        solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * gbufferData.emissive * BLOCK_LIGHT_BRIGHTNESS + texelFetch(colortex4, texel, 0).rgb * solidColor.w;
+        solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * gbufferData.emissive * BLOCK_LIGHT_BRIGHTNESS * PI + texelFetch(colortex4, texel, 0).rgb * solidColor.w;
         #ifdef SHADOW_AND_SKY
             float isTargetParticle = 1.0 - float(isTargetNotParticle);
             float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);

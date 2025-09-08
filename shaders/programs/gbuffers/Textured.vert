@@ -38,7 +38,7 @@ void main() {
     viewPos = gl_ModelViewMatrix * gl_Vertex;
     mcPos = (gbufferModelViewInverse * viewPos).xyz + cameraPosition;
 
-    gl_Position = ftransform();
+    gl_Position = gl_ProjectionMatrix * viewPos;
     color = gl_Color;
     texlmcoord.st = vec2(gl_TextureMatrix[0] * gl_MultiTexCoord0);
     texlmcoord.pq = gl_MultiTexCoord1.st / 240.0;

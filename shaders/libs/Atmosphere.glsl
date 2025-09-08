@@ -62,7 +62,7 @@ void chapmanOpticalDepthDoubleSide(float originHeight, vec2 c, vec2 cExpH, float
     cExpH /= c * abs(cosZenith) + 1.0;
     float sinZenith2 = 1.0 - cosZenith * cosZenith;
     float x0 = sinZenith2 * inversesqrt(sinZenith2) * originHeight;
-    vec2 c0 = 2.0 * inversesqrt(scaledHeight * 1.44269502) * x0 * inversesqrt(x0) * exp2(earthScaledHeight - x0 / scaledHeight) - cExpH;
+    vec2 c0 = 2.0 * inversesqrt(scaledHeight * 1.44269502) * min(vec2(1e+10), x0 * inversesqrt(x0) * exp2(earthScaledHeight - x0 / scaledHeight)) - cExpH;
 
     uint direction = floatBitsToUint(cosZenith) & 0x80000000u;
     cExpH = uintBitsToFloat(floatBitsToUint(cExpH) | direction);
@@ -170,7 +170,7 @@ vec3 singleAtmosphereScattering(vec3 skyLightColor, vec3 worldPos, vec3 worldDir
             vec3 totalInScattering = totalRayleighInScattering * pureRayleighBeta + totalMieInScattering * rainyMieBeta;
             totalInScattering *= 0.5;
 
-            atmosphere = totalInScattering * sunLightStrength;
+            atmosphere = totalInScattering * sunLightStrength * SUNLIGHT_BRIGHTNESS;
 
             result += atmosphere;
         }
@@ -251,7 +251,7 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
         vec3 totalInScattering = totalRayleighInScattering * pureRayleighBeta + totalMieInScattering * rainyMieBeta;
         totalInScattering *= 0.5;
 
-        result = totalInScattering * sunLightStrength;
+        result = totalInScattering * sunLightStrength * SUNLIGHT_BRIGHTNESS;
     }
     return result;
 }
@@ -261,7 +261,7 @@ vec3 solidAtmosphereScattering(vec3 color, vec3 worldDir, vec3 skyColor, float w
     vec3 absorption = exp2(-vec3(worldDepth * rainyMieBeta * (1.0 + RF_DENSITY * 3.0 * weatherStrength * weatherStrength) * 10.0 * 1.44269502 * exp2((-WORLD_BASIC_HEIGHT - cameraPosition.y) / 1200.0)));
     vec3 scatteringColor = skyLight * (
         0.1 * skyColor * (1.0 - weatherStrength * (1.0 - RF_SKY_BRIGHTNESS)) +
-        sunColor * miePhase(dot(worldDir, shadowDirection), 0.4, 0.16) * (1.0 - weatherStrength * (1.0 - RF_SUN_BRIGHTNESS))
+        sunColor * SUNLIGHT_BRIGHTNESS * miePhase(dot(worldDir, shadowDirection), 0.4, 0.16) * (1.0 - weatherStrength * (1.0 - RF_SUN_BRIGHTNESS))
     );
     vec3 scattering = scatteringColor * (1.0 - absorption) * 30.0;
     return color * absorption + scattering;

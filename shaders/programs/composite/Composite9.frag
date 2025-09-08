@@ -139,9 +139,6 @@ void main() {
         solidColor = temporalAntiAliasing(texcoord, velocity.st * 2.0 - 1.0, solidColor, velocity.w);
     #endif
     texBuffer3 = vec4(pow(clamp(solidColor * 0.1, 0.0, 1.0), vec3(2.2)) * 100.0, 1.0);
-    if (dot(texcoord, screenSize) < 1.1) {
-        texBuffer3.w = texelFetch(colortex4, ivec2(0), 0).w;
-    }
 }
 
 /* DRAWBUFFERS:3 */

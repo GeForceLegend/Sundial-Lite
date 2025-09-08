@@ -1,11 +1,8 @@
 #extension GL_ARB_gpu_shader5 : enable
 #extension GL_ARB_shading_language_packing : enable
 
-layout(location = 0) out vec4 texBuffer1;
-layout(location = 1) out vec4 texBuffer3;
-layout(location = 2) out vec4 texBuffer4;
+layout(location = 0) out vec4 texBuffer3;
 
-in float prevExposure;
 in vec2 texcoord;
 
 // #define APERTURE_CORROSION
@@ -18,228 +15,95 @@ in vec2 texcoord;
 #include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
 
-float getFarthestPrevDepth(vec2 coord) {
-    float farthest = 0.0;
-
-    vec4 samples = textureGather(colortex7, coord - vec2(0.5) * texelSize, 3);
-    farthest = max(max(samples.x, samples.y), max(samples.z, samples.w));
-
-    samples = textureGather(colortex7, coord + vec2(0.5) * texelSize, 3);
-    farthest = max(max(samples.x, samples.y), max(samples.z, farthest));
-
-    ivec2 texel = ivec2(coord * screenSize);
-    farthest = max(farthest, texelFetch(colortex7, texel + ivec2( 1, -1), 0).w);
-    farthest = max(farthest, texelFetch(colortex7, texel + ivec2(-1,  1), 0).w);
-
-    return farthest;
-}
-
-float getClosestDepth(vec2 coord) {
-    float closest = 2.0;
-
-    vec4 samples = textureGather(depthtex0, coord - vec2(0.5) * texelSize, 0);
-    #ifdef DISTANT_HORIZONS
-        samples += step(1.0, samples) * textureGather(dhDepthTex0, coord - vec2(0.5) * texelSize, 0);
-    #endif
-    closest = min(min(samples.x, samples.y), min(samples.z, samples.w));
-
-    samples = textureGather(depthtex0, coord + vec2(0.5) * texelSize, 0);
-    #ifdef DISTANT_HORIZONS
-        samples += step(1.0, samples) * textureGather(dhDepthTex0, coord + vec2(0.5) * texelSize, 0);
-    #endif
-    closest = min(min(samples.x, samples.y), min(samples.z, closest));
-
-    samples.xy = vec2(
-        textureLod(depthtex0, coord + vec2( texelSize.x, -texelSize.y), 0.0).r,
-        textureLod(depthtex0, coord + vec2(-texelSize.x,  texelSize.y), 0.0).r
-    );
-    #ifdef DISTANT_HORIZONS
-        samples.xy += step(vec2(1.0), samples.xy) * vec2(
-            textureLod(dhDepthTex0, coord + vec2( texelSize.x, -texelSize.y), 0.0).r,
-            textureLod(dhDepthTex0, coord + vec2(-texelSize.x,  texelSize.y), 0.0).r
-        );
-    #endif
-
-    closest = min(closest, min(samples.x, samples.y));
-
-    return closest;
-}
-
-vec3 calculateVelocity(vec3 coord, ivec2 texel) {
-    vec3 view = coord;
-    vec2 data = unpack16Bit(texelFetch(colortex2, texel, 0).a);
-    float materialID = round(data.x * 255.0);
-    float parallaxOffset = data.y * PARALLAX_DEPTH * 0.2;
-    vec3 geoNormal = decodeNormal(texelFetch(colortex1, texel, 0).zw);
-    if (materialID == MAT_HAND) {
-        view = projectionToViewPos(view * 2.0 - 1.0);
-        view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
-        view -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
-        view += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
-
-        view -= view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
-        view = viewToProjectionPos(view);
-        view = view * 0.5 + 0.5;
-    } else if (coord.z > 0.7) {
-        #ifdef DISTANT_HORIZONS
-            if (coord.z > 1.0) {
-                view.z -= 1.0;
-                view = projectionToViewPosDH(view * 2.0 - 1.0);
-            } else
-        #endif
-        {
-            view = projectionToViewPos(view * 2.0 - 1.0);
-        }
-        if (coord.z - float(coord.z > 1.0) < 1.0 && materialID != MAT_END_PORTAL) {
-            view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
-            view = viewToWorldPos(view);
-            view += cameraMovement;
-            view = prevWorldToViewPos(view);
-
-            vec3 prevViewNormal = mat3(gbufferPreviousModelView) * mat3(gbufferModelViewInverse) * geoNormal;
-            view -= view * parallaxOffset / max(dot(prevViewNormal, -view), 1e-5);
-        }
-        else {
-            view = mat3(gbufferModelViewInverse) * view;
-            view = mat3(gbufferPreviousModelView) * view;
-        }
-        #ifdef DISTANT_HORIZONS
-            if (coord.z > 1.0) {
-                view = prevViewToProjectionPosDH(view);
-                view = view * 0.5 + 0.5;
-                view.z += 1.0;
-            } else
-        #endif
-        {
-            view = prevViewToProjectionPos(view);
-            view = view * 0.5 + 0.5;
-        }
-    }
-    vec3 velocity = view - coord;
-    return velocity;
-}
-
-float getDepthConfidenceFactor(vec3 coord, vec3 velocity) {
-    vec2 prevCoord = coord.st + velocity.xy;
-    float prevDepth = getFarthestPrevDepth(prevCoord);
-    float depthDiffFactor = step(coord.z + velocity.z, prevDepth + 1e-3);
-    return depthDiffFactor;
-}
-
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
 
-    texBuffer4 = vec4(texelFetch(colortex7, texel, 0).rgb, 1.0);
-    if (dot(texcoord, screenSize) < 1.1) {
-        texBuffer4.w = prevExposure;
-    }
-
     vec4 centerData = texelFetch(colortex3, texel, 0);
-    #ifdef DEPTH_OF_FIELD
-        float centerDepth = centerData.w;
-        float centerCoCRadius = clamp(abs(centerData.w), 0.0, 1.0);
+    float centerDepth = centerData.w;
+    float centerCoCRadius = clamp(abs(centerData.w), 0.0, 1.0);
 
-        const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
-        const float strength = 15.0 * MAX_BLUR_RADIUS;
-        vec2 noise = blueNoiseTemporal(texcoord).xy;
-        float radius = noise.y / DOF_SAMPLES;
-        float noiseAngle = noise.x * PI * 2.0;
-        float cosNoise = cos(noiseAngle);
-        float sinNoise = sin(noiseAngle);
-        vec2 angle = vec2(cosNoise, sinNoise) * strength;
+    const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
+    const float strength = 15.0 * MAX_BLUR_RADIUS;
+    vec2 noise = blueNoiseTemporal(texcoord).xy;
+    float radius = noise.y / DOF_SAMPLES;
+    float noiseAngle = noise.x * PI * 2.0;
+    float cosNoise = cos(noiseAngle);
+    float sinNoise = sin(noiseAngle);
+    vec2 angle = vec2(cosNoise, sinNoise) * strength;
 
-        float maxSampleRadius = texelFetch(colortex4, texel, 0).w;
-        angle *= maxSampleRadius;
+    float maxSampleRadius = texelFetch(colortex4, texel, 0).w;
+    angle *= maxSampleRadius;
 
-        vec3 totalColor = vec3(0.0);
-        float totalSamples = 0.0;
-        vec3 selfColor = centerData.rgb * 1e-5;
-        float selfSamples = 1e-5;
-        float selfWeight = 0.0;
+    vec3 totalColor = vec3(0.0);
+    float totalSamples = 0.0;
+    vec3 selfColor = centerData.rgb * 1e-5;
+    float selfSamples = 1e-5;
+    float selfWeight = 0.0;
 
+    #ifdef APERTURE_CORROSION
+        vec2 screenScale = APERTURE_CORROSION_OFFSET * screenSize / max(screenSize.x, screenSize.y);
+        // vec2 scale = screenScale * (texcoord - 0.5);
+        // float corrosionDistance = dot(scale, scale);
+        // selfColor *= step(corrosionDistance, 1.0);
+    #endif
+
+    float centerWeight = maxSampleRadius * maxSampleRadius - maxSampleRadius + 1.0;
+    centerWeight = mix(centerWeight, 1e-5, pow(centerCoCRadius / maxSampleRadius, 4.0));
+
+    for (int i = 0; i < DOF_SAMPLES; i++) {
+        float sampleRadius = radius * inversesqrt(radius);
+        vec2 sampleCoord = texcoord + texelSize * sampleRadius * angle;
+        vec4 sampleData = textureLod(colortex3, sampleCoord, 0.0);
+        vec3 sampleColor = sampleData.rgb;
+        float sampleDepth = sampleData.w;
+        float sampleRadiusScaled = sampleRadius * maxSampleRadius;
+        float sampleCoC = clamp(abs(sampleData.w), 0.0, 1.0);
         #ifdef APERTURE_CORROSION
-            vec2 screenScale = APERTURE_CORROSION_OFFSET * screenSize / max(screenSize.x, screenSize.y);
-            // vec2 scale = screenScale * (texcoord - 0.5);
-            // float corrosionDistance = dot(scale, scale);
-            // selfColor *= step(corrosionDistance, 1.0);
+            vec2 sampleOffset = sampleRadius * angle;
+            vec2 scale = screenScale * (sampleCoord - 0.5);
+            vec2 sampleOffsetScaled = sampleOffset / (LENS_DIAMETER_SCALE * strength);
+            vec2 corrosionOffset = sampleOffsetScaled + scale * maxSampleRadius;
+            float corrosionDistance = dot(corrosionOffset, corrosionOffset);
         #endif
-
-        float centerWeight = maxSampleRadius * maxSampleRadius - maxSampleRadius + 1.0;
-        centerWeight = mix(centerWeight, 1e-5, pow(centerCoCRadius / maxSampleRadius, 4.0));
-
-        for (int i = 0; i < DOF_SAMPLES; i++) {
-            float sampleRadius = radius * inversesqrt(radius);
-            vec2 sampleCoord = texcoord + texelSize * sampleRadius * angle;
-            vec4 sampleData = textureLod(colortex3, sampleCoord, 0.0);
-            vec3 sampleColor = sampleData.rgb;
-            float sampleDepth = sampleData.w;
-            float sampleRadiusScaled = sampleRadius * maxSampleRadius;
-            float sampleCoC = clamp(abs(sampleData.w), 0.0, 1.0);
+        angle = goldenRotate * angle;
+        radius += 1.0 / DOF_SAMPLES;
+        if (centerCoCRadius >= sampleRadiusScaled && sampleDepth >= centerDepth) {
             #ifdef APERTURE_CORROSION
-                vec2 sampleOffset = sampleRadius * angle;
-                vec2 scale = screenScale * (sampleCoord - 0.5);
-                vec2 sampleOffsetScaled = sampleOffset / (LENS_DIAMETER_SCALE * strength);
-                vec2 corrosionOffset = sampleOffsetScaled + scale * maxSampleRadius;
+                vec2 corrosionOffset = sampleOffsetScaled + scale * centerCoCRadius;
                 float corrosionDistance = dot(corrosionOffset, corrosionOffset);
-            #endif
-            angle = goldenRotate * angle;
-            radius += 1.0 / DOF_SAMPLES;
-            if (centerCoCRadius >= sampleRadiusScaled && sampleDepth >= centerDepth) {
-                #ifdef APERTURE_CORROSION
-                    vec2 corrosionOffset = sampleOffsetScaled + scale * centerCoCRadius;
-                    float corrosionDistance = dot(corrosionOffset, corrosionOffset);
-                    if (pow2(centerCoCRadius) > corrosionDistance)
-                #endif
-                {
-                    selfColor += sampleColor;
-                    selfSamples += 1.0;
-                }
-            }
-            else if (sampleCoC >= sampleRadiusScaled && sampleDepth <= centerDepth) {
-                #ifdef APERTURE_CORROSION
-                    vec2 corrosionOffset = sampleOffsetScaled + scale * sampleCoC;
-                    float corrosionDistance = dot(corrosionOffset, corrosionOffset);
-                    if (pow2(sampleCoC) > corrosionDistance)
-                #endif
-                {
-                    float sampleWeight = pow2(max(1.0, centerCoCRadius / sampleCoC));
-                    totalColor += sampleColor * sampleWeight;
-                    totalSamples += sampleWeight;
-                }
-            }
-            else
-            #ifdef APERTURE_CORROSION
-                if (pow2(maxSampleRadius) > corrosionDistance)
+                if (pow2(centerCoCRadius) > corrosionDistance)
             #endif
             {
-                selfWeight += centerWeight;
+                selfColor += sampleColor;
+                selfSamples += 1.0;
             }
         }
+        else if (sampleCoC >= sampleRadiusScaled && sampleDepth <= centerDepth) {
+            #ifdef APERTURE_CORROSION
+                vec2 corrosionOffset = sampleOffsetScaled + scale * sampleCoC;
+                float corrosionDistance = dot(corrosionOffset, corrosionOffset);
+                if (pow2(sampleCoC) > corrosionDistance)
+            #endif
+            {
+                float sampleWeight = pow2(max(1.0, centerCoCRadius / sampleCoC));
+                totalColor += sampleColor * sampleWeight;
+                totalSamples += sampleWeight;
+            }
+        }
+        else
+        #ifdef APERTURE_CORROSION
+            if (pow2(maxSampleRadius) > corrosionDistance)
+        #endif
+        {
+            selfWeight += centerWeight;
+        }
+    }
 
-        totalColor += selfColor * (1.0 + selfWeight / selfSamples);
-        totalColor /= totalSamples + selfSamples + selfWeight;
-        centerData.rgb = totalColor;
-    #endif
+    totalColor += selfColor * (1.0 + selfWeight / selfSamples);
+    totalColor /= totalSamples + selfSamples + selfWeight;
+    centerData.rgb = totalColor;
 
     texBuffer3 = vec4(clamp(pow(0.005 * centerData.rgb, vec3(1.0 / 2.2)), vec3(0.0), vec3(1.0)) * 10.0, 1.0);
-
-    float closestDepth = getClosestDepth(texcoord);
-    vec3 closest = vec3(texcoord, closestDepth);
-
-    vec3 velocity = calculateVelocity(closest, texel);
-    velocity = velocity * clamp(0.5 * inversesqrt(dot(velocity.st, velocity.st) + 1e-7), 0.0, 1.0);
-
-    float blendWeight = 1.0;
-    #ifdef TAA
-        vec2 reprojectCoord = closest.st + velocity.xy;
-        float depthDiffFactor = getDepthConfidenceFactor(closest, velocity);
-
-        blendWeight *= 0.95 - min(0.7, 4.0 * pow(dot(velocity.xy, velocity.xy), 0.25)) * step(closest.z, 0.999999);
-        blendWeight *= step(abs(floor(reprojectCoord.x)) + abs(floor(reprojectCoord.y)), 0.5);
-        blendWeight *= depthDiffFactor;
-    #endif
-
-    texBuffer1 = vec4(velocity.st * 0.5 + 0.5, 0.0, blendWeight);
 }
 
-/* DRAWBUFFERS:134 */
+/* DRAWBUFFERS:3 */

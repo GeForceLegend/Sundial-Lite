@@ -243,7 +243,7 @@ option.CLOUD_REALISTIC_HARDNESS=Realistic cloud hardness
 # RealisticCloudLighting
 option.CLOUD_REALISTIC_BASIC_SHADOWLIGHT=Realistic cloud basic shadow light
 option.CLOUD_REALISTIC_BASIC_SKYLIGHT=Realistic cloud basic skylight
-option.CLOUD_REALISTIC_SHADOWLIGHT_STEPSCALE=Shadow light sample step sacle
+option.CLOUD_REALISTIC_SHADOWLIGHT_STEPSCALE=Shadow light sample step scale
 option.CLOUD_REALISTIC_FADE_DISTANCE=Realistic cloud fade distance
 
 # PostProcessing

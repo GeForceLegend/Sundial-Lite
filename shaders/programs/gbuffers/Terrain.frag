@@ -226,7 +226,9 @@ void main() {
             rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
             rawData.normal = normalize(tbnMatrix * rawData.normal);
         #endif
-        rawData.normal = normalize(mix(tbnMatrix[2], rawData.normal, 1.0 / (1.0 + 4.0 * pow(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY)), 0.1))));
+        texGradX *= albedoTexSize;
+        texGradY *= albedoTexSize;
+        rawData.normal = normalize(mix(tbnMatrix[2], rawData.normal, exp2(-sqrt(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY))))));
     }
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);

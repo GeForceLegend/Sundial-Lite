@@ -3,6 +3,7 @@ layout(location = 1) out vec4 texBuffer4;
 layout(location = 2) out vec4 texBuffer7;
 
 in vec2 texcoord;
+in float prevExposure;
 in float smoothCenterDepth;
 
 #define MOTION_BLUR_STRENGTH 1.0 // [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.5 6.0 6.5 7.0 7.5 8.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0]
@@ -55,9 +56,8 @@ float getAvgBrightness() {
     }
     totalColor = pow(totalColor / totalWeight, vec3(AVERAGE_EXPOSURE_TENDENCY));
     float currBrightness = dot(totalColor, vec3(600.0 / 3.0));
-    float prevBrightness = texelFetch(colortex3, ivec2(0), 0).w;
 
-    float averageBrightness = mix(prevBrightness, currBrightness, clamp(frameTime * (step(currBrightness, prevBrightness) * 2.0 + 2.0) + float(prevBrightness == 0.0), 0.0, 1.0));
+    float averageBrightness = mix(prevExposure, currBrightness, clamp(frameTime * (step(currBrightness, prevExposure) * 2.0 + 2.0) + float(prevExposure == 0.0), 0.0, 1.0));
 
     return averageBrightness;
 }

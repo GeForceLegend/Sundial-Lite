@@ -153,8 +153,8 @@ void main() {
             );
             vec2 endPortalCoord = vec2(0.5 + sampleOffset * 0.5);
 
-            vec3 enderPortalColor = texture(gtexture, endPortalCoord).rgb * COLORS[0];
-            for (int i = 0; i < 16; i++) {
+            vec3 enderPortalColor = vec3(0.0);
+            for (int i = 0; i < 15; i++) {
                 enderPortalColor += texture(gtexture, endPortalLayer(endPortalCoord, i + 1.0)).rgb * COLORS[i];
             }
 
@@ -331,14 +331,15 @@ void main() {
                             rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
                             rawData.normal = normalize(tbnMatrix * rawData.normal);
                         #endif
-                        rawData.normal = normalize(mix(rawData.geoNormal, rawData.normal, 1.0 / (1.0 + 4.0 * pow(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY)), 0.1))));
+                        texGradX *= albedoTexSize;
+                        texGradY *= albedoTexSize;
+                        rawData.normal = normalize(mix(rawData.geoNormal, rawData.normal, exp2(-sqrt(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY))))));
                     } else
                 #endif
             #endif
             {
                 #ifdef SMOOTH_NORMAL
                     normalData = bilinearNormalSample(normals, texcoord, coordRange, quadTexelSize, albedoTexSize);
-                #else
                 #endif
                 #ifdef MC_NORMAL_MAP
                     rawData.normal = NORMAL_FORMAT(normalData.xyz);

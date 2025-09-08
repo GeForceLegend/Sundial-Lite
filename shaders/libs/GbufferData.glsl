@@ -210,13 +210,13 @@ float viewToScreenDepth(float depth) {
     return depth * 0.5 + 0.5;
 }
 
-vec2 projIntersection(vec4 origin, vec4 direction, vec2 targetCoord) {
-    return (targetCoord * origin.ww - origin.xy) / (direction.xy - targetCoord * direction.ww);
+uvec2 projIntersection(vec4 origin, vec4 direction, vec2 targetCoord) {
+    return floatBitsToUint((targetCoord * origin.ww - origin.xy) / (direction.xy - targetCoord * direction.ww));
 }
 
 float projIntersectionScreenEdge(vec4 origin, vec4 direction) {
-    uvec2 intersectionAA = floatBitsToUint(projIntersection(origin, direction, vec2(1.0)));
-    uvec2 intersectionBB = floatBitsToUint(projIntersection(origin, direction, vec2(-1.0)));
+    uvec2 intersectionAA = projIntersection(origin, direction, vec2(1.0));
+    uvec2 intersectionBB = projIntersection(origin, direction, vec2(-1.0));
     uint intersection = min(min(intersectionAA.x, intersectionAA.y), min(intersectionBB.x, intersectionBB.y));
     float depthLimit = far;
     #ifdef DISTANT_HORIZONS
