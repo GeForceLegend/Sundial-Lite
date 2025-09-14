@@ -36,6 +36,13 @@ float volumetricFogDensity(vec3 position) {
     return density;
 }
 
+#ifdef THE_END
+#undef VOLUMETRIC_LIGHT
+#endif
+#ifdef NETHER
+#undef VOLUMETRIC_LIGHT
+#endif
+
 void main() {
     float absorption = 1.0;
     vec3 volumetricLight = vec3(0.0);
