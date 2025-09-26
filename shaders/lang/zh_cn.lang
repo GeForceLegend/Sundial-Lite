@@ -113,6 +113,7 @@ value.REFLECTION_FILTER.2=高
 option.CLOUD_IN_REFLECTION=反射中渲染云
 option.SCREEN_SPACE_REFLECTION_STEP=屏幕空间反射步进次数
 option.SCREEN_SPACE_REFLECTION_REFINEMENTS=屏幕空间反射精度
+option.SCREEN_SPACE_REFLECTION_REFINEMENTS.comment=通过二分法提高命中点精度的计算次数
 
 # Shadow
 option.shadowMapResolution=阴影分辨率

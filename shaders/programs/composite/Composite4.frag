@@ -45,7 +45,6 @@ void main() {
     vec3 backColor;
     vec4 planeCloud = vec4(0.0);
     if (abs(depth) < 0.999999) {
-        solidColor.rgb += texelFetch(colortex4, texel, 0).rgb;
         backDepth = 1.0 / worldDepth;
         backColor = solidColor.rgb;
     }

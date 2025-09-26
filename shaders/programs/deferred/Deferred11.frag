@@ -69,17 +69,17 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 float avgOcclusionDepth = 0.0;
                 float depthSum = 0.0;
                 float depthSampleRadius = (0.5 + noise.y) * 2.0;
-                float offsetX = -1.0;
+                float offsetX = -depthSampleRadius;
                 for (int i = -1; i <= 1; i++) {
-                    float offsetY = -1.0;
+                    float offsetY = -depthSampleRadius;
                     for (int j = -1; j <= 1; j++) {
-                        vec3 sampleCoord = distortShadowCoord(basicShadowCoordNoDistort + depthSampleRadius * (offsetX * offsetDirection1 + offsetY * offsetDirection2));
+                        vec3 sampleCoord = distortShadowCoord(basicShadowCoordNoDistort + offsetX * offsetDirection1 + offsetY * offsetDirection2);
                         float sampleDepth = textureLod(shadowtex1, sampleCoord.st, 1.0).r;
                         depthSum += sampleDepth;
                         avgOcclusionDepth += clamp(sampleCoord.z - sampleDepth, 0.0, 1.0);
-                        offsetY += 1.0;
+                        offsetY += depthSampleRadius;
                     }
-                    offsetX += 1.0;
+                    offsetX += depthSampleRadius;
                 }
                 if (depthSum < 8.9999) {
                     float filterRadius = min(avgOcclusionDepth * 80.0 / 9.0, 4.0) + 0.02 * shadowDistance / distortFactor;
@@ -162,13 +162,14 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec4 projDirection = projShadowDirection;
         float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
         vec4 targetProjPos = originProjPos + projDirection * traceLength;
-        vec4 targetCoord = vec4(targetProjPos.xyz / targetProjPos.w * 0.5 + 0.5, 0.0);
+        targetProjPos.w = 0.5 / targetProjPos.w;
+        vec4 targetCoord = vec4(targetProjPos.xyz * targetProjPos.w + 0.5, 0.0);
 
         #ifdef DISTANT_HORIZONS
             projDirection.z *= dhProjection[2].z / gbufferProjection[2].z;
             float originProjDepthDH = viewPos.z * dhProjection[2].z + dhProjection[3].z;
             originCoord.w = originProjDepthDH * projScale + 0.5;
-            targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) / (projDirection.w * traceLength - viewPos.z) * 0.5 + 0.5;
+            targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) * targetProjPos.w + 0.5;
         #endif
 
         vec4 stepSize = targetCoord - originCoord;
@@ -261,7 +262,7 @@ void main() {
     #ifdef DISTANT_HORIZONS
         if (gbufferData.depth == 1.0) {
             gbufferData.depth = textureLod(dhDepthTex0, texcoord, 0.0).r;
-            viewPos = screenToViewPosDH(texcoord, gbufferData.depth);
+            viewPos = screenToViewPosDH(texcoord, gbufferData.depth - 1e-7);
             viewPosNoPOM = viewPos;
             gbufferData.depth = -gbufferData.depth;
         } else
@@ -333,7 +334,7 @@ void main() {
             #endif
             #ifdef PCSS
                 shadow *= percentageCloserSoftShadow(
-                    worldPosNoPOM, worldGeoNormal, NdotL, viewLength, shadowLightFactor,
+                    worldPosNoPOM, worldGeoNormal, NdotL, 1.0 / viewLength, shadowLightFactor,
                     gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, noise
                 );
             #else

@@ -129,15 +129,17 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos + gbufferProjection[3].xyz, -viewPos.z);
         float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
 
-        vec4 sampleCoord = vec4(originProjPos.xyz / originProjPos.w * 0.5 + 0.5, 0.0);
+        float originProjScale = 0.5 / originProjPos.w;
+        vec4 sampleCoord = vec4(originProjPos.xyz * originProjScale + 0.5, 0.0);
         vec4 targetProjPos = originProjPos + projDirection * traceLength;
-        vec4 targetCoord = vec4(targetProjPos.xyz / targetProjPos.w * 0.5 + 0.5, 0.0);
+        float targetProjScale = 0.5 / targetProjPos.w;
+        vec4 targetCoord = vec4(targetProjPos.xyz * targetProjScale + 0.5, 0.0);
 
         #ifdef DISTANT_HORIZONS
-            projDirection.z *= dhProjection[2].z / gbufferProjection[2].z;
+            projDirection.z = rayDir.z * dhProjection[2].z;
             float originProjDepthDH = viewPos.z * dhProjection[2].z + dhProjection[3].z;
-            sampleCoord.w = originProjDepthDH / -viewPos.z * 0.5 + 0.5;
-            targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) / (projDirection.w * traceLength - viewPos.z) * 0.5 + 0.5;
+            sampleCoord.w = originProjDepthDH * originProjScale + 0.5;
+            targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) * targetProjScale + 0.5;
         #endif
 
         float noise = blueNoiseTemporal(texcoord).x + 0.1;
@@ -148,6 +150,8 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         #endif
 
         bool hitSky = true;
+        float minimumThichness = max(0.001 * originProjScale, abs(stepSize.z));
+        float minimumThichnessDH = max(0.01 * originProjScale, abs(stepSize.w));
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
             float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).x;
             bool hitCheck = sampleCoord.z > sampleDepth && sampleDepth < 1.0;
@@ -170,9 +174,9 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                     stepScale *= 0.5;
                 }
 
-                bool hitTerrain = abs(refinementCoord.z - sampleDepth) < abs(stepSize.z) && sampleDepth < 1.0;
+                bool hitTerrain = abs(refinementCoord.z - sampleDepth) < minimumThichness && sampleDepth < 1.0;
                 #ifdef DISTANT_HORIZONS
-                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoord.w - sampleDepthDH) < abs(stepSize.w) && sampleDepthDH < 1.0);
+                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoord.w - sampleDepthDH) < minimumThichnessDH && sampleDepthDH < 1.0);
                 #endif
                 if (hitTerrain && clamp(refinementCoord.st, 0.0, 1.0) == refinementCoord.st) {
                     sampleCoord = refinementCoord;
@@ -293,6 +297,7 @@ void main() {
                 } else {
                     n /= 1.0 + 0.333333 * float(isEyeInWater == 1);
                 }
+                reflectionStrength = float(gbufferData.smoothness > 0.01);
             } else {
                 float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
                 #ifndef FULL_REFLECTION

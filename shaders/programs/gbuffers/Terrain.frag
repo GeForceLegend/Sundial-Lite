@@ -160,11 +160,11 @@ void main() {
     vec2 quadTexelSize = albedoTexelSize * quadSize;
     if (
         true
-        #ifdef PARALLAX_BASED_NORMAL
-            #ifdef PARALLAX
-                && (rawData.parallaxOffset == 0.0
-                #ifdef VOXEL_PARALLAX
-                    || parallaxTexNormal.z > 0.5
+        #ifdef PARALLAX
+            #ifdef VOXEL_PARALLAX
+                && (parallaxTexNormal.z > 0.5
+                #ifdef PARALLAX_BASED_NORMAL
+                    || rawData.parallaxOffset == 0.0
                 #endif
                 )
             #endif

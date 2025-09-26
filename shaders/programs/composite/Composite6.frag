@@ -87,7 +87,7 @@ void main() {
             maxAllowedDistance = min(maxAllowedDistance, 5000.0 * exp(-6.0 * length(absorptionBeta)));
 
             vec3 target = waterWorldPos * clamp(maxAllowedDistance * waterWorldDistanceInv, 0.0, 1.0);
-            vec3 stepSize = target / (VL_SAMPLES + 1.0);
+            vec3 stepSize = target / VL_SAMPLES;
             vec3 samplePos = gbufferModelViewInverse[3].xyz + stepSize * noise;
             float stepLength = length(stepSize);
 

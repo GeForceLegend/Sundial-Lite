@@ -64,7 +64,9 @@ void main() {
     /********************************************************** Water Refraction **********************************************************/
 
     float n = 1.5;
+    vec3 reflectionColor = texelFetch(colortex4, texel, 0).rgb;
     if (waterDepth < solidDepth) {
+        reflectionColor *= solidColor.w;
         vec3 worldDir = waterWorldDir;
         vec3 waterWorldPos = waterWorldDir * waterViewDepthNoLimit + gbufferModelViewInverse[3].xyz;
         bool isTargetWater = gbufferData.materialID == MAT_WATER;
@@ -153,9 +155,11 @@ void main() {
 
         stainedColor = mix(vec3(1.0), stainedColor, vec3(solidColor.w));
         solidColor.rgb = mix(rawSolidColor, solidColor.rgb, vec3(solidColor.w)) * stainedColor;
-        solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * gbufferData.emissive * BLOCK_LIGHT_BRIGHTNESS * PI + texelFetch(colortex4, texel, 0).rgb * solidColor.w;
+
+        float isTargetParticle = 1.0 - float(isTargetNotParticle);
+        vec3 vanillaLight = pow2(gbufferData.lightmap.y) * (skyColorUp + sunColor * SUNLIGHT_BRIGHTNESS) * (1.0 - gbufferData.metalness) * isTargetParticle;
+        solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * (gbufferData.emissive * BLOCK_LIGHT_BRIGHTNESS * PI + vanillaLight);
         #ifdef SHADOW_AND_SKY
-            float isTargetParticle = 1.0 - float(isTargetNotParticle);
             float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);
             if (NdotL > 0.0) {
                 float shadowLightFactor = 1.0;
@@ -166,7 +170,7 @@ void main() {
                     waterWorldPos, mat3(gbufferModelViewInverse) * gbufferData.geoNormal, NdotL, shadowLightFactor,
                     gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, 0.0
                 );
-                shadow *= sunlightSpecular(
+                shadow *= (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle + sunlightSpecular(
                     waterWorldDir, shadowDirection, worldNormal, gbufferData.albedo.rgb,
                     gbufferData.smoothness * 0.995, gbufferData.metalness, NdotL, LdotH, vec3(n), vec3(0.0)
                 );
@@ -178,6 +182,7 @@ void main() {
             }
         #endif
     }
+    solidColor.rgb += reflectionColor;
 
     waterDepth -= float(waterDepth > 1.0);
     float waterViewDepth = mix(waterViewDepthNoLimit, 114514.0, step(0.999999, waterDepth));

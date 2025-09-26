@@ -260,4 +260,9 @@ float projIntersectionScreenEdge(vec4 origin, vec4 direction) {
         depth = depth * 2.0 - 1.0;
         return 1.0 / (depth * dhProjectionInverse[2].w + dhProjectionInverse[3].w);
     }
+
+    float viewToScreenDepthDH(float depth) {
+        depth = (1.0 / depth - dhProjectionInverse[3].w) / dhProjectionInverse[2].w;
+        return depth * 0.5 + 0.5;
+    }
 #endif
