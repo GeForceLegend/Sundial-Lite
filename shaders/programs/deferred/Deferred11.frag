@@ -166,7 +166,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec4 targetCoord = vec4(targetProjPos.xyz * targetProjPos.w + 0.5, 0.0);
 
         #ifdef DISTANT_HORIZONS
-            projDirection.z *= dhProjection[2].z / gbufferProjection[2].z;
+            projDirection.z = projShadowDirection.z * dhProjection[2].z;
             float originProjDepthDH = viewPos.z * dhProjection[2].z + dhProjection[3].z;
             originCoord.w = originProjDepthDH * projScale + 0.5;
             targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) * targetProjPos.w + 0.5;
@@ -186,7 +186,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         float sampleLengthInv = inversesqrt(dot(viewPosDiff, viewPosDiff));
         const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
         float absorptionBeta = -0.5 / (max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5) * sampleLengthInv);
-        float absorption = exp2(absorptionBeta * porosityScale * 0.01) * step(0.25, porosity) * (1.0 - clamp(NdotL * 10.0, 0.0, 1.0) * porosityScale);
+        float absorption = exp2(absorptionBeta * porosityScale * 0.01) * step(0.25, porosity) * (1.0 - clamp(NdotL * 10.0, 0.0, 1.0) * porosityScale) + 1.0;
         float shadowWeight = clamp(1.0 - abs(NdotL) * 10.0, 0.0, 1.0) * clamp(1.0 - 1.1 / viewLength / shadowDistance, 0.0, 1.0);
 
         vec4 sampleCoord = originCoord + noise.x * stepSize;
@@ -195,6 +195,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         float maximumThickness = 0.0005 * viewLength + 0.03 * float(materialID == MAT_HAND);
         float maximumThicknessDH = 0.5 * viewLength;
         float depthMultiplicator = mix(1.0, 1.0 / MC_HAND_DEPTH, float(materialID == MAT_HAND));
+        float baseDepthOffset = 0.5 - 0.5 * depthMultiplicator;
         sampleCoord.zw -= vec2(maximumThickness, maximumThicknessDH);
 
         for (int i = 0; i < SCREEN_SPACE_SHADOW_SAMPLES; i++) {
@@ -211,7 +212,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 else
             #endif
             {
-                float sampleParallaxOffset = textureLod(colortex3, sampleCoord.st, 0.0).w / 512.0 - 0.5 * depthMultiplicator + 0.5;
+                float sampleParallaxOffset = textureLod(colortex3, sampleCoord.st, 0.0).w / 512.0 + baseDepthOffset;
                 sampleDepth = sampleDepth * depthMultiplicator + sampleParallaxOffset;
                 hit = abs(sampleCoord.z - sampleDepth) < maximumThickness && sampleDepth < 1.0;
                 if (hit) {
@@ -225,7 +226,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                     hit = abs(sampleCoord.z - sampleDepth) < maximumThickness;
                 }
             }
-            shadow *= mix(1.0, absorption, float(hit));
+            shadow *= clamp(absorption - float(hit), 0.0, 1.0);
             sampleCoord += stepSize;
         }
 
@@ -276,8 +277,8 @@ void main() {
         gbufferData.depth += abs(parallaxData) / 512.0;
         viewPos = screenToViewPos(texcoord, gbufferData.depth);
     }
-    vec3 worldPosNoPOM = viewToWorldPos(viewPosNoPOM);
-    vec3 worldDir = normalize(worldPosNoPOM - gbufferModelViewInverse[3].xyz);
+    vec3 worldPos = viewToWorldPos(viewPosNoPOM);
+    vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
 
     vec4 finalColor = vec4(0.0);
     texBuffer0 = vec4(texelFetch(colortex0, texel, 0).rgb, texelFetch(colortex4, texel, 0).w);
@@ -285,7 +286,6 @@ void main() {
     if (abs(gbufferData.depth) < 1.0) {
         float viewLength = inversesqrt(dot(viewPos, viewPos));
         vec3 viewDir = viewPos * viewLength;
-        vec3 worldPos = viewToWorldPos(viewPos);
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
 
@@ -304,7 +304,9 @@ void main() {
         finalColor.rgb += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
         finalColor.rgb += pow(gbufferData.lightmap.x, 4.4) * lightColor;
         #ifdef SHADOW_AND_SKY
-            finalColor.rgb += pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (worldNormal.y * 0.4 + 0.6);
+            finalColor.rgb +=
+                pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) *
+                (worldNormal.y * 0.3 + 0.6 + mix(dot(worldNormal, sunDirection), dot(worldNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
         #endif
         float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
         vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
@@ -334,12 +336,12 @@ void main() {
             #endif
             #ifdef PCSS
                 shadow *= percentageCloserSoftShadow(
-                    worldPosNoPOM, worldGeoNormal, NdotL, 1.0 / viewLength, shadowLightFactor,
+                    worldPos, worldGeoNormal, NdotL, 1.0 / viewLength, shadowLightFactor,
                     gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, noise
                 );
             #else
                 shadow *= singleSampleShadow(
-                    worldPosNoPOM, worldGeoNormal, NdotL, shadowLightFactor,
+                    worldPos, worldGeoNormal, NdotL, shadowLightFactor,
                     gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, 0.0
                 );
             #endif

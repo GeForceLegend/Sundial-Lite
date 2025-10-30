@@ -79,13 +79,13 @@ void BedrockRTX(inout GbufferData dataSet, vec4 specularData) {
 vec3 LabPBR(vec3 rawNormal) {
     vec3 normal = rawNormal * 2.0 - 1.0;
     normal.z = sqrt(clamp(1.0 - dot(normal.xy, normal.xy), 0.0, 1.0));
-    normal.xy = uintBitsToFloat(floatBitsToUint(clamp(abs(normal.xy) - 1.0 / 255.0, 0.0, 1.0)) ^ (floatBitsToUint(normal.xy) & 0x80000000u));
+    normal.xy = uintBitsToFloat(floatBitsToUint(clamp(abs(normal.xy) - 1.0 / 255.0, 0.0, 1.0)) | (floatBitsToUint(normal.xy) & 0x80000000u));
     return normal;
 }
 
 vec3 ClassicPBR(vec3 rawNormal) {
     vec3 normal = rawNormal * 2.0 - 1.0;
-    normal.xy = uintBitsToFloat(floatBitsToUint(clamp(abs(normal.xy) - 1.0 / 255.0, 0.0, 1.0)) ^ (floatBitsToUint(normal.xy) & 0x80000000u));
+    normal.xy = uintBitsToFloat(floatBitsToUint(clamp(abs(normal.xy) - 1.0 / 255.0, 0.0, 1.0)) | (floatBitsToUint(normal.xy) & 0x80000000u));
     return normal;
 }
 

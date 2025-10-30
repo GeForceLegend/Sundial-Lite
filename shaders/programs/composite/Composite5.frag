@@ -56,8 +56,9 @@ void main() {
     {
         waterViewPos = screenToViewPos(texcoord, waterDepth);
     }
-    vec3 worldPos = viewToWorldPos(viewPos);
-    vec3 waterWorldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
+    vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
+    float worldDistanceInv = inversesqrt(dot(worldPos, worldPos));
+    vec3 waterWorldDir = worldPos * worldDistanceInv;
 
     float waterViewDepthNoLimit = length(waterViewPos);
 
@@ -71,16 +72,23 @@ void main() {
         vec3 waterWorldPos = waterWorldDir * waterViewDepthNoLimit + gbufferModelViewInverse[3].xyz;
         bool isTargetWater = gbufferData.materialID == MAT_WATER;
         bool isTargetNotParticle = gbufferData.materialID != MAT_PARTICLE;
+        vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
+        vec3 worldGeoNormal = mat3(gbufferModelViewInverse) * gbufferData.geoNormal;
+        float LdotH = clamp(dot(-worldNormal, waterWorldDir), 0.0, 1.0);
         if (isTargetNotParticle) {
-            float solidViewDepth = length(viewPos);
-            float refractionStrength = (REFRACTION_STRENGTH * 2e-2 * clamp((solidViewDepth - waterViewDepthNoLimit) / (waterViewDepthNoLimit + 1.0), 0.0, 1.0));
+            float refractionStrength = REFRACTION_STRENGTH * 4e-2 * clamp((1.0 - waterViewDepthNoLimit * worldDistanceInv) / (waterViewDepthNoLimit * worldDistanceInv + worldDistanceInv), 0.0, 1.0);
 
             float roughness = 1.0 - gbufferData.smoothness;
             vec2 blueNoise = textureLod(noisetex, texcoord * screenSize / 64.0, 0.0).xy;
             vec2 randomOffset = vec2(cos(blueNoise.x * 2.0 * PI), sin(blueNoise.x * 2.0 * PI)) * blueNoise.y;
-            vec2 refractionOffset = (gbufferData.normal.xy + roughness * randomOffset) * refractionStrength;
+            float k = sqrt(n * n - (1.0 - LdotH * LdotH));
+            vec3 refractDirection = normalize(
+                viewPos * worldDistanceInv - (LdotH + k) * gbufferData.normal +
+                (dot(-worldGeoNormal, waterWorldDir) + k) * gbufferData.geoNormal * float(isTargetWater) // Get this idea from zombye/spectrum, MIT Licence
+            );
+            vec2 refractionOffset = (refractDirection.xy - viewPos.xy / viewPos.z * refractDirection.z + roughness * randomOffset) * refractionStrength;
 
-            vec2 refractionTarget = texcoord - refractionOffset;
+            vec2 refractionTarget = texcoord + refractionOffset;
             float targetSolidDepth = textureLod(depthtex1, refractionTarget, 0.0).r;
             #ifdef DISTANT_HORIZONS
                 targetSolidDepth += float(targetSolidDepth == 1.0) * textureLod(dhDepthTex1, refractionTarget, 0.0).r;
@@ -97,21 +105,18 @@ void main() {
                 {
                     viewPos = screenToViewPos(refractionTarget, targetSolidDepth);
                 }
-                solidViewDepth = length(viewPos);
-                worldPos = viewToWorldPos(viewPos);
-                worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
+                worldPos = mat3(gbufferModelViewInverse) * viewPos;
+                worldDir = normalize(worldPos);
             }
         }
 
         float waterDistance = distance(worldPos, waterWorldPos);
         vec3 rawSolidColor = solidColor.rgb;
-        vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         n -= 0.166666 * float(isTargetWater);
         #ifdef LABPBR_F0
             n = mix(n, f0ToIor(gbufferData.metalness) , step(0.001, gbufferData.metalness));
             gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
         #endif
-        float LdotH = clamp(dot(worldNormal, -waterWorldDir), 0.0, 1.0);
         #ifdef DISTANT_HORIZONS
             solidDepth -= float(solidDepth > 1.0);
         #endif

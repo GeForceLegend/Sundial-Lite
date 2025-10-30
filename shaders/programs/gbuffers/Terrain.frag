@@ -34,8 +34,8 @@ void main() {
 
     vec4 viewTangent = vec4(unpackHalf2x16(blockData.x), unpackHalf2x16(blockData.y));
     float tangentLenInv = inversesqrt(dot(viewTangent.xyz, viewTangent.xyz));
-    vec3 tangent = viewTangent.xyz * tangentLenInv;
-    vec3 bitangent = cross(viewNormal, tangent) * signI(viewTangent.w);
+    vec3 tangent = viewTangent.xyz;
+    vec3 bitangent = cross(viewNormal, tangent) * (signI(viewTangent.w) * tangentLenInv);
     mat3 tbnMatrix = mat3(tangent, bitangent, viewNormal);
 
     vec3 viewPos = screenToViewPos(gl_FragCoord.st * texelSize, gl_FragCoord.z);
@@ -44,11 +44,8 @@ void main() {
     #ifdef SKYLIGHT_FIX
         lightLevel.y = clamp(lightLevel.y + skyLightFix.w - dot(worldPos, skyLightFix.xyz), 0.0, 1.0);
     #endif
-    vec2 pixelScale = vec2(tangentLenInv, abs(viewTangent.w)) * albedoTexelSize;
     vec2 quadSize = 1.0 / coordRange.zw;
 
-    float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
-    vec3 viewDir = viewPos * (-viewDepthInv);
     float parallaxOffset = 0.0;
     vec2 texcoord = texlmcoord.st;
     #ifdef PARALLAX
@@ -57,8 +54,8 @@ void main() {
             if ((material >> 1) != MAT_WATER)
         #endif
         {
-            vec3 textureViewer = -viewDir * tbnMatrix;
-            textureViewer.xy /= vec2(tangentLenInv, abs(viewTangent.w));
+            vec3 textureViewer = viewPos * tbnMatrix;
+            textureViewer.y /= abs(viewTangent.w);
             #ifdef VOXEL_PARALLAX
                 texcoord = perPixelParallax(texlmcoord.st, textureViewer, albedoTexSize, albedoTexelSize, coordRange, parallaxTexNormal, parallaxOffset);
             #else
@@ -66,6 +63,7 @@ void main() {
             #endif
         }
     #endif
+    tbnMatrix[0] *= tangentLenInv;
 
     vec2 texGradX = dFdx(texlmcoord.st);
     vec2 texGradY = dFdy(texlmcoord.st);
@@ -107,7 +105,7 @@ void main() {
     #endif
 
     #ifdef HARDCODED_EMISSIVE
-        float emissive = step(rawData.emissive, 1e-3) * (material & 1u);
+        float emissive = clamp(float(material & 1u) - rawData.emissive * 1e+3, 0.0, 1.0);
         if (rawData.materialID == MAT_TORCH) {
             emissive *= 0.57 * length(rawData.albedo.rgb);
         }
@@ -130,11 +128,13 @@ void main() {
     #endif
 
     rawData.porosity +=
-        (1.0 - clamp(rawData.porosity * 1e+3, 0.0, 1.0)) *
+        clamp(1.0 - rawData.porosity * 1e+3, 0.0, 1.0) *
         (0.5 * float(rawData.materialID == MAT_GRASS) + 0.7 * float(rawData.materialID == MAT_LEAVES || rawData.materialID == MAT_GLOWING_BERRIES));
 
     float wetStrength = 0.0;
     vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
+    float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
+    vec3 viewDir = viewPos * (-viewDepthInv);
     if (rainyStrength > 0.0 && rawData.materialID != MAT_LAVA) {
         float porosity = rawData.porosity * 255.0 / 64.0;
         porosity *= step(porosity, 1.0);
@@ -158,23 +158,44 @@ void main() {
     }
 
     vec2 quadTexelSize = albedoTexelSize * quadSize;
-    if (
-        true
-        #ifdef PARALLAX
-            #ifdef VOXEL_PARALLAX
-                && (parallaxTexNormal.z > 0.5
-                #ifdef PARALLAX_BASED_NORMAL
-                    || rawData.parallaxOffset == 0.0
+    vec2 pixelScale = vec2(tangentLenInv, abs(viewTangent.w)) * albedoTexelSize;
+    #ifdef PARALLAX
+        #if (defined VOXEL_PARALLAX) || (defined PARALLAX_BASED_NORMAL)
+            if (rawData.parallaxOffset > 0.0
+                #ifdef VOXEL_PARALLAX
+                    || parallaxTexNormal.z < 0.5
                 #endif
-                )
-            #endif
+            ) {
+                #ifdef VOXEL_PARALLAX
+                    rawData.normal = tbnMatrix * parallaxTexNormal;
+                #else
+                    #ifdef SMOOTH_PARALLAX
+                        rawData.normal = heightBasedNormal(normals, texcoord, coordRange, quadTexelSize, albedoTexSize, pixelScale);
+                    #else
+                        const float eps = 1e-4;
+                        vec2 tileCoord = (texcoord - coordRange.xy) * quadSize;
+                        float rD = textureGrad(normals, clampCoordRange(tileCoord + vec2(eps * quadTexelSize.x, 0.0), coordRange), grad, grad).a;
+                        float lD = textureGrad(normals, clampCoordRange(tileCoord - vec2(eps * quadTexelSize.x, 0.0), coordRange), grad, grad).a;
+                        float uD = textureGrad(normals, clampCoordRange(tileCoord + vec2(0.0, eps * quadTexelSize.y), coordRange), grad, grad).a;
+                        float dD = textureGrad(normals, clampCoordRange(tileCoord - vec2(0.0, eps * quadTexelSize.y), coordRange), grad, grad).a;
+                        rawData.normal = vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3));
+                    #endif
+                    rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
+                    rawData.normal = normalize(tbnMatrix * rawData.normal);
+                #endif
+                texGradX *= albedoTexSize;
+                texGradY *= albedoTexSize;
+                rawData.normal = normalize(mix(tbnMatrix[2], rawData.normal, exp2(-sqrt(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY))))));
+            }
+            else
         #endif
-    ) {
+    #endif
+    {
         #ifdef CAULDRON_WAVE
             #if WATER_TYPE == 0
                 if (isCauldronWater) {
                     rawData.albedo = vec4(color.rgb * 0.2, 1.0);
-                    vec3 tangentDir = transpose(tbnMatrix) * viewPos.xyz;
+                    vec3 tangentDir = viewPos * tbnMatrix;
                     rawData.normal = waterWave(worldPos / 32.0, tangentDir);
                     rawData.normal.xy += rippleNormal.xy * wetStrength;
                     rawData.smoothness = 1.0;
@@ -205,30 +226,6 @@ void main() {
         float weight = clamp(curveStart - curveStart * exp(NdotV / curveStart - 1.0), 0.0, 1.0);
         weight = max(NdotV, curveStart) - weight;
         rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
-    }
-    else {
-        #ifdef VOXEL_PARALLAX
-            #ifdef PARALLAX
-                rawData.normal = tbnMatrix * parallaxTexNormal;
-            #endif
-        #else
-            #ifdef SMOOTH_PARALLAX
-                rawData.normal = heightBasedNormal(normals, texcoord, coordRange, quadTexelSize, albedoTexSize, pixelScale);
-            #else
-                const float eps = 1e-4;
-                vec2 tileCoord = (texcoord - coordRange.xy) * quadSize;
-                float rD = textureGrad(normals, clampCoordRange(tileCoord + vec2(eps * quadTexelSize.x, 0.0), coordRange), grad, grad).a;
-                float lD = textureGrad(normals, clampCoordRange(tileCoord - vec2(eps * quadTexelSize.x, 0.0), coordRange), grad, grad).a;
-                float uD = textureGrad(normals, clampCoordRange(tileCoord + vec2(0.0, eps * quadTexelSize.y), coordRange), grad, grad).a;
-                float dD = textureGrad(normals, clampCoordRange(tileCoord - vec2(0.0, eps * quadTexelSize.y), coordRange), grad, grad).a;
-                rawData.normal = vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3));
-            #endif
-            rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
-            rawData.normal = normalize(tbnMatrix * rawData.normal);
-        #endif
-        texGradX *= albedoTexSize;
-        texGradY *= albedoTexSize;
-        rawData.normal = normalize(mix(tbnMatrix[2], rawData.normal, exp2(-sqrt(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY))))));
     }
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);

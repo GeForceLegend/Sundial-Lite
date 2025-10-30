@@ -20,6 +20,8 @@
             #define NORMAL_STRENGTH 1.0 // [0.0 0.1 0.15 0.2 0.25 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.25 1.5 1.75 2.0 2.25 2.5 2.75 3.0]
             // #define SMOOTH_NORMAL
             // #define PARALLAX_BASED_NORMAL
+            #ifdef PARALLAX_BASED_NORMAL
+            #endif
         // Parallax
             #define PARALLAX
             #define SMOOTH_PARALLAX

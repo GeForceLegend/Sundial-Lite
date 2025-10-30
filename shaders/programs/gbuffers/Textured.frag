@@ -175,7 +175,7 @@ void main() {
                 if (color.w < 0.999) discard;
             #endif
             #ifdef ENTITIES
-                if (dot(color.rgb, vec3(1.0)) < 0.001) discard;
+                if (dot(color.rgb, vec3(1.0)) < 0.001 && abs(color.w - 0.5) < 0.49) discard;
             #endif
             useTexAlbedo = true;
         }
@@ -307,7 +307,7 @@ void main() {
             }
 
             vec2 quadTexelSize = albedoTexelSize * quadSize;
-            #ifdef PARALLAX_BASED_NORMAL
+            #if (defined PARALLAX_BASED_NORMAL) || (defined VOXEL_PARALLAX)
                 #if defined ENTITY_PARALLAX && defined PARALLAX
                     if (rawData.parallaxOffset > 0.0
                         #ifdef VOXEL_PARALLAX
