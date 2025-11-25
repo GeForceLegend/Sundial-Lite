@@ -296,6 +296,16 @@ option.AGX_LOOK=AgX风格
 value.AGX_LOOK.0=默认
 value.AGX_LOOK.1=金黄
 value.AGX_LOOK.2=简洁
+option.OFFSET_R=暗部偏移_红
+option.OFFSET_G=暗部偏移_绿
+option.OFFSET_B=暗部偏移_蓝
+option.SLOPE_R=亮部增益_红
+option.SLOPE_G=亮部增益_绿
+option.SLOPE_B=亮部增益_蓝
+option.POWER_R=中调_红
+option.POWER_G=中调_绿
+option.POWER_B=中调_蓝
+option.SAT_1=饱和度
 option.AGX_EV_MIN=AgX最小曝光度
 option.AGX_EV_MAX=AgX最大曝光度
 # Exposure

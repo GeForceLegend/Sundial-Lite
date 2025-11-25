@@ -149,10 +149,10 @@ vec3 AgX(vec3 val) {
     float luma = dot(val, lw);
 
     // Default
-    vec3 offset = vec3(0.0);
-    vec3 slope = vec3(1.0);
-    vec3 power = vec3(1.0);
-    float sat = 1.0;
+    vec3 offset = vec3(OFFSET_R, OFFSET_G, OFFSET_B);
+    vec3 slope = vec3(SLOPE_R, SLOPE_G, SLOPE_B);
+    vec3 power = vec3(POWER_R, POWER_G, POWER_B);
+    float sat = SAT_1;
 
     #if AGX_LOOK == 1
         // Golden
