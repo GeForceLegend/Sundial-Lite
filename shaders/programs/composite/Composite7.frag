@@ -11,7 +11,6 @@ in vec2 texcoord;
 #define DEPTH_OF_FIELD
 #define FOCUS_MODE 0 // [0 1]
 #define HAND_DOF
-// #define FOCUS_IGNORE_HAND
 #define COC_SPREAD_SAMPLES 10 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 22 25 30 35 40 45 50 60 70 80 90 100]
 #define FOCAL_LENGTH 0.01 // [0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.015 0.02 0.025 0.03 0.035 0.04 0.045 0.05 0.06 0.07 0.08 0.09 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0]
 #define MANUAL_FOCUS_DEPTH 100.0 // [0.1 0.2 0.3 0.4 0.5 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.3 2.6 2.9 3.2 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 18.0 20.0 22.0 24.0 27.0 30.0 35.0 40.0 45.0 50.0 55.0 60.0 65.0 70.0 80.0 90.0 100.0 110.0 120.0 130.0 140.0 160.0 180.0 200.0 250.0 300.0 400.0 500.0]
@@ -21,10 +20,6 @@ in vec2 texcoord;
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
-
-#ifdef FOCUS_IGNORE_HAND
-    uniform float centerDepthSmooth;
-#endif
 
 float getFarthestPrevDepth(vec2 coord) {
     float farthest = 0.0;
@@ -147,11 +142,7 @@ void main() {
     float focusDepth = far;
     #if FOCUS_MODE == 0
         const float minFocalLength = max(FOCAL_LENGTH + 0.01, 0.3);
-        #ifdef FOCUS_IGNORE_HAND
-            focusDepth = max(minFocalLength, screenToViewDepth(centerDepthSmooth));
-        #else
-            focusDepth = max(minFocalLength, screenToViewDepth(smoothCenterDepth));
-        #endif
+        focusDepth = max(minFocalLength, screenToViewDepth(smoothCenterDepth));
     #elif FOCUS_MODE == 1
         focusDepth = MANUAL_FOCUS_DEPTH;
     #endif

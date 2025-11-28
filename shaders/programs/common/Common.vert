@@ -8,6 +8,8 @@ out vec2 texcoord;
     out float smoothCenterDepth;
 #endif
 
+#define DOF_FOCUS_TEXTURE depthtex2 // [depthtex0 depthtex1 depthtex2]
+
 #ifdef SKY_COLOR_UP
     out vec3 skyColorUp;
 
@@ -30,7 +32,7 @@ void main() {
 
     #ifdef SMOOTH_CENTER_DEPTH
         float prevCenterDepth = texelFetch(colortex7, ivec2(screenSize - 0.5), 0).w;
-        float currCenterDepth = textureLod(DOF_DEPTH_TEXTURE, vec2(0.5), 0.0).x;
+        float currCenterDepth = textureLod(DOF_FOCUS_TEXTURE, vec2(0.5), 0.0).x;
         float fadeFactor = exp(log(0.5) * frameTime * 10.0 / centerDepthHalflife) * float(prevCenterDepth > 0.0);
         smoothCenterDepth = mix(currCenterDepth, prevCenterDepth, fadeFactor);
     #endif
