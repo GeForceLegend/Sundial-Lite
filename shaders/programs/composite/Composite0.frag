@@ -103,10 +103,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         viewPos = screenToViewPos(texcoord, gbufferData.depth);
     }
     vec3 viewDir = normalize(viewPos);
-    float NdotV = max(dot(viewPos, -gbufferData.geoNormal), 1e-6);
-    gbufferData.parallaxOffset *= PARALLAX_DEPTH;
-    viewPos += gbufferData.parallaxOffset * viewPos * 0.2 / NdotV;
-    viewPos += gbufferData.geoNormal * 0.01;
+    viewPos += gbufferData.geoNormal * 3e-3;
 
     NoiseGenerator noiseGenerator = initNoiseGenerator(uvec2(gl_FragCoord.st), uint(frameCounter));
 
@@ -154,6 +151,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         float minimumThichnessDH = max(0.01 * originProjScale, abs(stepSize.w));
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
             float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).x;
+            sampleDepth += textureLod(colortex3, sampleCoord.st, 0.0).w / 512.0;
             bool hitCheck = sampleCoord.z > sampleDepth && sampleDepth < 1.0;
             #ifdef DISTANT_HORIZONS
                 float sampleDepthDH = textureLod(dhDepthTex1, sampleCoord.st, 0.0).x;
@@ -170,7 +168,8 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                         sampleDepthDH = textureLod(dhDepthTex1, refinementCoord.st, 0.0).x;
                     #endif
                     refinementCoord += signMul(stepScale, stepDirection) * stepSize;
-                    sampleDepth = textureLod(depthtex2, refinementCoord.st, 0.0).x;
+                    sampleDepth = textureLod(depthtex1, refinementCoord.st, 0.0).x;
+                    sampleDepth += textureLod(colortex3, refinementCoord.st, 0.0).w / 512.0;
                     stepScale *= 0.5;
                 }
 
@@ -286,6 +285,8 @@ void main() {
     #ifdef REFLECTION
         if (waterDepth - float(waterDepth > 1.0) < 1.0) {
             GbufferData gbufferData = getGbufferData(texel, texcoord);
+            gbufferData.depth = waterDepth;
+
             vec3 n = vec3(1.5);
             vec3 k = vec3(0.0);
             float reflectionStrength = 1.0;
@@ -304,13 +305,13 @@ void main() {
                     diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
                 #endif
                 reflectionStrength = 1.0 - diffuseWeight;
+                gbufferData.depth += texelFetch(colortex3, texel, 0).w / 512.0;
             }
             #ifdef LABPBR_F0
                 n = mix(n, vec3(f0ToIor(gbufferData.metalness)), vec3(clamp(gbufferData.metalness * 1e+10, 0.0, 1.0)));
                 hardcodedMetal(gbufferData.metalness, n, k);
                 gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
             #endif
-            gbufferData.depth = waterDepth;
 
             if (reflectionStrength > 1e-5) {
                 reflectionColor = reflection(gbufferData, n, k, reflectionStrength);

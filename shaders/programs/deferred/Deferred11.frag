@@ -280,13 +280,13 @@ void main() {
         }
         viewPosNoPOM = screenToViewPos(texcoord, gbufferData.depth);
         float parallaxData = texelFetch(colortex3, texel, 0).w;
-        gbufferData.depth += abs(parallaxData) / 512.0;
+        gbufferData.depth += parallaxData / 512.0;
         viewPos = screenToViewPos(texcoord, gbufferData.depth);
     }
     vec3 worldPos = viewToWorldPos(viewPosNoPOM);
     vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
 
-    vec4 finalColor = vec4(0.0);
+    vec4 finalColor = vec4(vec3(0.0), texelFetch(colortex3, texel, 0).w);
     texBuffer0 = vec4(texelFetch(colortex0, texel, 0).rgb, texelFetch(colortex4, texel, 0).w);
 
     if (abs(gbufferData.depth) < 1.0) {
