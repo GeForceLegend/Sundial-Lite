@@ -12,6 +12,7 @@ layout(location = 1) out vec4 texBuffer3;
 
 in vec2 texcoord;
 
+uniform int heldBlockLightValue;
 uniform vec4 projShadowDirection;
 
 #define PCSS
@@ -308,6 +309,7 @@ void main() {
         finalColor.rgb = vec3(BASIC_LIGHT);
         finalColor.rgb += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
         const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
+        gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - 1.0 / 15.0 / viewLength, 0.0, 1.0));
         float blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor);
         finalColor.rgb += blockLight * lightColor;
         #ifdef SHADOW_AND_SKY
