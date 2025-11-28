@@ -93,7 +93,7 @@ void main() {
     #ifdef PHYSICS_OCEAN
         rawData.normal = mat3(gbufferModelView) * (physics_waveData.normal * vec3(0.5, 1.0, 0.5));
         rawData.normal = -signI(dot(rawData.normal, viewPos.xyz)) * rawData.normal;
-        rawData.geoNormal = rawData.normal;
+        rawData.geoNormal = -signI(dot(rawData.geoNormal, viewPos.xyz)) * rawData.geoNormal;
         #if WATER_TYPE == 0
             rawData.albedo.rgb = color.rgb;
         #else

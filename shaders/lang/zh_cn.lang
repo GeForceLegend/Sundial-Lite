@@ -55,6 +55,8 @@ value.ANISOTROPIC_FILTERING_QUALITY.8=8x
 value.ANISOTROPIC_FILTERING_QUALITY.16=16x
 value.ANISOTROPIC_FILTERING_QUALITY.32=32x
 option.REFRACTION_STRENGTH=折射强度
+option.REFRACTION_EDGE_FADE=折射边缘过渡
+option.REFRACTION_EDGE_FADE.comment=在折射目标点靠近/超出屏幕边缘时减小折射强度，减少折射超出屏幕范围时出现的硬边缘
 # Normal
 option.NORMAL_STRENGTH=法线强度
 option.NORMAL_FORMAT=法线格式
@@ -137,6 +139,8 @@ option.LIGHT_LEAKING_FIX.comment=修复地底漏光的情况. 会导致较深水
 # Lighting
 option.MOD_LIGHT_DETECTION=模组光源检测
 option.MOD_LIGHT_DETECTION.comment=将所有方块光照等级为最高的表面视为光源. 可能会产生意料之外的光源
+option.VANILLA_BLOCK_LIGHT_FADE=原版方块光照衰减
+option.VANILLA_BLOCK_LIGHT_FADE.comment=原版方块光照曲线的衰减速度
 option.SUNLIGHT_BRIGHTNESS=日光亮度
 option.NIGHT_BRIGHTNESS=夜晚亮度
 option.NIGHT_VISION_BRIGHTNESS=夜视亮度

@@ -6,6 +6,7 @@ layout(location = 0) out vec4 texBuffer3;
 in vec2 texcoord;
 
 #define REFRACTION_STRENGTH 1.0 // [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.5 6.0 6.5 7.0 7.5 8.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0]
+#define REFRACTION_EDGE_FADE 0.5 // [0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
 
 #include "/settings/CloudSettings.glsl"
 #include "/settings/GlobalSettings.glsl"
@@ -75,7 +76,9 @@ void main() {
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = mat3(gbufferModelViewInverse) * gbufferData.geoNormal;
         float LdotH = clamp(dot(-worldNormal, waterWorldDir), 0.0, 1.0);
+        vec3 stainedColor = vec3(0.0);
         if (isTargetNotParticle) {
+            stainedColor += gbufferData.smoothness * gbufferData.smoothness;
             float refractionStrength = REFRACTION_STRENGTH * 4e-2 * clamp((1.0 - waterViewDepthNoLimit * worldDistanceInv) / (waterViewDepthNoLimit * worldDistanceInv + worldDistanceInv), 0.0, 1.0);
 
             float roughness = 1.0 - gbufferData.smoothness;
@@ -87,6 +90,11 @@ void main() {
                 (dot(-worldGeoNormal, waterWorldDir) + k) * gbufferData.geoNormal * float(isTargetWater) // Get this idea from zombye/spectrum, MIT Licence
             );
             vec2 refractionOffset = (refractDirection.xy - viewPos.xy / viewPos.z * refractDirection.z + roughness * randomOffset) * refractionStrength;
+            vec2 screenEdgeIntersection = mix(texcoord, 1.0 - texcoord, clamp(refractionOffset * 1e+20, 0.0, 1.0)) / abs(refractionOffset);
+            float screenEdgeLength = min(screenEdgeIntersection.x, screenEdgeIntersection.y);
+            if (screenEdgeLength < 1.0 / (1.0 - REFRACTION_EDGE_FADE)) {
+                refractionOffset *= screenEdgeLength + pow2(REFRACTION_EDGE_FADE * screenEdgeLength) / (-1.0 + (1.0 - 2.0 * REFRACTION_EDGE_FADE) * screenEdgeLength);
+            }
 
             vec2 refractionTarget = texcoord + refractionOffset;
             float targetSolidDepth = textureLod(depthtex1, refractionTarget, 0.0).r;
@@ -152,10 +160,8 @@ void main() {
         #if WATER_TYPE == 0
             waterStain = float(!isTargetWater);
         #endif
-        vec3 stainedColor = sqrt(gbufferData.albedo.w * 1.5) * log2(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w)) * waterStain;
-        if (isTargetNotParticle) {
-            stainedColor += gbufferData.smoothness * gbufferData.smoothness * log2(1.0 - fresnel(LdotH, LdotH * LdotH, n));
-        }
+        stainedColor *= log2(1.0 - fresnel(LdotH, LdotH * LdotH, n));
+        stainedColor += sqrt(gbufferData.albedo.w * 1.5) * log2(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w)) * waterStain;
         stainedColor = exp2(stainedColor);
 
         stainedColor = mix(vec3(1.0), stainedColor, vec3(solidColor.w));

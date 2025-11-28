@@ -18,6 +18,7 @@ uniform vec4 projShadowDirection;
 #define PCSS_SAMPLES 9 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 25 30 36]
 #define SCREEN_SPACE_SHADOW_SAMPLES 12 // [4 5 6 7 8 9 10 12 14 16 18 20 25 30 35 40 45 50]
 #define SCREEN_SPACE_SHADOW
+#define VANILLA_BLOCK_LIGHT_FADE 2.0 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.5 6.0 6.5 7.0 7.5 8.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0]
 
 const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0 360.0 400.0 480.0 560.0 640.0]
 
@@ -162,14 +163,14 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec4 projDirection = projShadowDirection;
         float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
         vec4 targetProjPos = originProjPos + projDirection * traceLength;
-        targetProjPos.w = 0.5 / targetProjPos.w;
-        vec4 targetCoord = vec4(targetProjPos.xyz * targetProjPos.w + 0.5, 0.0);
+        float targetProjScale = 0.5 / targetProjPos.w;
+        vec4 targetCoord = vec4(targetProjPos.xyz * targetProjScale + 0.5, 0.0);
 
         #ifdef DISTANT_HORIZONS
-            projDirection.z = projShadowDirection.z * dhProjection[2].z;
+            projDirection.z = projShadowDirection.z / gbufferProjection[2].z * dhProjection[2].z;
             float originProjDepthDH = viewPos.z * dhProjection[2].z + dhProjection[3].z;
             originCoord.w = originProjDepthDH * projScale + 0.5;
-            targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) * targetProjPos.w + 0.5;
+            targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) * targetProjScale + 0.5;
         #endif
 
         vec4 stepSize = targetCoord - originCoord;
@@ -182,11 +183,15 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         stepSize *= 0.003 * 12.0 / SCREEN_SPACE_SHADOW_SAMPLES;
 
         targetCoord = originCoord + stepSize * SCREEN_SPACE_SHADOW_SAMPLES;
-        vec3 viewPosDiff = projectionToViewPos(targetCoord.xyz) - viewPos;
-        float sampleLengthInv = inversesqrt(dot(viewPosDiff, viewPosDiff));
+        vec3 targetViewPos = screenToViewPos(targetCoord.xy, targetCoord.z);
+        #ifdef DISTANT_HORIZONS
+            if (targetCoord.z >= 1.0) {
+                targetViewPos = screenToViewPosDH(targetCoord.xy, targetCoord.w);
+            }
+        #endif
         const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
-        float absorptionBeta = -0.5 / (max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5) * sampleLengthInv);
-        float absorption = exp2(absorptionBeta * porosityScale * 0.01) * step(0.25, porosity) * (1.0 - clamp(NdotL * 10.0, 0.0, 1.0) * porosityScale) + 1.0;
+        float absorptionBeta = -0.5 * abs(targetViewPos.z - viewPos.z) / (max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5) * abs(projShadowDirection.w));
+        float absorption = exp2(absorptionBeta * porosityScale * 0.5) * step(0.25, porosity) * (1.0 - clamp(NdotL * 10.0, 0.0, 1.0) * porosityScale) + 1.0;
         float shadowWeight = clamp(1.0 - abs(NdotL) * 10.0, 0.0, 1.0) * clamp(1.0 - 1.1 / viewLength / shadowDistance, 0.0, 1.0);
 
         vec4 sampleCoord = originCoord + noise.x * stepSize;
@@ -302,7 +307,9 @@ void main() {
         #endif
         finalColor.rgb = vec3(BASIC_LIGHT);
         finalColor.rgb += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
-        finalColor.rgb += pow(gbufferData.lightmap.x, 4.4) * lightColor;
+        const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
+        float blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor);
+        finalColor.rgb += blockLight * lightColor;
         #ifdef SHADOW_AND_SKY
             finalColor.rgb +=
                 pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) *

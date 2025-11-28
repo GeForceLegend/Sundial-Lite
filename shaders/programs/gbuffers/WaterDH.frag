@@ -20,7 +20,7 @@ flat in float materialID;
 
 void main() {
     vec3 worldPos = viewToWorldPos(viewPos);
-    if (max(dot(worldPos.xz, worldPos.xz), worldPos.y * worldPos.y) < (far - 16.0) * (far - 16.0) || texture2D(depthtex1, gl_FragCoord.st * texelSize).r < 1.0) {
+    if (max(dot(worldPos.xz, worldPos.xz), worldPos.y * worldPos.y) < (far - 16.0) * (far - 16.0) || texture2D(depthtex0, gl_FragCoord.st * texelSize).r < 1.0) {
         discard;
     }
 

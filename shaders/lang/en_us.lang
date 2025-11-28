@@ -49,6 +49,8 @@ value.ANISOTROPIC_FILTERING_QUALITY.8=8x
 value.ANISOTROPIC_FILTERING_QUALITY.16=16x
 value.ANISOTROPIC_FILTERING_QUALITY.32=32x
 option.REFRACTION_STRENGTH=Refraction strength
+option.REFRACTION_EDGE_FADE=Refraction edge fade
+option.REFRACTION_EDGE_FADE.comment=Reduce refraction strength when target near or out of screen edge, to reduce hard edge when refraction target out of screen
 # Normal
 option.NORMAL_FORMAT=Normal format
 option.NORMAL_FORMAT.comment=LabPBR uses data of x and y axis to reconstructe z axis. ClassicPBR uses normalize(normal.xyz)
@@ -128,6 +130,8 @@ option.LIGHT_LEAKING_FIX.comment=Fix light leaking underground. May cause issues
 # Lighting
 option.MOD_LIGHT_DETECTION=Mod light detection
 option.MOD_LIGHT_DETECTION.comment=Assuming all faces with maximum block light level to be light sources. May cause unexpected lighting faces.
+option.VANILLA_BLOCK_LIGHT_FADE=Vanilla block light fade
+option.VANILLA_BLOCK_LIGHT_FADE.comment=Fading speed of vanilla block light strength
 option.SUNLIGHT_BRIGHTNESS=Sun light brightness
 option.NIGHT_BRIGHTNESS=Night brightness
 option.NIGHT_VISION_BRIGHTNESS=Night vision brightness

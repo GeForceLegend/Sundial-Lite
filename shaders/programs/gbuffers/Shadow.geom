@@ -34,12 +34,14 @@ void main() {
         #ifdef TRANSPARENT
             float isTransparent = 1.0;
             #ifdef ENTITIES
-                isTransparent = float(abs(textureLod(gtexture, midCoord + 1e-6, 0.0).w * vColor[0].w - 0.5) + 1e-4 < 0.499);
+                isTransparent = float(abs(textureLod(gtexture, midCoord + 1e-6, 0.0).w - 0.5) + 1e-4 < 0.499);
             #endif
-            isTransparent *= float(shadowOffsetCenter.y == realShadowMapResolution - 1024.0);
+            isTransparent *= float(shadowOffsetCenter.y == 0.0);
             shadowOffsetCenter.x -= isTransparent * 0.5 * realShadowMapResolution;
             positionOffset.x = -isTransparent;
         #endif
+        vec2 maxCoordOffset = max(abs(minCoord - 0.5), abs(maxCoord - 0.5));
+        shadowOffset.x -= realShadowMapResolution * float(max(maxCoordOffset.x, maxCoordOffset.y) > 0.5);
 
         gl_Position = gl_in[0].gl_Position + positionOffset;
         color = vColor[0];

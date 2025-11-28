@@ -136,7 +136,7 @@ float realisticCloudDensity(vec3 cloudPos, vec3 wind, float cloudDistance, int o
         octaves = (octaves + 1) / 2;
     #endif
 
-    cloudPos += frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0);
+    cloudPos += frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0);
     float density = baseCloudNoise(cloudPos.xz * 0.00001 / CLOUD_SCALE);
     float weight = 1.0;
     for (int i = 0; i < octaves; i++) {
@@ -179,7 +179,7 @@ vec4 sampleRealisticCloud(vec3 cloudPos, vec3 sunDir, vec3 atmosphere) {
     vec3 relativeCloudPos = cloudPos - vec3(cameraPosition.x + CLOUD_REALISTIC_OFFSET_X, 0.0, cameraPosition.z + CLOUD_REALISTIC_OFFSET_Z);
     float cloudDistance2 = dot(relativeCloudPos, relativeCloudPos);
     float cloudDistance = inversesqrt(cloudDistance2);
-    vec3 wind = CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0);
+    vec3 wind = -CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0);
     vec4 result = vec4(0.0);
     result.w = realisticCloudDensity(cloudPos, wind, cloudDistance2 * cloudDistance, CLOUD_REALISTIC_OCTAVES, cloudDensityWeights);
     if (result.w > 1e-5) {
@@ -411,10 +411,10 @@ float cloudShadowRealistic(vec3 worldPos, vec3 shadowDir) {
 
     float cloudTransmittance = 1.0;
     if (hit) {
-        vec3 wind = CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0) * 0.000015 / CLOUD_SCALE * 64.0;
+        vec3 wind = -CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0) * 0.000015 / CLOUD_SCALE * 64.0;
 
         vec3 cloudPos = worldPos + vec3(cameraPosition.x + CLOUD_REALISTIC_OFFSET_X, 0.0, cameraPosition.z + CLOUD_REALISTIC_OFFSET_Z) + shadowDir * startIntersection;
-        cloudPos += frameTimeCounter * CLOUD_SPEED * vec3(10.0, 0.0, 5.0);
+        cloudPos += frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0);
         cloudTransmittance = baseCloudShadowNoise(cloudPos.xz * 0.00001 / CLOUD_SCALE * 64.0);
         float weight = 1.0;
         cloudPos = cloudPos * CLOUD_REALISTIC_OCTAVE_SCALE * 0.000015 / CLOUD_SCALE * 64.0 + wind;
