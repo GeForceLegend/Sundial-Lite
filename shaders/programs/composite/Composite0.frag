@@ -145,13 +145,17 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         #ifdef TAA
             sampleCoord.st += taaOffset * 0.5;
         #endif
+        sampleCoord.zw -= 2e-7;
 
         bool hitSky = true;
         float minimumThichness = max(0.001 * originProjScale, abs(stepSize.z));
         float minimumThichnessDH = max(0.01 * originProjScale, abs(stepSize.w));
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
             float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).x;
-            sampleDepth += textureLod(colortex3, sampleCoord.st, 0.0).w / 512.0;
+            float parallaxData = textureLod(colortex3, sampleCoord.st, 0.0).w;
+            float isHand = clamp(parallaxData - 511.0, 0.0, 1.0);
+            sampleDepth = mix(sampleDepth, sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
+            sampleDepth += (parallaxData - 512.0 * isHand) / 512.0;
             bool hitCheck = sampleCoord.z > sampleDepth && sampleDepth < 1.0;
             #ifdef DISTANT_HORIZONS
                 float sampleDepthDH = textureLod(dhDepthTex1, sampleCoord.st, 0.0).x;
@@ -169,7 +173,10 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                     #endif
                     refinementCoord += signMul(stepScale, stepDirection) * stepSize;
                     sampleDepth = textureLod(depthtex1, refinementCoord.st, 0.0).x;
-                    sampleDepth += textureLod(colortex3, refinementCoord.st, 0.0).w / 512.0;
+                    parallaxData = textureLod(colortex3, refinementCoord.st, 0.0).w;
+                    isHand = clamp(parallaxData - 511.0, 0.0, 1.0);
+                    sampleDepth = mix(sampleDepth, sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
+                    sampleDepth += (parallaxData - 512.0 * isHand) / 512.0;
                     stepScale *= 0.5;
                 }
 
@@ -286,6 +293,9 @@ void main() {
         if (waterDepth - float(waterDepth > 1.0) < 1.0) {
             GbufferData gbufferData = getGbufferData(texel, texcoord);
             gbufferData.depth = waterDepth;
+            if (gbufferData.materialID == MAT_HAND) {
+                gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+            }
 
             vec3 n = vec3(1.5);
             vec3 k = vec3(0.0);
@@ -305,7 +315,8 @@ void main() {
                     diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
                 #endif
                 reflectionStrength = 1.0 - diffuseWeight;
-                gbufferData.depth += texelFetch(colortex3, texel, 0).w / 512.0;
+                float parallaxData = texelFetch(colortex3, texel, 0).w;
+                gbufferData.depth += (parallaxData - 512.0 * clamp(parallaxData - 511.0, 0.0, 1.0)) / 512.0;
             }
             #ifdef LABPBR_F0
                 n = mix(n, vec3(f0ToIor(gbufferData.metalness)), vec3(clamp(gbufferData.metalness * 1e+10, 0.0, 1.0)));
