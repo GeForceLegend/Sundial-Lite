@@ -1,6 +1,14 @@
+#if MC_VERSION >= 11700
 in vec4 mc_Entity;
 in vec3 vaPosition;
 in vec2 mc_midTexCoord;
+#elif MC_VERSION >= 11500
+layout(location = 11) in vec4 mc_Entity;
+layout(location = 12) in vec4 mc_midTexCoord;
+#else
+layout(location = 10) in vec4 mc_Entity;
+layout(location = 11) in vec4 mc_midTexCoord;
+#endif
 
 out vec4 color;
 out vec3 worldPos;

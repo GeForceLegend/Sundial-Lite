@@ -61,6 +61,7 @@ vec3 shadowCoordToWorldPos(vec3 shadowCoord) {
 void main() {
     #ifdef SHADOW_AND_SKY
         vec4 albedo = textureLod(gtexture, texcoord, 0.0);
+        albedo *= color;
         #ifdef COLORWHEEL
             vec2 lmcoord;
             float ao;
