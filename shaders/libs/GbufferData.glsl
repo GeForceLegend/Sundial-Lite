@@ -330,8 +330,8 @@ float projIntersectionScreenEdge(vec4 origin, vec4 direction) {
     uvec2 intersectionBB = projIntersection(origin, direction, vec2(-1.0));
     uint intersection = min(min(intersectionAA.x, intersectionAA.y), min(intersectionBB.x, intersectionBB.y));
     float depthLimit = far;
-    #ifdef lodRenderDistance
-        depthLimit = dhRenderDistance * 1.01;
+    #ifdef LOD
+        depthLimit = lodRenderDistance() * 1.01;
     #endif
     intersection = min(intersection, floatBitsToUint(depthLimit + 32.0));
     return uintBitsToFloat(intersection);
