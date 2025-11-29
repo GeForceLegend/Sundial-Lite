@@ -94,7 +94,7 @@ vec3 directionDistribution(vec2 noise, vec3 normal, vec3 viewDir, float roughnes
 
 vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float firstWeight) {
     vec3 viewPos;
-    #ifdef lodRenderDistance
+    #ifdef LOD
         if (gbufferData.depth > 1.0) {
             viewPos = screenToViewPosLod(texcoord, gbufferData.depth - 1.0);
         } else
