@@ -41,7 +41,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     rawData.depth = 0.0;
 
     float blockId = parameters.customId;
-    float emissive = float(511.5 < blockId && blockId < 2048.5);
+    float emissive = float(511.5 < blockId && blockId < 2048.5 && rawData.emissive < 1e-3);
     if (abs(blockId - 188.5) < 1.0 || blockId == 265 || abs(blockId - 225.5) < 31 || abs(blockId - 736.5) < 31) {
         rawData.materialID = MAT_GRASS;
         rawData.porosity = 0.5;
@@ -81,9 +81,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         emissive = 0.0;
     #endif
     #ifdef MOD_LIGHT_DETECTION
-        if (rawData.lightmap.x > 0.99999) {
-            emissive += float(rawData.emissive < 1e-3 && blockId < -0.5);
-        }
+        emissive += float(rawData.lightmap.x > 0.99999 && rawData.emissive < 1e-3 && blockId < -0.5);
     #endif
     rawData.emissive = emissive;
 

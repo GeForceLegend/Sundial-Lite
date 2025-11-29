@@ -32,9 +32,11 @@
         "vxDepthTexOpaque": "sampler2D",
         "vxDepthTexTrans": "sampler2D"
     },
+    "blending": {
+        "-1": "off"
+    },
     "excludeLodsFromVanillaDepth": true,
     "taaOffset": "{return taaOffsetVX;}",
     "opaqueDrawBuffers": [0, 1, 2],
-    "translucentDrawBuffers": [0, 1, 2],
-    "translucentPatchData": "void voxy_emitFragment(VoxyFragmentParameters parameters) {discard;}"
+    "translucentDrawBuffers": [16, 17, 18]
 }

@@ -1,8 +1,7 @@
 #extension GL_ARB_gpu_shader5 : enable
 #extension GL_ARB_shading_language_packing: enable
 
-layout(location = 0) out vec4 texBuffer0;
-layout(location = 1) out vec4 texBuffer3;
+layout(location = 0) out vec4 texBuffer3;
 
 #ifdef SHADOW_AND_SKY
     in vec3 skyColorUp;
@@ -287,7 +286,6 @@ void main() {
     vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
 
     vec4 finalColor = vec4(vec3(0.0), texelFetch(colortex3, texel, 0).w + 512.0 * float(gbufferData.materialID == MAT_HAND));
-    texBuffer0 = vec4(texelFetch(colortex0, texel, 0).rgb, texelFetch(colortex4, texel, 0).w);
 
     if (abs(gbufferData.depth) < 1.0) {
         float viewLength = inversesqrt(dot(viewPos, viewPos));
@@ -366,4 +364,4 @@ void main() {
     texBuffer3 = finalColor;
 }
 
-/* DRAWBUFFERS:03 */
+/* DRAWBUFFERS:3 */
