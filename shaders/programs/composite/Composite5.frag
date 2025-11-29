@@ -36,10 +36,10 @@ void main() {
     float solidDepth = gbufferData.depth;
     vec4 solidColor = texelFetch(colortex3, texel, 0);
     vec3 viewPos;
-    #ifdef DISTANT_HORIZONS
+    #ifdef LOD
         if (solidDepth == 1.0) {
-            solidDepth = textureLod(dhDepthTex1, texcoord, 0.0).r;
-            viewPos = screenToViewPosDH(texcoord, solidDepth);
+            solidDepth = getLodDepthSolid(texcoord);
+            viewPos = screenToViewPosLod(texcoord, solidDepth);
             solidDepth += 1.0;
         } else
     #endif
@@ -47,10 +47,10 @@ void main() {
         viewPos = screenToViewPos(texcoord, solidDepth);
     }
     vec3 waterViewPos;
-    #ifdef DISTANT_HORIZONS
+    #ifdef LOD
         if (waterDepth == 1.0) {
-            waterDepth = textureLod(dhDepthTex0, texcoord, 0.0).r;
-            waterViewPos = screenToViewPosDH(texcoord, waterDepth);
+            waterDepth = getLodDepthWater(texcoord);
+            waterViewPos = screenToViewPosLod(texcoord, waterDepth);
             waterDepth += 1.0;
         } else
     #endif
@@ -98,16 +98,16 @@ void main() {
 
             vec2 refractionTarget = texcoord + refractionOffset;
             float targetSolidDepth = textureLod(depthtex1, refractionTarget, 0.0).r;
-            #ifdef DISTANT_HORIZONS
-                targetSolidDepth += float(targetSolidDepth == 1.0) * textureLod(dhDepthTex1, refractionTarget, 0.0).r;
+            #ifdef LOD
+                targetSolidDepth += float(targetSolidDepth == 1.0) * getLodDepthSolid(refractionTarget);
             #endif
             if (waterDepth < targetSolidDepth) {
                 solidDepth = targetSolidDepth;
                 solidColor.rgb = textureLod(colortex3, refractionTarget, 0.0).rgb;
                 vec3 viewPos;
-                #ifdef DISTANT_HORIZONS
+                #ifdef LOD
                     if (targetSolidDepth > 1.0) {
-                        viewPos = screenToViewPosDH(refractionTarget, targetSolidDepth - 1.0);
+                        viewPos = screenToViewPosLod(refractionTarget, targetSolidDepth - 1.0);
                     } else
                 #endif
                 {
@@ -125,7 +125,7 @@ void main() {
             n = mix(n, f0ToIor(gbufferData.metalness) , step(0.001, gbufferData.metalness));
             gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
         #endif
-        #ifdef DISTANT_HORIZONS
+        #ifdef LOD
             solidDepth -= float(solidDepth > 1.0);
         #endif
         waterDistance = mix(waterDistance, 114514.0, step(0.999999, solidDepth));

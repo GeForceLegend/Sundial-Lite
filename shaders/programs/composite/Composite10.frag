@@ -14,6 +14,7 @@ in float smoothCenterDepth;
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
+#include "/libs/GbufferData.glsl"
 
 const bool colortex3MipmapEnabled = true;
 
@@ -91,8 +92,8 @@ void main() {
     texBuffer3.rgb *= 6.0;
 
     texBuffer7 = vec4(pow(currColor * 0.01, vec3(1.0 / 2.2)), textureLod(depthtex0, texcoord, 0.0).r) * 10.0;
-    #ifdef DISTANT_HORIZONS
-        texBuffer7.w += textureLod(dhDepthTex0, texcoord, 0.0).r * float(texBuffer7.w == 1.0);
+    #ifdef LOD
+        texBuffer7.w += getLodDepthWater(texcoord) * float(texBuffer7.w == 1.0);
     #endif
     if (dot(texcoord, screenSize) < 1.1) {
         texBuffer7.w = getAvgBrightness();

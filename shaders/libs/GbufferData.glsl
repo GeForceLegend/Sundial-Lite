@@ -1,5 +1,116 @@
 #include "/libs/Materials.glsl"
 
+#ifdef LOD
+    mat4 projLod() {
+        #ifdef DISTANT_HORIZONS
+            return dhProjection;
+        #endif
+        #ifdef VOXY
+            return vxProj;
+        #endif
+        return gbufferProjection;
+    }
+
+    mat4 projInvLod() {
+        #ifdef DISTANT_HORIZONS
+            return dhProjectionInverse;
+        #endif
+        #ifdef VOXY
+            return vxProjInv;
+        #endif
+        return gbufferProjectionInverse;
+    }
+
+    mat4 projPrevLod() {
+        #ifdef DISTANT_HORIZONS
+            return dhPreviousProjection;
+        #endif
+        #ifdef VOXY
+            return vxProjPrev;
+        #endif
+        return gbufferPreviousProjection;
+    }
+
+    float lodRenderDistance() {
+        #ifdef DISTANT_HORIZONS
+            return dhRenderDistance;
+        #endif
+        #ifdef VOXY
+            return vxRenderDistance * 16.0;
+        #endif
+        return far;
+    }
+
+    float getLodDepthSolid(vec2 coord) {
+        #ifdef DISTANT_HORIZONS
+            return textureLod(dhDepthTex1, coord, 0.0).x;
+        #endif
+        #ifdef VOXY
+            return textureLod(vxDepthTexOpaque, coord, 0.0).x;
+        #endif
+        return textureLod(depthtex1, coord, 0.0).x;
+    }
+
+    float getLodDepthSolidDeferred(vec2 coord) {
+        #ifdef DISTANT_HORIZONS
+            return textureLod(dhDepthTex0, coord, 0.0).x;
+        #endif
+        #ifdef VOXY
+            return textureLod(vxDepthTexOpaque, coord, 0.0).x;
+        #endif
+        return textureLod(depthtex0, coord, 0.0).x;
+    }
+
+    float getLodDepthWater(vec2 coord) {
+        #ifdef DISTANT_HORIZONS
+            return textureLod(dhDepthTex0, coord, 0.0).x;
+        #endif
+        #ifdef VOXY
+            return textureLod(vxDepthTexTrans, coord, 0.0).x;
+        #endif
+        return textureLod(depthtex0, coord, 0.0).x;
+    }
+
+    vec3 screenToViewPosLod(vec2 coord, float depth) {
+        vec3 projPos = vec3(coord.xy, depth) * 2.0 - 1.0;
+        #ifdef TAA
+            projPos.xy -= taaOffset;
+        #endif
+        vec4 viewPos = vec4(projInvLod()[0].x, projInvLod()[1].y, projInvLod()[2].zw) * projPos.xyzz + projInvLod()[3];
+        return viewPos.xyz / viewPos.w;
+    }
+
+    vec3 projectionToViewPosLod(vec3 projPos) {
+        vec4 viewPos = vec4(projInvLod()[0].x, projInvLod()[1].y, projInvLod()[2].zw) * projPos.xyzz + projInvLod()[3];
+        return viewPos.xyz / viewPos.w;
+    }
+
+    vec3 viewToProjectionPosLod(vec3 viewPos) {
+        return -(vec3(projLod()[0].x, projLod()[1].y, projLod()[2].z) * viewPos + projLod()[3].xyz) / viewPos.z;
+    }
+
+    vec3 prevProjectionToViewPosLod(vec3 projPos) {
+        projPos.x /= projPrevLod()[0].x;
+        projPos.y /= projPrevLod()[1].y;
+        projPos.z = projPrevLod()[3].z / (projPos.z + projPrevLod()[2].z);
+        return vec3(projPos.xy * projPos.z, -projPos.z);
+    }
+
+    vec3 prevViewToProjectionPosLod(vec3 viewPos) {
+        return -(vec3(projPrevLod()[0].x, projPrevLod()[1].y, projPrevLod()[2].z) * viewPos + projPrevLod()[3].xyz) / viewPos.z;
+    }
+
+    float screenToViewDepthLod(float depth) {
+        depth = depth * 2.0 - 1.0;
+        return 1.0 / (depth * projInvLod()[2].w + projInvLod()[3].w);
+    }
+
+    float viewToScreenDepthLod(float depth) {
+        depth = (1.0 / depth - projInvLod()[3].w) / projInvLod()[2].w;
+        return depth * 0.5 + 0.5;
+    }
+#endif
+
 struct GbufferData {
     vec4 albedo;
     vec3 normal;
@@ -219,50 +330,9 @@ float projIntersectionScreenEdge(vec4 origin, vec4 direction) {
     uvec2 intersectionBB = projIntersection(origin, direction, vec2(-1.0));
     uint intersection = min(min(intersectionAA.x, intersectionAA.y), min(intersectionBB.x, intersectionBB.y));
     float depthLimit = far;
-    #ifdef DISTANT_HORIZONS
+    #ifdef lodRenderDistance
         depthLimit = dhRenderDistance * 1.01;
     #endif
     intersection = min(intersection, floatBitsToUint(depthLimit + 32.0));
     return uintBitsToFloat(intersection);
 }
-
-#ifdef DISTANT_HORIZONS
-    vec3 screenToViewPosDH(vec2 coord, float depth) {
-        vec3 projPos = vec3(coord.xy, depth) * 2.0 - 1.0;
-        #ifdef TAA
-            projPos.xy -= taaOffset;
-        #endif
-        vec4 viewPos = vec4(dhProjectionInverse[0].x, dhProjectionInverse[1].y, dhProjectionInverse[2].zw) * projPos.xyzz + dhProjectionInverse[3];
-        return viewPos.xyz / viewPos.w;
-    }
-
-    vec3 projectionToViewPosDH(vec3 projPos) {
-        vec4 viewPos = vec4(dhProjectionInverse[0].x, dhProjectionInverse[1].y, dhProjectionInverse[2].zw) * projPos.xyzz + dhProjectionInverse[3];
-        return viewPos.xyz / viewPos.w;
-    }
-
-    vec3 viewToProjectionPosDH(vec3 viewPos) {
-        return -(vec3(dhProjection[0].x, dhProjection[1].y, dhProjection[2].z) * viewPos + dhProjection[3].xyz) / viewPos.z;
-    }
-
-    vec3 prevProjectionToViewPosDH(vec3 projPos) {
-        projPos.x /= dhPreviousProjection[0].x;
-        projPos.y /= dhPreviousProjection[1].y;
-        projPos.z = dhPreviousProjection[3].z / (projPos.z + dhPreviousProjection[2].z);
-        return vec3(projPos.xy * projPos.z, -projPos.z);
-    }
-
-    vec3 prevViewToProjectionPosDH(vec3 viewPos) {
-        return -(vec3(dhPreviousProjection[0].x, dhPreviousProjection[1].y, dhPreviousProjection[2].z) * viewPos + dhPreviousProjection[3].xyz) / viewPos.z;
-    }
-
-    float screenToViewDepthDH(float depth) {
-        depth = depth * 2.0 - 1.0;
-        return 1.0 / (depth * dhProjectionInverse[2].w + dhProjectionInverse[3].w);
-    }
-
-    float viewToScreenDepthDH(float depth) {
-        depth = (1.0 / depth - dhProjectionInverse[3].w) / dhProjectionInverse[2].w;
-        return depth * 0.5 + 0.5;
-    }
-#endif

@@ -44,10 +44,10 @@ void main() {
         if (isEyeInWater < 2) {
             float waterDepth = textureLod(depthtex0, texcoord, 0.0).r;
             vec3 waterViewPos;
-            #ifdef DISTANT_HORIZONS
+            #ifdef LOD
                 if (waterDepth == 1.0) {
-                    waterDepth = textureLod(dhDepthTex0, texcoord, 0.0).r;
-                    waterViewPos = screenToViewPosDH(texcoord, waterDepth);
+                    waterDepth = getLodDepthWater(texcoord);
+                    waterViewPos = screenToViewPosLod(texcoord, waterDepth);
                 } else
             #endif
             {
@@ -80,8 +80,8 @@ void main() {
 
             float noise = bayer64Temporal(gl_FragCoord.xy);
             float maxAllowedDistance = far;
-            #ifdef DISTANT_HORIZONS
-                maxAllowedDistance = dhRenderDistance * 1.01;
+            #ifdef LOD
+                maxAllowedDistance = lodRenderDistance() * 1.01;
             #endif
             maxAllowedDistance = (maxAllowedDistance + 32.0) * inversesqrt(max(waterWorldDir.y * waterWorldDir.y, 0.5));
             maxAllowedDistance = min(maxAllowedDistance, 5000.0 * exp(-6.0 * length(absorptionBeta)));

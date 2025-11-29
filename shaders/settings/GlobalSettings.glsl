@@ -111,3 +111,7 @@
         #undef SHADOW_AND_SKY
     #endif
 #endif
+
+#if defined DISTANT_HORIZONS || defined VOXY
+    #define LOD
+#endif

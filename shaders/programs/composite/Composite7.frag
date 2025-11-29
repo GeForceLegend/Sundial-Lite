@@ -37,18 +37,30 @@ float getFarthestPrevDepth(vec2 coord) {
     return farthest;
 }
 
+#ifdef LOD
+    vec4 depthGatherLod(vec2 coord) {
+        #ifdef DISTANT_HORIZONS
+            return textureGather(dhDepthTex0, coord, 0);
+        #endif
+        #ifdef VOXY
+            return textureGather(vxDepthTexTrans, coord, 0);
+        #endif
+        return textureGather(depthtex0, coord, 0);
+    }
+#endif
+
 float getClosestDepth(vec2 coord) {
     float closest = 2.0;
 
     vec4 samples = textureGather(depthtex0, coord - vec2(0.5) * texelSize, 0);
-    #ifdef DISTANT_HORIZONS
-        samples += step(1.0, samples) * textureGather(dhDepthTex0, coord - vec2(0.5) * texelSize, 0);
+    #ifdef LOD
+        samples += step(1.0, samples) * depthGatherLod(coord - vec2(0.5) * texelSize);
     #endif
     closest = min(min(samples.x, samples.y), min(samples.z, samples.w));
 
     samples = textureGather(depthtex0, coord + vec2(0.5) * texelSize, 0);
-    #ifdef DISTANT_HORIZONS
-        samples += step(1.0, samples) * textureGather(dhDepthTex0, coord + vec2(0.5) * texelSize, 0);
+    #ifdef LOD
+        samples += step(1.0, samples) * depthGatherLod(coord + vec2(0.5) * texelSize);
     #endif
     closest = min(min(samples.x, samples.y), min(samples.z, closest));
 
@@ -56,10 +68,10 @@ float getClosestDepth(vec2 coord) {
         textureLod(depthtex0, coord + vec2( texelSize.x, -texelSize.y), 0.0).r,
         textureLod(depthtex0, coord + vec2(-texelSize.x,  texelSize.y), 0.0).r
     );
-    #ifdef DISTANT_HORIZONS
+    #ifdef LOD
         samples.xy += step(vec2(1.0), samples.xy) * vec2(
-            textureLod(dhDepthTex0, coord + vec2( texelSize.x, -texelSize.y), 0.0).r,
-            textureLod(dhDepthTex0, coord + vec2(-texelSize.x,  texelSize.y), 0.0).r
+            getLodDepthWater(coord + vec2( texelSize.x, -texelSize.y)),
+            getLodDepthWater(coord + vec2(-texelSize.x,  texelSize.y))
         );
     #endif
 
@@ -82,10 +94,10 @@ vec3 calculateVelocity(vec3 coord, ivec2 texel, float materialID) {
         view = viewToProjectionPos(view);
         view = view * 0.5 + 0.5;
     } else if (coord.z > 0.7) {
-        #ifdef DISTANT_HORIZONS
+        #ifdef LOD
             if (coord.z > 1.0) {
                 view.z -= 1.0;
-                view = projectionToViewPosDH(view * 2.0 - 1.0);
+                view = projectionToViewPosLod(view * 2.0 - 1.0);
             } else
         #endif
         {
@@ -104,9 +116,9 @@ vec3 calculateVelocity(vec3 coord, ivec2 texel, float materialID) {
             view = mat3(gbufferModelViewInverse) * view;
             view = mat3(gbufferPreviousModelView) * view;
         }
-        #ifdef DISTANT_HORIZONS
+        #ifdef LOD
             if (coord.z > 1.0) {
-                view = prevViewToProjectionPosDH(view);
+                view = prevViewToProjectionPosLod(view);
                 view.z += 2.0;
             } else
         #endif

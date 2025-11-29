@@ -24,10 +24,10 @@ void main() {
 
     float depth = texelFetch(depthtex1, texel, 0).r;
     vec3 viewPos;
-    #ifdef DISTANT_HORIZONS
+    #ifdef LOD
         if (depth == 1.0) {
-            depth = textureLod(dhDepthTex1, texcoord, 0.0).r;
-            viewPos = screenToViewPosDH(texcoord, depth);
+            depth = getLodDepthSolid(texcoord);
+            viewPos = screenToViewPosLod(texcoord, depth);
             depth = -depth;
         } else
     #endif

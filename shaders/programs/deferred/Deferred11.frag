@@ -167,9 +167,9 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         float targetProjScale = 0.5 / targetProjPos.w;
         vec4 targetCoord = vec4(targetProjPos.xyz * targetProjScale + 0.5, 0.0);
 
-        #ifdef DISTANT_HORIZONS
-            projDirection.z = projShadowDirection.z / gbufferProjection[2].z * dhProjection[2].z;
-            float originProjDepthDH = viewPos.z * dhProjection[2].z + dhProjection[3].z;
+        #ifdef LOD
+            projDirection.z = projShadowDirection.z / gbufferProjection[2].z * projLod()[2].z;
+            float originProjDepthDH = viewPos.z * projLod()[2].z + projLod()[3].z;
             originCoord.w = originProjDepthDH * projScale + 0.5;
             targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) * targetProjScale + 0.5;
         #endif
@@ -185,9 +185,9 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
         targetCoord = originCoord + stepSize * SCREEN_SPACE_SHADOW_SAMPLES;
         vec3 targetViewPos = screenToViewPos(targetCoord.xy, targetCoord.z);
-        #ifdef DISTANT_HORIZONS
+        #ifdef LOD
             if (targetCoord.z >= 1.0) {
-                targetViewPos = screenToViewPosDH(targetCoord.xy, targetCoord.w);
+                targetViewPos = screenToViewPosLod(targetCoord.xy, targetCoord.w);
             }
         #endif
         const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
@@ -210,9 +210,9 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             }
             float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).r;
             bool hit;
-            #ifdef DISTANT_HORIZONS
+            #ifdef LOD
                 if (sampleDepth == 1.0) {
-                    float sampleDepthDH = textureLod(dhDepthTex0, sampleCoord.st, 0.0).r;
+                    float sampleDepthDH = getLodDepthSolidDeferred(sampleCoord.st);
                     hit = abs(sampleCoord.w - sampleDepthDH) < maximumThicknessDH && sampleDepthDH < 1.0;
                 }
                 else
@@ -266,10 +266,10 @@ void main() {
     GbufferData gbufferData = getGbufferData(texel, texcoord);
     vec3 viewPos;
     vec3 viewPosNoPOM;
-    #ifdef DISTANT_HORIZONS
+    #ifdef LOD
         if (gbufferData.depth == 1.0) {
-            gbufferData.depth = textureLod(dhDepthTex0, texcoord, 0.0).r;
-            viewPos = screenToViewPosDH(texcoord, gbufferData.depth - 1e-7);
+            gbufferData.depth = getLodDepthSolidDeferred(texcoord);
+            viewPos = screenToViewPosLod(texcoord, gbufferData.depth - 1e-7);
             viewPosNoPOM = viewPos;
             gbufferData.depth = -gbufferData.depth;
         } else
