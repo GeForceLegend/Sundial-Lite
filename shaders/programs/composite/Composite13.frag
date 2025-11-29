@@ -15,8 +15,8 @@ const int colortex7Format = RGBA32F;
 
 // Voxy support
 const int colortex16Format = RGBA8;
-const int colortex17Format = RGBA16F;
-const int colortex18Format = RGBA16F;
+const int colortex17Format = RGBA16;
+const int colortex18Format = RGBA16;
 */
 
 const float shadowDistanceRenderMul = 1.0;
