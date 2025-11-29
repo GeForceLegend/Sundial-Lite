@@ -20,18 +20,18 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     GbufferData rawData;
     rawData.albedo = parameters.sampledColour * parameters.tinting;
 
-    vec3 normal = vec3(
+    vec3 worldNormal = vec3(
         float((parameters.face >> 2) & 1u),
         0.0,
         float((parameters.face >> 1) & 1u)
     );
-    normal.y = 1.0 - normal.x - normal.z;
-    normal *= uintBitsToFloat((parameters.face << 31) ^ 0xBF800000u);
-    normal = mat3(gbufferModelView) * normal;
-    rawData.normal = normal;
-    rawData.geoNormal = normal;
+    worldNormal.y = 1.0 - worldNormal.x - worldNormal.z;
+    worldNormal *= uintBitsToFloat((parameters.face << 31) ^ 0xBF800000u);
+    vec3 viewNormal = mat3(gbufferModelView) * worldNormal;
+    rawData.normal = viewNormal;
+    rawData.geoNormal = viewNormal;
 
-    rawData.lightmap = parameters.lightMap;
+    rawData.lightmap = clamp(parameters.lightMap * 16.0 / 15.0 - 0.5 / 15.0, 0.0, 1.0);
     rawData.smoothness = 0.0;
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;
@@ -85,7 +85,42 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     #endif
     rawData.emissive = emissive;
 
-    // TODO: Rain wet, water for water cauldron. Possible for normal and specular?
+    vec3 tangent = mat3(gbufferModelView) * vec3(abs(worldNormal.y) + worldNormal.z, 0.0, -worldNormal.x);
+    vec3 bitangent = mat3(gbufferModelView) * vec3(0.0, abs(worldNormal.y) - 1.0, worldNormal.y);
+    mat3 tbnMatrix = mat3(tangent, bitangent, viewNormal);
+
+    vec3 viewPos = screenToViewPosLod(gl_FragCoord.st * texelSize - 0.5 * taaOffsetVX, gl_FragCoord.z);
+    vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
+
+    float wetStrength = 0.0;
+    vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
+    float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
+    vec3 viewDir = viewPos * (-viewDepthInv);
+    if (rainyStrength > 0.0 && rawData.materialID != MAT_LAVA) {
+        float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
+
+        vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
+        #if RAIN_PUDDLE == 1
+            wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
+        #elif RAIN_PUDDLE == 2
+            wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, 1.0, outdoor);
+        #endif
+        rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
+
+        #ifdef RAIN_RIPPLES
+            rippleNormal = rainRippleNormal(mcPos);
+            rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
+        #endif
+    }
+    rawData.normal = mix(vec3(0.0, 0.0, 1.0), rippleNormal, wetStrength);
+    rawData.normal = normalize(tbnMatrix * rawData.normal);
+
+    float NdotV = dot(rawData.normal, viewDir);
+    vec3 edgeNormal = rawData.normal - viewDir * NdotV;
+    float curveStart = dot(viewDir, tbnMatrix[2]);
+    float weight = clamp(curveStart - curveStart * exp(NdotV / curveStart - 1.0), 0.0, 1.0);
+    weight = max(NdotV, curveStart) - weight;
+    rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);
 }

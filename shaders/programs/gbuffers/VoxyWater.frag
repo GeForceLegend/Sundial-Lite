@@ -31,7 +31,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     rawData.normal = viewNormal;
     rawData.geoNormal = viewNormal;
 
-    rawData.lightmap = parameters.lightMap;
+    rawData.lightmap = clamp(parameters.lightMap * 16.0 / 15.0 - 0.5 / 15.0, 0.0, 1.0);
     rawData.smoothness = 1.0;
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;
@@ -60,13 +60,44 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec3 bitangent = mat3(gbufferModelView) * vec3(0.0, abs(worldNormal.y) - 1.0, worldNormal.y);
     mat3 tbnMatrix = mat3(tangent, bitangent, viewNormal);
 
+    vec3 viewPos = screenToViewPosLod(gl_FragCoord.st * texelSize - 0.5 * taaOffsetVX, gl_FragCoord.z);
+    vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
+
+    float wetStrength = 0.0;
+    vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
+    float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
+    vec3 viewDir = viewPos * (-viewDepthInv);
+    if (rainyStrength > 0.0 && rawData.materialID != MAT_LAVA) {
+        float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
+
+        vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
+        #if RAIN_PUDDLE == 1
+            wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
+        #elif RAIN_PUDDLE == 2
+            wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, 1.0, outdoor);
+        #endif
+        rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
+
+        #ifdef RAIN_RIPPLES
+            rippleNormal = rainRippleNormal(mcPos);
+            rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
+        #endif
+    }
+
     if (rawData.materialID == MAT_WATER) {
         rawData.albedo.rgb = parameters.tinting.rgb;
-        vec3 viewPos = screenToViewPosLod(gl_FragCoord.st * texelSize - 0.5 * taaOffsetVX, gl_FragCoord.z);
         vec3 tangentDir = transpose(tbnMatrix) * viewPos;
-        vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
-        rawData.normal = tbnMatrix * waterWave(mcPos / 32.0, tangentDir);
+        rawData.normal = waterWave(mcPos / 32.0, tangentDir);
     }
+    rawData.normal.xy += rippleNormal.xy * wetStrength;
+    rawData.normal = normalize(tbnMatrix * rawData.normal);
+
+    float NdotV = dot(rawData.normal, viewDir);
+    vec3 edgeNormal = rawData.normal - viewDir * NdotV;
+    float curveStart = dot(viewDir, tbnMatrix[2]);
+    float weight = clamp(curveStart - curveStart * exp(NdotV / curveStart - 1.0), 0.0, 1.0);
+    weight = max(NdotV, curveStart) - weight;
+    rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);
 }
