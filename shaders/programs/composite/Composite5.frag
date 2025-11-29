@@ -106,12 +106,12 @@ void main() {
                 solidColor.rgb = textureLod(colortex3, refractionTarget, 0.0).rgb;
                 vec3 viewPos;
                 #ifdef LOD
-                    if (targetSolidDepth > 1.0) {
-                        viewPos = screenToViewPosLod(refractionTarget, targetSolidDepth - 1.0);
+                    if (solidDepth > 1.0) {
+                        viewPos = screenToViewPosLod(refractionTarget, solidDepth - 1.0);
                     } else
                 #endif
                 {
-                    viewPos = screenToViewPos(refractionTarget, targetSolidDepth);
+                    viewPos = screenToViewPos(refractionTarget, solidDepth);
                 }
                 worldPos = mat3(gbufferModelViewInverse) * viewPos;
                 worldDir = normalize(worldPos);

@@ -17,7 +17,7 @@ void main() {
     #ifdef REFLECTION
         bool isTerrain = waterDepth < 1.0;
         #ifdef LOD
-            isTerrain = isTerrain || getLodDepthWater(texel) < 1.0;
+            isTerrain = isTerrain || getLodDepthWater(texcoord) < 1.0;
         #endif
         if (isTerrain) {
             GbufferData gbufferData = getGbufferData(texel, texcoord);
