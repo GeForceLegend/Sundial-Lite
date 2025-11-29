@@ -2,4 +2,4 @@
 
 #define SHADOW_AND_SKY
 
-#include "/programs/gbuffers/ShadowColorwheel.vert"
+#include "/programs/gbuffers/Shadow.vert"

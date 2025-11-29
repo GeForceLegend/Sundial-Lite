@@ -61,13 +61,16 @@ vec3 shadowCoordToWorldPos(vec3 shadowCoord) {
 void main() {
     #ifdef SHADOW_AND_SKY
         vec4 albedo = textureLod(gtexture, texcoord, 0.0);
-        albedo *= color;
+        #ifdef COLORWHEEL
+            vec2 lmcoord;
+            float ao;
+            vec4 overlayColor;
+            clrwl_computeFragment(albedo, albedo, lmcoord, ao, overlayColor);
+	        albedo.rgb = mix(albedo.rgb, overlayColor.rgb, overlayColor.a);
+        #endif
+
         vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
-        if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || fwidth(shadowOffset.x) > 0.0
-            #ifdef ALPHA_TEST
-                || albedo.w < alphaTestRef
-            #endif
-        ) discard;
+        if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || fwidth(shadowOffset.x) > 0.0 || albedo.w < alphaTestRef) discard;
 
         #ifdef SHADOW_DISTORTION_FIX
             vec3 shadowProjPos = vec3(centerTexelOffset / (realShadowMapResolution * 0.25), gl_FragCoord.z * 10.0 - 5.0);
