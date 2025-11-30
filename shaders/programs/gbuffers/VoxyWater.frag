@@ -84,6 +84,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         #endif
     }
 
+    rawData.normal = vec3(0.0, 0.0, 1.0);
     if (rawData.materialID == MAT_WATER) {
         rawData.albedo.rgb = parameters.tinting.rgb;
         vec3 tangentDir = transpose(tbnMatrix) * viewPos;
