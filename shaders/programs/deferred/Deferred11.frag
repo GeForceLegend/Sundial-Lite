@@ -316,7 +316,7 @@ void main() {
         finalColor.rgb += blockLight * lightColor;
         #ifdef SHADOW_AND_SKY
             finalColor.rgb +=
-                pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) *
+                pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.6 - 0.3 * weatherStrength) *
                 (worldNormal.y * 0.3 + 0.6 + mix(dot(worldNormal, sunDirection), dot(worldNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
         #endif
         float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
