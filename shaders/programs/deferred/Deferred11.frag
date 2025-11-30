@@ -168,9 +168,9 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
         #ifdef LOD
             projDirection.z = projShadowDirection.z / gbufferProjection[2].z * projLod()[2].z;
-            float originProjDepthDH = viewPos.z * projLod()[2].z + projLod()[3].z;
-            originCoord.w = originProjDepthDH * projScale + 0.5;
-            targetCoord.w = (originProjDepthDH + projDirection.z * traceLength) * targetProjScale + 0.5;
+            float originProjDepthLod = viewPos.z * projLod()[2].z + projLod()[3].z;
+            originCoord.w = originProjDepthLod * projScale + 0.5;
+            targetCoord.w = (originProjDepthLod + projDirection.z * traceLength) * targetProjScale + 0.5;
         #endif
 
         vec4 stepSize = targetCoord - originCoord;
@@ -198,10 +198,10 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         sampleCoord.zw -= 2e-7;
 
         float maximumThickness = 0.0005 * viewLength + 0.03 * float(materialID == MAT_HAND);
-        float maximumThicknessDH = 0.5 * viewLength;
+        float maximumThicknessLod = 0.5 * viewLength;
         float depthMultiplicator = mix(1.0, 1.0 / MC_HAND_DEPTH, float(materialID == MAT_HAND));
         float baseDepthOffset = 0.5 - 0.5 * depthMultiplicator;
-        sampleCoord.zw -= vec2(maximumThickness, maximumThicknessDH);
+        sampleCoord.zw -= vec2(maximumThickness, maximumThicknessLod);
 
         for (int i = 0; i < SCREEN_SPACE_SHADOW_SAMPLES; i++) {
             if (any(greaterThan(abs(sampleCoord.xy - 0.5), vec2(0.5))) || shadow < 0.01) {
@@ -211,8 +211,8 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             bool hit;
             #ifdef LOD
                 if (sampleDepth == 1.0) {
-                    float sampleDepthDH = getLodDepthSolidDeferred(sampleCoord.st);
-                    hit = abs(sampleCoord.w - sampleDepthDH) < maximumThicknessDH && sampleDepthDH < 1.0;
+                    float sampleDepthLod = getLodDepthSolidDeferred(sampleCoord.st);
+                    hit = abs(sampleCoord.w - sampleDepthLod) < maximumThicknessLod && sampleDepthLod < 1.0;
                 }
                 else
             #endif
