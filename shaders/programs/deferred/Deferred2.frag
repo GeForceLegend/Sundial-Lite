@@ -242,6 +242,7 @@ vec3 Transform_Vz0Qz0(vec2 v, vec4 q)
 
 vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 texel) {
     vec3 originViewPos;
+    float isOriginNotHand = 1.0;
     #ifdef LOD
         if (gbufferData.depth == 1.0) {
             gbufferData.depth = getLodDepthSolidDeferred(texcoord);
@@ -252,6 +253,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
     {
         float parallaxData = texelFetch(colortex3, texel, 0).w;
         float isHand = clamp(parallaxData - 511.0, 0.0, 1.0);
+        isOriginNotHand -= isHand;
         gbufferData.depth = mix(gbufferData.depth, gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
         gbufferData.depth += parallaxData / 512.0 - isHand;
         originViewPos = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
@@ -270,6 +272,9 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
         vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * originViewPos + gbufferProjection[3].xyz, -originViewPos.z);
         float originProjScale = 0.5 / originProjPos.w;
         vec2 originCoord = vec2(originProjPos.xy * originProjScale + 0.5);
+        #ifdef TAA
+            originCoord += taaOffset * 0.5;
+        #endif
 
         for (int i = 0; i < VB_TRACE_COUNT; i++) {
             noise = fract(noise + vec2(r2Double, r2Double * r2Double));
@@ -309,13 +314,15 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
 
             for (int j = 0; j < VB_STEPS; j++) {
                 vec2 sampleCoord = originCoord + stepDir * stepSize;
-                vec4 sampleData = textureLod(colortex3, sampleCoord, 0);
-                float sampleDepth = textureLod(depthtex1, sampleCoord, 0).x;
+                ivec2 sampleTexel = ivec2(sampleCoord * screenSize);
+                vec4 sampleData = texelFetch(colortex3, sampleTexel, 0);
+                float sampleDepth = texelFetch(depthtex1, sampleTexel, 0).x;
                 stepSize *= stepScale;
                 if (any(greaterThan(abs(sampleCoord - 0.5), vec2(0.5)))) {
                     break;
                 }
 
+                float isHand = clamp(sampleData.w - 511.0, 0.0, 1.0);
                 vec3 sampleViewPos;
                 if (sampleDepth == 1.0) {
                     #ifdef LOD
@@ -326,7 +333,6 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                     continue;
                 }
                 else {
-                    float isHand = clamp(sampleData.w - 511.0, 0.0, 1.0);
                     sampleDepth = mix(sampleDepth, sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
                     sampleViewPos = screenToViewPos(sampleCoord, sampleDepth + sampleData.w / 512.0 - isHand);
                 }
@@ -357,7 +363,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                 #ifdef VBGI
                     if(visBits0 != 0u) {
                         float vis0 = float(CountBits(visBits0)) * (1.0/32.0);
-                        totalSamples.rgb += sampleData.rgb * vis0;
+                        totalSamples.rgb += sampleData.rgb * vis0 * clamp(2.0 - isOriginNotHand - isHand, 0.0, 1.0);
                     }
                 #endif
                 occBits = occBits | occBits0;
