@@ -14,7 +14,7 @@ flat in vec3 viewNormal;
 flat in vec4 skyLightFix;
 flat in vec4 coordRange;
 
-#define SKYLIGHT_FIX
+// #define SKYLIGHT_FIX
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
