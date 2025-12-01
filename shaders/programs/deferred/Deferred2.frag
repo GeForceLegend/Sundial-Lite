@@ -90,6 +90,23 @@ float ACosPoly(float x)
     return 1.5707963267948966 + (-0.20491203466059038 + 0.04832927023878897 * x) * x;
 }
 
+float ACos_Approx(float x)
+{
+    float u = ACosPoly(abs(x)) * sqrt(1.0 - abs(x));
+			
+    return x >= 0.0 ? u : PI - u;
+}
+
+float ACos(float x)
+{
+    return ACos_Approx(clamp(x, -1.0, 1.0));
+}
+
+vec2 ACos(vec2 x)
+{
+    return vec2(ACos(x.x), ACos(x.y));
+}
+
 float ASin01_Approx(float x)// x: [0,1]
 {
 	return 1.5707963267948966 - ACosPoly(x) * sqrt(1.0 - x);
@@ -187,23 +204,14 @@ vec2 SamplePartialSliceDir(vec3 vvsN, float rnd01)
     return dir0;
 }
 
-float SliceRelCDF_Cos(float x, float angN, float cosN, bool isPhiLargerThanAngN)
+vec2 SliceRelCDF_Cos(vec2 x, float angN, float cosN)
 {
-    if(abs(x - 0.5) < 0.5) {
-        float phi = x * PI - PI * 0.5;
+    vec2 phi = x * PI - PI * 0.5;
 
-        bool c = isPhiLargerThanAngN;
+    vec2 t0 = 3.0 * cosN + -cos(angN - 2.0 * phi) + (4.0 * angN - 2.0 * phi + PI) * sin(angN);
+    float t1 = 4.0 * (cosN + angN * sin(angN));
 
-        float n0 = c ?  3.0 : 1.0;
-        float n1 = c ? -1.0 : 1.0;
-        float n2 = c ?  4.0 : 0.0;
-
-        float t0 = n0 * cosN + n1 * cos(angN - 2.0 * phi) + (n2 * angN + (n1 * 2.0) * phi + PI) * sin(angN);
-        float t1 = 4.0 * (cosN + angN * sin(angN));
-
-        x = t0 / t1;
-    }
-    return x;
+    return mix(x, t0 / t1, step(abs(x - 0.5), vec2(0.5)));
 }
 
 // transform v by unit quaternion q.xy0s
@@ -287,7 +295,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
             vec3 T = cross(sliceN, projN);
             float projNRcpLen = inversesqrt(projNSqrLen);
             float cosN = dot(projN, viewDir) * projNRcpLen;
-            float angN = signMul(acos(cosN), dot(viewDir, T));
+            float angN = signMul(ACos(cosN), dot(viewDir, T));
 
             float angOff = angN / PI + 0.5;
             float w0 = clamp((sin(angN) / (cos(angN) + angN * sin(angN))) * (PI/4.0) + 0.5, 0.0, 1.0);
@@ -329,14 +337,13 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                 vec2 horCos = vec2(dot(deltaPosFront, viewDir) * inversesqrt(dot(deltaPosFront, deltaPosFront)),
                                    dot(deltaPosBack , viewDir) * inversesqrt(dot(deltaPosBack , deltaPosBack )));
 
-                vec2 horAng = acos(horCos);
+                vec2 horAng = ACos(horCos);
 
                 // shift relative angles from V to N + map to [0,1]
                 vec2 hor01 = clamp(horAng / PI + angOff, 0.0, 1.0);
 
                 // map to slice relative distribution
-                hor01.x = SliceRelCDF_Cos(hor01.x, angN, cosN, true);
-                hor01.y = SliceRelCDF_Cos(hor01.y, angN, cosN, true);
+                hor01 = SliceRelCDF_Cos(hor01, angN, cosN);
 
                 // partial slice re-mapping
                 hor01 = hor01 * w0_remap_mul + w0_remap_add;
