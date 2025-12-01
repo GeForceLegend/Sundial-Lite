@@ -292,12 +292,13 @@ void main() {
         } else
     #endif
     {
+        float depthWithHand = gbufferData.depth;
         if (gbufferData.materialID == MAT_HAND) {
-            gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+            depthWithHand = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
         }
-        viewPosNoPOM = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
-        gbufferData.depth += parallaxData / 512.0;
-        viewPos = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
+        viewPosNoPOM = screenToViewPos(texcoord, depthWithHand - 1e-7);
+        depthWithHand += parallaxData / 512.0;
+        viewPos = screenToViewPos(texcoord, depthWithHand - 1e-7);
     }
     vec3 worldPos = viewToWorldPos(viewPosNoPOM);
     vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
@@ -311,6 +312,7 @@ void main() {
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
         temporalGeometry.x = packUnorm2x16(encodeNormal(worldGeoNormal));
+        finalColor.w += 512.0 * float(gbufferData.materialID == MAT_HAND);
 
         float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
         vec3 n = vec3(1.5);

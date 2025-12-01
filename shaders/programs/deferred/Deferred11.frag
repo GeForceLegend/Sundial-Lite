@@ -58,8 +58,6 @@ void main() {
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
 
-        finalColor.w = 512.0 * float(gbufferData.materialID == MAT_HAND);
-
         float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
         vec3 n = vec3(1.5);
         vec3 k = vec3(0.0);

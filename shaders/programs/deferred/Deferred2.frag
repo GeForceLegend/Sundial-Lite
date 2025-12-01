@@ -241,11 +241,10 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
         } else
     #endif
     {
-        if (gbufferData.materialID == MAT_HAND) {
-            gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
-        }
         float parallaxData = texelFetch(colortex3, texel, 0).w;
-        gbufferData.depth += parallaxData / 512.0;
+        float isHand = clamp(parallaxData - 511.0, 0.0, 1.0);
+        gbufferData.depth = mix(gbufferData.depth, gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
+        gbufferData.depth += parallaxData / 512.0 - isHand;
         originViewPos = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
     }
     originViewPos += gbufferData.geoNormal * 3e-3;
@@ -318,11 +317,13 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                     continue;
                 }
                 else {
-                    sampleViewPos = screenToViewPos(sampleCoord, sampleDepth + sampleData.w / 512.0);
+                    float isHand = clamp(sampleData.w - 511.0, 0.0, 1.0);
+                    sampleDepth = mix(sampleDepth, sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
+                    sampleViewPos = screenToViewPos(sampleCoord, sampleDepth + sampleData.w / 512.0 - isHand);
                 }
 
                 vec3 deltaPosFront = sampleViewPos - originViewPos;
-                vec3 deltaPosBack = deltaPosFront - viewDir * abs(sampleViewPos.z) * 0.1;
+                vec3 deltaPosBack = deltaPosFront - viewDir * max(abs(sampleViewPos.z) * 0.1, 0.2);
 
                 vec2 horCos = vec2(dot(deltaPosFront, viewDir) * inversesqrt(dot(deltaPosFront, deltaPosFront)),
                                     dot(deltaPosBack , viewDir) * inversesqrt(dot(deltaPosBack , deltaPosBack )));
