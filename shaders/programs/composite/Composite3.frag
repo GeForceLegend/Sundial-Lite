@@ -73,7 +73,7 @@ void main() {
                             if (abs(i) + abs(j) > 0.5 && max(abs(sampleTexel.x / screenSize.x - 0.5), abs(sampleTexel.y / screenSize.y - 0.5)) < 0.5) {
                                 vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
                                 float sampleReflectionDepth = sampleData.w;
-                                float sampleSmoothness = unpack16Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
+                                float sampleSmoothness = unpack2x8Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
 
                                 vec3 sampleNormal = getNormalTexel(sampleTexel);
 

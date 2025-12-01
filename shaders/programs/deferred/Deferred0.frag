@@ -59,7 +59,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 currNormal, v
     #endif
     uvec2 prevGeometryData = texelFetch(colortex6, sampleTexel, 0).xy;
     float prevSampleDepth = min(1.0, uintBitsToFloat(prevGeometryData.y));
-    vec3 prevNormal = decodeNormal(unpackUnorm2x16(prevGeometryData.x));
+    vec3 prevNormal = decodeNormal(unpack2x16Bit(prevGeometryData.x));
 
     vec2 sampleCoord = sampleTexelCoord * texelSize;
     vec2 screenCoord = sampleCoord;

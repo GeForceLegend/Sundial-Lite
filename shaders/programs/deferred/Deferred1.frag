@@ -311,7 +311,7 @@ void main() {
         vec3 viewDir = viewPos * viewLength;
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
-        temporalGeometry.x = packUnorm2x16(encodeNormal(worldGeoNormal));
+        temporalGeometry.x = pack2x16Bit(encodeNormal(worldGeoNormal));
         finalColor.w += 512.0 * float(gbufferData.materialID == MAT_HAND);
 
         float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);

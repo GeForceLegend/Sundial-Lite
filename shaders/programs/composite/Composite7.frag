@@ -160,7 +160,7 @@ float circleOfConfusionRadius(vec2 coord, float sampleDepth, float focusDepth) {
     sampleDepth = max(0.31, sampleDepth);
     float circleRadius = (sampleDepth - focusDepth) / (sampleDepth * (focusDepth - FOCAL_LENGTH)) * APERTURE_DIAMETER_SCALE / MAX_BLUR_RADIUS;
     #ifndef HAND_DOF
-        float materialID = round(unpack16Bit(textureLod(colortex2, coord, 0.0).a).x * 255.0);
+        float materialID = round(unpack2x8Bit(textureLod(colortex2, coord, 0.0).a).x * 255.0);
         if (materialID == MAT_HAND) {
             circleRadius = 0.0;
         }

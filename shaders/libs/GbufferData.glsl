@@ -160,10 +160,23 @@ float pack2x8Bit(vec2 x) {
     return clamp(uintBitsToFloat(p) * 65536.0 / 65535.0 - 65536.0 / 65535.0, 0.0, 1.0);
 }
 
-vec2 unpack16Bit(float x) {
+vec2 unpack2x8Bit(float x) {
     uint u = floatBitsToUint(x * 65535.0 / 65536.0 + 65536.5 / 65536.0);
-    uvec2 p = (uvec2(u, u << 8) & 0x007f8000u) | 0x3f800000u;
+    uvec2 p = (uvec2(u, u << 8) & 0x007F8000u) | 0x3F800000u;
     return uintBitsToFloat(p) * 256.0 / 255.0 - 256.0 / 255.0;
+}
+
+uint pack2x16Bit(vec2 x) {
+    x = clamp(x, 0.0, 1.0);
+    x = x * vec2(65535.0 / 65536.0) + vec2(65536.5 / 65536.0);
+    uvec2 u = floatBitsToUint(x);
+    uvec2 p = u & 0x007FFF80u;
+    return (p.x >> 7) | (p.y << 9);
+}
+
+vec2 unpack2x16Bit(uint x) {
+    uvec2 p = (uvec2(x << 7, x >> 9) & 0x007FFF80u) | 0x3F800000u;
+    return uintBitsToFloat(p) * 65536.0 / 65535.0 - 65536.0 / 65535.0;
 }
 
 void LabPBR(inout GbufferData dataSet, vec4 specularData) {
@@ -240,16 +253,16 @@ GbufferData getGbufferData(ivec2 texel, vec2 coord) {
     vec4 tex1 = texelFetch(colortex1, texel, 0);
     vec4 tex2 = texelFetch(colortex2, texel, 0);
 
-    vec2 unpacked2g = unpack16Bit(tex2.g);
-    vec2 unpacked2b = unpack16Bit(tex2.b);
-    vec2 unpacked2a = unpack16Bit(tex2.a);
+    vec2 unpacked2g = unpack2x8Bit(tex2.g);
+    vec2 unpacked2b = unpack2x8Bit(tex2.b);
+    vec2 unpacked2a = unpack2x8Bit(tex2.a);
 
     GbufferData data;
 
     data.albedo = tex0;
     data.albedo.rgb = pow(data.albedo.rgb, vec3(2.2));
     decodeNormals(tex1, data.normal, data.geoNormal);
-    data.lightmap = unpack16Bit(tex2.r);
+    data.lightmap = unpack2x8Bit(tex2.r);
 
     data.smoothness = unpacked2g.x;
     data.metalness = unpacked2g.y;

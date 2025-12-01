@@ -3,7 +3,7 @@ vec4 reflectionFilter(float offset, bool useNoise) {
 
     vec4 originData = texelFetch(colortex4, centerTexel, 0);
     float originReflectionDepth = originData.w;
-    float originSmoothness = unpack16Bit(texelFetch(colortex2, centerTexel, 0).g).x;
+    float originSmoothness = unpack2x8Bit(texelFetch(colortex2, centerTexel, 0).g).x;
     if (originSmoothness < 0.9975 && originReflectionDepth > 1e-5) {
         float routhness = pow2(1.0 - originSmoothness);
         float roughnessInv = 100.0 / max(routhness, 1e-5);
@@ -24,7 +24,7 @@ vec4 reflectionFilter(float offset, bool useNoise) {
                 vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
                 float sampleReflectionDepth = sampleData.w;
                 vec3 sampleNormal = getNormalTexel(sampleTexel);
-                float sampleSmoothness = unpack16Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
+                float sampleSmoothness = unpack2x8Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
 
                 float weight =
                     exp2(
