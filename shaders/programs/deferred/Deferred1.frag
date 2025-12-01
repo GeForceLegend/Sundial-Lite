@@ -324,9 +324,8 @@ void main() {
             diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
         #endif
 
-        float ambientOcclusion = 1.0 - texelFetch(colortex5, texel, 0).w;
-
         #ifdef SHADOW_AND_SKY
+            float ambientOcclusion = 1.0 - texelFetch(colortex5, texel, 0).w;
             finalColor.rgb +=
                 pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.6 - 0.3 * weatherStrength) * ambientOcclusion *
                 (worldNormal.y * 0.3 + 0.6 + mix(dot(worldNormal, sunDirection), dot(worldNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);

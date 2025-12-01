@@ -23,8 +23,9 @@ layout(location = 0) out vec4 texBuffer5;
 
 in vec2 texcoord;
 
-#define SSILVB_RAY_COUNT 1
-#define SSILVB_STEPS 16
+#define VB_TRACE_COUNT 1 // [1 2 3 4 5 6 7 8]
+#define VB_STEPS 16 // [4 6 8 12 16 20 24 32 40 48 64 80 96 112 128]
+#define VB_MAX_BLEDED_FRAMES 20 // [4 5 6 7 8 10 12 14 16 20 24 28 32 36 40 48 56 64 72 80 96 112 128]
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -262,7 +263,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
         float originProjScale = 0.5 / originProjPos.w;
         vec2 originCoord = vec2(originProjPos.xy * originProjScale + 0.5);
 
-        for (int i = 0; i < SSILVB_RAY_COUNT; i++) {
+        for (int i = 0; i < VB_TRACE_COUNT; i++) {
             noise = fract(noise + vec2(r2Double, r2Double * r2Double));
             vec2 screenDir = SamplePartialSliceDir(normalVVS, noise.x);
             vec3 rayDir = Transform_Vz0Qz0(screenDir, Q_toV);
@@ -277,7 +278,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
             vec2 sampleRange = (targetCoord - originCoord) * screenSize;
             float projTraceLength = inversesqrt(dot(sampleRange, sampleRange));
             vec2 stepDir = sampleRange * projTraceLength * texelSize;
-            float stepScale = pow(max(1.0 / 512.0, projTraceLength), -1.0 / float(SSILVB_STEPS));
+            float stepScale = pow(max(1.0 / 512.0, projTraceLength), -1.0 / float(VB_STEPS));
 
             vec3 sliceN = cross(viewDir, rayDir);
             vec3 projN = gbufferData.normal - sliceN * dot(gbufferData.normal, sliceN);
@@ -298,7 +299,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
             uint occBits = 0u;
             float stepSize = pow(stepScale, noise.y);
 
-            for (int j = 0; j < SSILVB_STEPS; j++) {
+            for (int j = 0; j < VB_STEPS; j++) {
                 vec2 sampleCoord = originCoord + stepDir * stepSize;
                 vec4 sampleData = textureLod(colortex3, sampleCoord, 0);
                 float sampleDepth = textureLod(depthtex1, sampleCoord, 0).x;
@@ -344,16 +345,18 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                 uint occBits0 = mX & mY;
 
                 uint visBits0 = occBits0 & (~occBits);
-                if(visBits0 != 0u) {
-                    float vis0 = float(CountBits(visBits0)) * (1.0/32.0);
-                    totalSamples.rgb += sampleData.rgb * vis0;
-                }
+                #ifdef VBGI
+                    if(visBits0 != 0u) {
+                        float vis0 = float(CountBits(visBits0)) * (1.0/32.0);
+                        totalSamples.rgb += sampleData.rgb * vis0;
+                    }
+                #endif
                 occBits = occBits | occBits0;
             }
             float occ0 = float(CountBits(occBits)) * (1.0/32.0);
             totalSamples.a += occ0;
         }
-        totalSamples /= SSILVB_RAY_COUNT;
+        totalSamples /= VB_TRACE_COUNT;
     }
 
     return totalSamples;

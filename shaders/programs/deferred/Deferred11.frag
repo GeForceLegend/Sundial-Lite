@@ -73,8 +73,10 @@ void main() {
         #endif
         finalColor.rgb = vec3(BASIC_LIGHT);
 
-        vec4 ssilvb = texelFetch(colortex5, texel, 0);
-        finalColor.rgb += ssilvb.rgb;
+        vec4 visibilityBitmask = texelFetch(colortex5, texel, 0);
+        #ifdef VBGI
+            finalColor.rgb += visibilityBitmask.rgb;
+        #endif
 
         finalColor.rgb += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
         #ifdef IS_IRIS
@@ -83,7 +85,7 @@ void main() {
         #endif
         const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
         vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * lightColor;
-        finalColor.rgb += blockLight * (1.0 - ssilvb.w);
+        finalColor.rgb += blockLight * (1.0 - visibilityBitmask.w);
         float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
         vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
         finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;

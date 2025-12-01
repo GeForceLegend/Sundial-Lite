@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Parallax depth offset for less calculation in upcoming shaders; Move previous SSILVB to current frame position
+//  Parallax depth offset for less calculation in upcoming shaders; Move previous visibility mask result to current frame position
 //
 
 #extension GL_ARB_shading_language_packing: enable
@@ -54,6 +54,9 @@ vec2 getPrevCoord(inout vec3 prevWorldPos, vec3 viewPos, vec3 worldGeoNormal, fl
 vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 currNormal, vec3 geoNormal, float materialID, out float isPrevValid) {
     ivec2 sampleTexel = ivec2(sampleTexelCoord);
     vec4 prevSampleData = max(vec4(0.0), texelFetch(colortex5, sampleTexel, 0));
+    #ifndef VBGI
+        prevSampleData.rgb = vec3(0.0);
+    #endif
     uvec2 prevGeometryData = texelFetch(colortex6, sampleTexel, 0).xy;
     float prevSampleDepth = min(1.0, uintBitsToFloat(prevGeometryData.y));
     vec3 prevNormal = decodeNormal(unpackUnorm2x16(prevGeometryData.x));

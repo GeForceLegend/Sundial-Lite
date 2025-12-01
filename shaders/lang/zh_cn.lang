@@ -12,6 +12,8 @@ screen.Specular.comment=使用纹理包提供的PBR纹理赋予表面不同的�
 screen.Reflection=反射
 screen.Shadow=阴影
 screen.Lighting=光照
+screen.VisibilityBitmask=可见性位遮罩
+screen.VisibilityBitmask.comment=可见性位遮罩（Visibility bitmask）是一种用于屏幕空间的全局光照与环境光遮蔽的方案. Sundial Lite 的环境光遮蔽固定开启，全局光照可选开启
 screen.Atmosphere=大气效果
 screen.Atmosphere.comment=体积云、体积光与各种雾气等
 screen.RainFog=雨雾
@@ -149,6 +151,13 @@ option.LIGHT_BRIGHTNESS=光源亮度
 option.LIGHT_COLOR_R=光源颜色：红
 option.LIGHT_COLOR_G=光源颜色：绿
 option.LIGHT_COLOR_B=光源颜色：蓝
+# VisibilityBitmask
+option.VBGI=VBGI
+option.VBGI.comment=使用可见性位遮罩计算全局光照
+option.VB_TRACE_COUNT=VB 追踪数
+option.VB_TRACE_COUNT.comment=可见性位遮罩追踪的次数. 可以理解为光线追踪中的光线数量
+option.VB_STEPS=VB 步进次数
+option.VB_MAX_BLEDED_FRAMES=VB 最大混合帧数
 
 # Atmosphere
 option.ATMOSPHERE_VIEW_SAMPLE=大气散射视角方向采样数
