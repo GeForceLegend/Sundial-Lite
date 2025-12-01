@@ -6,7 +6,7 @@ Sundial Lite is the free and open source version of Sundial. It's using [GNU Gen
 
 Sundial Lite contains most features from the full version, excepting path tracing stuff like path traced global illumination and reflection, and nether and the end effect is removed to reduce developing workload, they will be added again when Sundial Lite's framework is almost complete. It also reduced reflection and volumetric light (and fog) from calculating 2 times to 1 time.
 
-Sundial Lite is currently using very simple lighting function based on vanilla light level with vanilla AO. Advanced ambient occlusion and other GI solution is not implemented, maybe in the future.
+Sundial Lite is using [visibility bitmask from shadertoy (CC0)](https://www.shadertoy.com/view/XcdBWf) as global illumination and ambient occlusion solution. Noise is expected.
 
 ## Supported versions
 
