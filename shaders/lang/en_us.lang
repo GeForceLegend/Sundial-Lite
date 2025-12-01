@@ -9,6 +9,8 @@ screen.Specular=PBR
 screen.Reflection=Reflection
 screen.Shadow=Shadow
 screen.Lighting=Lighting
+screen.VisibilityBitmask=Visibility bitmask
+screen.VisibilityBitmask.comment=Used for global illumination and ambient occlusion. Ambient occlusion is always enabled. Global illumination is optional
 screen.Atmosphere=Atmosphere
 screen.RainFog=Rain fog
 screen.VolumetricLight=Volumetric light
@@ -140,6 +142,13 @@ option.LIGHT_BRIGHTNESS=Light brightness
 option.LIGHT_COLOR_R=Light color: red
 option.LIGHT_COLOR_G=Light color: green
 option.LIGHT_COLOR_B=Light color: blue
+# VisibilityBitmask
+option.VBGI=VBGI
+option.VBGI.comment=Visibility bitmask global illumination
+option.VB_TRACE_COUNT=VB trace count
+option.VB_TRACE_COUNT.comment=Can be considered as ray count in ray tracing
+option.VB_STEPS=VB step count
+option.VB_MAX_BLEDED_FRAMES=VB max blended frames
 
 # Atmosphere
 option.ATMOSPHERE_VIEW_SAMPLE=Atmosphere view samples

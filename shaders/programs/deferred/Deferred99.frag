@@ -1,3 +1,21 @@
+//     _________      __        __     ___       __     __________      ________        ______        __           
+//    /  _____  \    |  |      |  |   |   \     |  |   |   _____  \    |__    __|      /  __  \      |  |          
+//   /  /     \__\   |  |      |  |   |    \    |  |   |  |     \  \      |  |        /  /  \  \     |  |          
+//  |  |             |  |      |  |   |  |  \   |  |   |  |      |  |     |  |       /  /    \  \    |  |          
+//   \  \______      |  |      |  |   |  |\  \  |  |   |  |      |  |     |  |      |  |______|  |   |  |          
+//    \______  \     |  |      |  |   |  | \  \ |  |   |  |      |  |     |  |      |   ______   |   |  |          
+//           \  \    |  |      |  |   |  |  \  \|  |   |  |      |  |     |  |      |  |      |  |   |  |          
+//  ___       |  |   |  |      |  |   |  |   \  |  |   |  |      |  |     |  |      |  |      |  |   |  |          
+//  \  \_____/  /     \  \____/  /    |  |    \    |   |  |_____/  /    __|  |__    |  |      |  |   |  |_________ 
+//   \_________/       \________/     |__|     \___|   |__________/    |________|   |__|      |__|   |____________|
+//
+//  General Public License v3.0. © 2021-Now GeForceLegend.
+//  https://github.com/GeForceLegend/Sundial-Lite
+//  https://www.gnu.org/licenses/gpl-3.0.en.html
+//
+//  Voxy transparent data blit
+//
+
 layout(location = 0) out vec4 texBuffer0;
 layout(location = 1) out vec4 texBuffer1;
 layout(location = 2) out vec4 texBuffer2;
