@@ -53,20 +53,20 @@ uint CountBits(uint v)
 // Edited from https://www.shadertoy.com/view/XcdBWf, here is the source License:
 /*
     This work is licensed under a dual license, public domain and MIT, unless noted otherwise. Choose the one that best suits your needs:
-    
+
     CC0 1.0 Universal https://creativecommons.org/publicdomain/zero/1.0/
     To the extent possible under law, the author has waived all copyrights and related or neighboring rights to this work.
-    
+
     or
-    
+
     The MIT License
-    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), 
-    to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-    and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: 
-    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. 
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR 
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
     THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -74,14 +74,14 @@ float ArcTan11(vec2 dir)// == ArcTan(dir) / Pi
 {
     float x = abs(dir.x);
     float y =     dir.y;
-    
+
     //float u = 2.0 + x * (1.27324 + x * (-0.189431 + x * (0.0908837 + x * (-0.0511549 + (0.0236728 - 0.005618 * x) * x))));
     float u = 2.0 + x * (1.27324 + x * (-0.189431 + (0.08204 - 0.0242564 * x) * x));
-          
+
     float f = y / u;
-    
-    if(dir.x < 0.0) f = (dir.y < 0.0 ? -1.0 : 1.0) - f;
-    
+
+    if(dir.x < 0.0) f = signI(dir.y) - f;
+
     return f;
 }
 
@@ -101,16 +101,16 @@ vec4 GetQuaternion(vec3 to)
     float s  =                  -to.z;//   dot(from, to);
 
     float u = inversesqrt(max(0.0, s * 0.5 + 0.5));// rcp(cosine half-angle formula)
-    
+
     s    = 1.0 / u;
     xyz *= u * 0.5;
 
-    return vec4(xyz, s);  
+    return vec4(xyz, s);
 }
 
 vec2 cmul(vec2 c0, vec2 c1)
 {
-	return vec2(c0.x * c1.x - c0.y * c1.y, 
+	return vec2(c0.x * c1.x - c0.y * c1.y,
 		        c0.y * c1.x + c0.x * c1.y);
 }
 
@@ -118,91 +118,92 @@ float SamplePartialSlice(float x, float sin_thVN)
 {
     const float Pi   = 3.1415926535897930;
     const float Pi05 = 1.5707963267948966;
-    
-    if(x == 0.0 || abs(x) >= 1.0) return x;
-    
-    bool sgn = x < 0.0;
-    x = abs(x);
-    
-    float s = sin_thVN;
-    
-    float o = s - s * s;
-    float slp0 = 1.0 / (1.0 + (Pi  - 1.0        ) * (s - o * 0.30546           ));
-    float slp1 = 1.0 / (1.0 - (1.0 - exp2(-20.0)) * (s + o * mix(0.5, 0.785, s)));
-    
-    float k = mix(0.1, 0.25, s);  
-    
-    float a = 1.0 - (Pi - 2.0) / (Pi - 1.0);
-    float b = 1.0 / (Pi - 1.0);
-    
-    float d0 =   a - slp0 * b;
-    float d1 = 1.0 - slp1;
-    
-    float f0 = d0 * (Pi * x - ASin01_Approx(x));
-    float f1 = d1 * (     x - 1.0);
-    
-    float kk = k * k;
-    
-    float h0 = sqrt(f0*f0 + kk) - k;
-    float h1 = sqrt(f1*f1 + kk) - k;
-    
-    float hh = (h0 * h1) / (h0 + h1);
-    
-    float y = x - sqrt(hh*(hh + 2.0*k));
-    
-    return sgn ? -y : y;
+
+    if((abs(x) - 0.5) < 0.5) {
+        uint sgn = floatBitsToUint(x) & 0x80000000u;
+        x = abs(x);
+
+        float s = sin_thVN;
+
+        float o = s - s * s;
+        float slp0 = 1.0 / (1.0 + (Pi  - 1.0        ) * (s - o * 0.30546           ));
+        float slp1 = 1.0 / (1.0 - (1.0 - exp2(-20.0)) * (s + o * mix(0.5, 0.785, s)));
+
+        float k = mix(0.1, 0.25, s);
+
+        float a = 1.0 - (Pi - 2.0) / (Pi - 1.0);
+        float b = 1.0 / (Pi - 1.0);
+
+        float d0 =   a - slp0 * b;
+        float d1 = 1.0 - slp1;
+
+        float f0 = d0 * (Pi * x - ASin01_Approx(x));
+        float f1 = d1 * (     x - 1.0);
+
+        float kk = k * k;
+
+        float h0 = sqrt(f0*f0 + kk) - k;
+        float h1 = sqrt(f1*f1 + kk) - k;
+
+        float hh = (h0 * h1) / (h0 + h1);
+
+        float y = x - sqrt(hh*(hh + 2.0*k));
+        x = uintBitsToFloat(floatBitsToUint(y) ^ sgn);
+    }
+    return x;
 }
 
 // vvsN: view vec space normal | rnd01: [0, 1]
 vec2 SamplePartialSliceDir(vec3 vvsN, float rnd01)
 {
     float ang0 = rnd01 * PI * 2.0;
-    
+
     vec2 dir0 = vec2(cos(ang0), sin(ang0));
 
-    float l = length(vvsN.xy);
+    float l = inversesqrt(dot(vvsN.xy, vvsN.xy));
+    float l2 = 1.0 / l;
 
-    if(l == 0.0) return dir0;
-    
-    vec2 n = vvsN.xy / l;    
-    
-    // align n with x-axis
-    dir0 = cmul(dir0, n * vec2(1.0, -1.0));
+    if(l2 > 0.0) {
+        vec2 n = vvsN.xy * l;
 
-    // sample slice angle
-    float ang;
-    {
-        float x = ArcTan11(dir0);
-        float sinNV = l;
+        // align n with x-axis
+        dir0 = cmul(dir0, n * vec2(1.0, -1.0));
 
-        ang = SamplePartialSlice(x, sinNV) * PI;
+        // sample slice angle
+        float ang;
+        {
+            float x = ArcTan11(dir0);
+            float sinNV = l2;
+
+            ang = SamplePartialSlice(x, sinNV) * PI;
+        }
+
+        // ray space slice direction
+        vec2 dir = vec2(cos(ang), sin(ang));
+
+        // align x-axis with n
+        dir0 = cmul(dir, n);
     }
-    
-    // ray space slice direction
-    vec2 dir = vec2(cos(ang), sin(ang));
-    
-    // align x-axis with n
-    dir = cmul(dir, n);
-    
-    return dir;
+    return dir0;
 }
 
 float SliceRelCDF_Cos(float x, float angN, float cosN, bool isPhiLargerThanAngN)
 {
-    if(x <= 0.0 || x >= 1.0) return x;
-    
-    float phi = x * PI - PI * 0.5;
+    if(abs(x - 0.5) < 0.5) {
+        float phi = x * PI - PI * 0.5;
 
-    bool c = isPhiLargerThanAngN;
-    
-    float n0 = c ?  3.0 : 1.0;
-    float n1 = c ? -1.0 : 1.0;
-    float n2 = c ?  4.0 : 0.0;
-    
-    float t0 = n0 * cosN + n1 * cos(angN - 2.0 * phi) + (n2 * angN + (n1 * 2.0) * phi + PI) * sin(angN);
-    float t1 = 4.0 * (cosN + angN * sin(angN));
+        bool c = isPhiLargerThanAngN;
 
-    return t0 / t1;
+        float n0 = c ?  3.0 : 1.0;
+        float n1 = c ? -1.0 : 1.0;
+        float n2 = c ?  4.0 : 0.0;
+
+        float t0 = n0 * cosN + n1 * cos(angN - 2.0 * phi) + (n2 * angN + (n1 * 2.0) * phi + PI) * sin(angN);
+        float t1 = 4.0 * (cosN + angN * sin(angN));
+
+        x = t0 / t1;
+    }
+    return x;
 }
 
 // transform v by unit quaternion q.xy0s
@@ -210,11 +211,11 @@ vec3 Transform_Qz0(vec3 v, vec4 q)
 {
     float k = v.y * q.x - v.x * q.y;
     float g = 2.0 * (v.z * q.w + k);
-    
+
     vec3 r;
     r.xy = v.xy + q.yx * vec2(g, -g);
     r.z  = v.z  + 2.0 * (q.w * k - v.z * dot(q.xy, q.xy));
-    
+
     return r;
 }
 
@@ -223,11 +224,11 @@ vec3 Transform_Vz0Qz0(vec2 v, vec4 q)
 {
     float o = q.x * v.y;
     float c = q.y * v.x;
-    
+
     vec3 b = vec3( o - c,
                   -o + c,
                    o - c);
-    
+
     return vec3(v, 0.0) + 2.0 * (b * q.yxw);
 }
 
@@ -287,10 +288,10 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
             float projNRcpLen = inversesqrt(projNSqrLen);
             float cosN = dot(projN, viewDir) * projNRcpLen;
             float angN = signMul(acos(cosN), dot(viewDir, T));
-        
+
             float angOff = angN / PI + 0.5;
             float w0 = clamp((sin(angN) / (cos(angN) + angN * sin(angN))) * (PI/4.0) + 0.5, 0.0, 1.0);
-            
+
             // partial slice re-mapping constants
             float w0_remap_mul = 1.0 / (1.0 - w0);
             float w0_remap_add = -w0 * w0_remap_mul;
@@ -326,7 +327,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                 vec3 deltaPosBack = deltaPosFront - viewDir * max(abs(sampleViewPos.z) * 0.1, 0.2);
 
                 vec2 horCos = vec2(dot(deltaPosFront, viewDir) * inversesqrt(dot(deltaPosFront, deltaPosFront)),
-                                    dot(deltaPosBack , viewDir) * inversesqrt(dot(deltaPosBack , deltaPosBack )));
+                                   dot(deltaPosBack , viewDir) * inversesqrt(dot(deltaPosBack , deltaPosBack )));
 
                 vec2 horAng = acos(horCos);
 
@@ -336,7 +337,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                 // map to slice relative distribution
                 hor01.x = SliceRelCDF_Cos(hor01.x, angN, cosN, true);
                 hor01.y = SliceRelCDF_Cos(hor01.y, angN, cosN, true);
-            
+
                 // partial slice re-mapping
                 hor01 = hor01 * w0_remap_mul + w0_remap_add;
 
