@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Lighting that don't need calculated in SSILVB
+//  Lighting that don't need calculated in visibility bitmask
 //
 
 #extension GL_ARB_gpu_shader5 : enable

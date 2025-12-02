@@ -382,7 +382,8 @@ void main() {
     GbufferData gbufferData = getGbufferData(texel, texcoord);
     vec4 currData = screenSpaceVisibiliyBitmask(gbufferData, texcoord, texel);
     vec4 prevData = texelFetch(colortex5, texel, 0);
-    texBuffer5 = mix(prevData, currData, 1.0 / VB_MAX_BLEDED_FRAMES);
+    float blendWeight = clamp(1.0 / VB_MAX_BLEDED_FRAMES + clamp(1.0 - 1e+20 * dot(prevData, vec4(1.0)), 0.0, 1.0), 0.0, 1.0);
+    texBuffer5 = mix(prevData, currData, blendWeight);
 }
 
 /* DRAWBUFFERS:5 */

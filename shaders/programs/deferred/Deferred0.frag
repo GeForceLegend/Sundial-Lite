@@ -93,7 +93,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 currNormal, v
     return vec4(prevSampleData);
 }
 
-vec4 prevSSILVB(vec2 prevCoord, vec3 prevWorldPos, vec3 currNormal, vec3 geoNormal, float materialID) {
+vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 currNormal, vec3 geoNormal, float materialID) {
     vec2 sampleCoord = prevCoord;
     const float offset = 0.25;
     sampleCoord += prevTaaOffset * offset - taaOffset * 0.5 * offset;
@@ -165,7 +165,7 @@ void main() {
 
         vec3 prevWorldPos = worldPos;
         vec2 prevCoord = getPrevCoord(prevWorldPos, viewPos, worldGeoNormal, gbufferData.parallaxOffset, gbufferData.materialID);
-        prevData = prevSSILVB(prevCoord, prevWorldPos, worldNormal, worldGeoNormal, gbufferData.materialID);
+        prevData = prevVisibilityBitmask(prevCoord, prevWorldPos, worldNormal, worldGeoNormal, gbufferData.materialID);
     }
     texBuffer5 = prevData;
 }
