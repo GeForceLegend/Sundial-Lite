@@ -26,17 +26,15 @@ out vec2 texcoord;
     out float smoothCenterDepth;
 #endif
 
-#define DOF_FOCUS_TEXTURE depthtex2 // [depthtex0 depthtex1 depthtex2]
+#define DOF_FOCUS_TEXTURE 2 // [0 1 2]
+
+#include "/settings/GlobalSettings.glsl"
+#include "/libs/Uniform.glsl"
 
 #ifdef SKY_COLOR_UP
     out vec3 skyColorUp;
 
-    #include "/settings/GlobalSettings.glsl"
-    #include "/libs/Uniform.glsl"
     #include "/libs/Atmosphere.glsl"
-#else
-    #include "/settings/GlobalSettings.glsl"
-    #include "/libs/Uniform.glsl"
 #endif
 
 void main() {
@@ -50,7 +48,22 @@ void main() {
 
     #ifdef SMOOTH_CENTER_DEPTH
         float prevCenterDepth = texelFetch(colortex7, ivec2(screenSize - 0.5), 0).w;
-        float currCenterDepth = textureLod(DOF_FOCUS_TEXTURE, vec2(0.5), 0.0).x;
+        #if DOF_FOCUS_TEXTURE == 0
+            float currCenterDepth = textureLod(depthtex0, vec2(0.5), 0.0).x;
+        #elif DOF_FOCUS_TEXTURE == 1
+            float currCenterDepth = textureLod(depthtex1, vec2(0.5), 0.0).x;
+        #else
+            float currCenterDepth = textureLod(depthtex2, vec2(0.5), 0.0).x;
+        #endif
+        float materialID = texelFetch(colortex2, ivec2(screenSize * 0.5), 0).a;
+        uint uMaterialID = floatBitsToUint(materialID * 65535.0 / 65536.0 + 65536.5 / 65536.0);
+        uMaterialID = (uMaterialID >> 15) & 0x000000FFu;
+        #if (defined CORRECT_DOF_HAND_DEPTH) && (DOF_FOCUS_TEXTURE != 2)
+            float handDepth = currCenterDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+            if (uMaterialID == 9u && abs(handDepth - 0.5) < 0.5) {
+                currCenterDepth = handDepth;
+            }
+        #endif
         float fadeFactor = exp(log(0.5) * frameTime * 10.0 / centerDepthHalflife) * float(prevCenterDepth > 0.0);
         smoothCenterDepth = mix(currCenterDepth, prevCenterDepth, fadeFactor);
     #endif
