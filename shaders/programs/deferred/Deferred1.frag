@@ -335,7 +335,7 @@ void main() {
         float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
         vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
         finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;
-        finalColor.rgb += gbufferData.emissive * BLOCK_LIGHT_BRIGHTNESS * PI;
+        finalColor.rgb += gbufferData.emissive * PBR_BRIGHTNESS * PI;
         finalColor.rgb *= gbufferData.albedo.rgb;
 
         #ifdef SHADOW_AND_SKY

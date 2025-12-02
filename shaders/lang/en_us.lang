@@ -75,6 +75,8 @@ option.PARALLAX_MAX_REFINEMENTS=Parallax fineness
 option.PARALLAX_MAX_REFINEMENTS.comment=Improves parallax quality with Less performance cost. Does not improve the "pane edge" effect
 # Specular
 option.SUBSERFACE_SCATTERING_STRENTGH=Sub-surface scattering strength
+option.PBR_BRIGHTNESS=PBR brightness
+option.PBR_BRIGHTNESS.comment=Control brightness of PBR and hardcoded emissive objects
 option.SPECULAR_FORMAT=PBR format
 option.SPECULAR_EMISSIVE=PBR emissive
 option.SPECULAR_EMISSIVE.comment=Does not affect hardcoded emissive

@@ -81,6 +81,8 @@ option.PARALLAX_MAX_REFINEMENTS=视差精度
 option.PARALLAX_MAX_REFINEMENTS.comment=能提升视差精度且性能损耗较小，但不能缓解片状边缘现象. 不会影响体素视差
 # Specular
 option.SUBSERFACE_SCATTERING_STRENTGH=次表面散射强度
+option.PBR_BRIGHTNESS=PBR亮度
+option.PBR_BRIGHTNESS.comment=控制PBR发光与硬编码光源本身的亮度
 option.SPECULAR_FORMAT=PBR格式
 option.SPECULAR_FORMAT.comment=LabPBR格式为R光滑度G反射强度B孔隙度/次表面散射A发光强度. ClassicPBR格式为R光滑度G金属性B发光强度. BedrockRTX格式为R金属性G发光强度B粗糙度
 option.SPECULAR_EMISSIVE=PBR发光

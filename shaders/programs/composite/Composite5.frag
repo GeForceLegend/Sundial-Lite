@@ -187,7 +187,7 @@ void main() {
 
         float isTargetParticle = 1.0 - float(isTargetNotParticle);
         vec3 vanillaLight = pow2(gbufferData.lightmap.y) * (skyColorUp + sunColor * SUNLIGHT_BRIGHTNESS) * (1.0 - gbufferData.metalness) * isTargetParticle;
-        solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * (gbufferData.emissive * BLOCK_LIGHT_BRIGHTNESS * PI + vanillaLight);
+        solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * (gbufferData.emissive * PBR_BRIGHTNESS * PI + vanillaLight);
         #ifdef SHADOW_AND_SKY
             float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);
             if (NdotL > 0.0) {
