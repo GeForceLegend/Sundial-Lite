@@ -42,7 +42,7 @@ void main() {
             vec4 originData = texelFetch(colortex4, texel, 0);
 
             vec3 viewPos = screenToViewPos(texcoord, waterDepth);
-            float NdotV = -dot(viewPos, gbufferData.normal) * inversesqrt(dot(viewPos, viewPos));
+            float NdotV = clamp(-dot(viewPos, gbufferData.normal) * inversesqrt(dot(viewPos, viewPos)), 0.0, 1.0);
             #ifdef LABPBR_F0
                 gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
             #endif
