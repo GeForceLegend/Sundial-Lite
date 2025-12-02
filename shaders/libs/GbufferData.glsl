@@ -33,7 +33,7 @@
 
     float lodRenderDistance() {
         #ifdef DISTANT_HORIZONS
-            return dhRenderDistance;
+            return float(dhRenderDistance);
         #endif
         #ifdef VOXY
             return vxRenderDistance * 16.0;
