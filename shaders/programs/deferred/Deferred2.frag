@@ -291,7 +291,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
             vec2 sampleRange = (targetCoord - originCoord) * screenSize;
             float projTraceLength = inversesqrt(dot(sampleRange, sampleRange));
             vec2 stepDir = sampleRange * projTraceLength * texelSize;
-            float stepScale = pow(max(1.0 / 512.0, projTraceLength), -1.0 / float(VB_STEPS));
+            float stepScale = log2(max(1.0 / 512.0, clamp(projTraceLength, 0.0, 1.0))) / -float(VB_STEPS);
 
             vec3 sliceN = cross(viewDir, rayDir);
             vec3 projN = gbufferData.normal - sliceN * dot(gbufferData.normal, sliceN);
@@ -310,7 +310,8 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
             float w0_remap_add = -w0 * w0_remap_mul;
 
             uint occBits = 0u;
-            float stepSize = pow(stepScale, noise.y);
+            float stepSize = exp2(stepScale * noise.y);
+            stepScale = exp2(stepScale);
 
             for (int j = 0; j < VB_STEPS; j++) {
                 vec2 sampleCoord = originCoord + stepDir * stepSize;
