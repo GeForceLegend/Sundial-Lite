@@ -58,6 +58,22 @@ void main() {
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
 
+        finalColor.rgb += vec3(BASIC_LIGHT);
+        finalColor.rgb += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
+        #ifdef IS_IRIS
+            float eyeRelatedDistance = length(worldPos + relativeEyePosition);
+            gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
+        #endif
+        const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
+        vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * lightColor;
+        finalColor.rgb += blockLight;
+        vec4 visibilityBitmask = texelFetch(colortex5, texel, 0);
+        finalColor.rgb *= (1.0 - visibilityBitmask.w);
+        #ifdef VBGI
+            finalColor.rgb += visibilityBitmask.rgb;
+        #endif
+        float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
+
         float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
         vec3 n = vec3(1.5);
         vec3 k = vec3(0.0);
@@ -69,22 +85,6 @@ void main() {
         #ifndef FULL_REFLECTION
             diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
         #endif
-        finalColor.rgb = vec3(BASIC_LIGHT);
-
-        vec4 visibilityBitmask = texelFetch(colortex5, texel, 0);
-        #ifdef VBGI
-            finalColor.rgb += visibilityBitmask.rgb;
-        #endif
-
-        finalColor.rgb += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
-        #ifdef IS_IRIS
-            float eyeRelatedDistance = length(worldPos + relativeEyePosition);
-            gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
-        #endif
-        const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
-        vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * lightColor;
-        finalColor.rgb += blockLight * (1.0 - visibilityBitmask.w);
-        float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
         vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
         finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;
         finalColor.rgb *= gbufferData.albedo.rgb;

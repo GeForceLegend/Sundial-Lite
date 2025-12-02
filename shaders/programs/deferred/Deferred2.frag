@@ -380,9 +380,9 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
     GbufferData gbufferData = getGbufferData(texel, texcoord);
-    vec4 ssilvb = screenSpaceVisibiliyBitmask(gbufferData, texcoord, texel);
+    vec4 currData = screenSpaceVisibiliyBitmask(gbufferData, texcoord, texel);
     vec4 prevData = texelFetch(colortex5, texel, 0);
-    texBuffer5 = mix(prevData, ssilvb, 1.0 / VB_MAX_BLEDED_FRAMES);
+    texBuffer5 = mix(prevData, currData, 1.0 / VB_MAX_BLEDED_FRAMES);
 }
 
 /* DRAWBUFFERS:5 */
