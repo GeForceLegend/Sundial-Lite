@@ -34,8 +34,10 @@ vec2 getPrevCoord(inout vec3 prevWorldPos, vec3 viewPos, vec3 worldGeoNormal, fl
     vec3 prevViewPos;
     if (materialID == MAT_HAND) {
         prevViewPos = viewPos;
-        prevViewPos -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
-        prevViewPos += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
+        #ifndef TEMPORAL_IGNORE_HAND_ANIMATION
+            prevViewPos -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
+            prevViewPos += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
+        #endif
         vec3 prevViewNormal = mat3(gbufferModelView) * worldGeoNormal;
         prevViewPos -= parallaxOffset * prevViewPos / max(dot(prevViewPos, -prevViewNormal), 1e-5);
         prevScreenPos = viewToProjectionPos(prevViewPos);

@@ -348,6 +348,8 @@ option.MOD_WATER_DETECTION=Mod water detection
 option.MOD_WATER_DETECTION.comment=Assuming all transparent block with vertex color to be water. May cause unexpected faces to be water
 option.MOD_PLANT_DETECTION=Mod plant detection
 option.MOD_PLANT_DETECTION.comment=Assuming all slope not hardcoded to be plant. May cause unexpected faces to be plant
+option.TEMPORAL_IGNORE_HAND_ANIMATION=Temporal ignore hand animation
+option.TEMPORAL_IGNORE_HAND_ANIMATION.comment=Ignore hand animation of view bobbing in temporal. Might improve visual quality on mod held item with custom animation
 
 # Experimental
 option.AUTHOR=Author
