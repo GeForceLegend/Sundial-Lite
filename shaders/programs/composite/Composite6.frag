@@ -170,7 +170,8 @@ void main() {
 
     ivec2 texel = ivec2(gl_FragCoord.st);
     float weatherData = texelFetch(colortex0, texel, 0).w;
-    vec3 solidColor = texelFetch(colortex3, texel, 0).rgb * absorption + volumetricLight;
+    vec4 solidColor = texelFetch(colortex3, texel, 0);
+    solidColor.rgb = solidColor.rgb * absorption + volumetricLight;
 
     weatherData = weatherData * 2.5 - 1.5;
     float weatherLightData = abs(weatherData);
@@ -179,10 +180,10 @@ void main() {
         float basicSunlight = (1.0 - sqrt(weatherStrength)) * 8.0 * SUNLIGHT_BRIGHTNESS;
         vec3 weatherLight = sunlightStrength * basicSunlight * sunColor + skyColorUp * 1.5;
         float weatherBlendWeight = clamp(weatherData * 1e+10, 0.0, 1.0) * 0.8 + 0.2;
-        solidColor = mix(solidColor, weatherLight, weatherBlendWeight);
+        solidColor.rgb = mix(solidColor.rgb, weatherLight, weatherBlendWeight);
     }
 
-    texBuffer3 = vec4(solidColor, 1.0);
+    texBuffer3 = solidColor;
 }
 
 /* DRAWBUFFERS:3 */

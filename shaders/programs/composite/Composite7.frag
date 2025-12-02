@@ -32,7 +32,7 @@ in vec2 texcoord;
 #define COC_SPREAD_SAMPLES 10 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 22 25 30 35 40 45 50 60 70 80 90 100]
 #define FOCAL_LENGTH 0.01 // [0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.015 0.02 0.025 0.03 0.035 0.04 0.045 0.05 0.06 0.07 0.08 0.09 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0]
 #define MANUAL_FOCUS_DEPTH 100.0 // [0.1 0.2 0.3 0.4 0.5 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.3 2.6 2.9 3.2 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 18.0 20.0 22.0 24.0 27.0 30.0 35.0 40.0 45.0 50.0 55.0 60.0 65.0 70.0 80.0 90.0 100.0 110.0 120.0 130.0 140.0 160.0 180.0 200.0 250.0 300.0 400.0 500.0]
-#define APERTURE_DIAMETER_SCALE 0.5 // [0.01 0.02 0.03 0.04 0.06 0.08 0.1 0.12 0.14 0.16 0.18 0.2 0.22 0.24 0.26 0.28 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.5 6.0 6.5 7.0 7.5 8.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 22.0 24.0 26.0 28.0 30.0 32.0 34.0 36.0 38.0 40.0 42.0 44.0 46.0 48.0 50.0 55.0 60.0 65.0 70.0 75.0 80.0 85.0 90.0 95.0 100.0]
+#define APERTURE_DIAMETER_SCALE 0.26 // [0.01 0.02 0.03 0.04 0.06 0.08 0.1 0.12 0.14 0.16 0.18 0.2 0.22 0.24 0.26 0.28 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.5 6.0 6.5 7.0 7.5 8.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 22.0 24.0 26.0 28.0 30.0 32.0 34.0 36.0 38.0 40.0 42.0 44.0 46.0 48.0 50.0 55.0 60.0 65.0 70.0 75.0 80.0 85.0 90.0 95.0 100.0]
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -161,21 +161,21 @@ float getDepthConfidenceFactor(vec3 coord, vec3 velocity) {
 float circleOfConfusionRadius(vec2 coord, float sampleDepth, float focusDepth) {
     float circleRadius = 1.0;
     float materialID = textureLod(colortex3, coord, 0.0).a;
+    float viewDepth = screenToViewDepth(sampleDepth);
     if (materialID > 0.5) {
         #ifdef HAND_DOF
             #ifdef CORRECT_DOF_HAND_DEPTH
                 float handDepth = sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
                 if (abs(handDepth - 0.5) < 0.5) {
-                    sampleDepth = handDepth;
+                    viewDepth = screenToViewDepth(handDepth);
                 }
             #endif
+            viewDepth = min(focusDepth, viewDepth);
         #else
             circleRadius = 0.0;
         #endif
     }
-    sampleDepth = screenToViewDepth(sampleDepth);
-    sampleDepth = max(0.31, sampleDepth);
-    circleRadius *= (sampleDepth - focusDepth) / (sampleDepth * (focusDepth - FOCAL_LENGTH)) * APERTURE_DIAMETER_SCALE / MAX_BLUR_RADIUS;
+    circleRadius *= (viewDepth - focusDepth) / (viewDepth * (focusDepth - FOCAL_LENGTH)) * APERTURE_DIAMETER_SCALE / MAX_BLUR_RADIUS;
     return circleRadius;
 }
 
