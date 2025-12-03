@@ -1,5 +1,5 @@
 #version 330 compatibility
 
-#define BASIC_LIGHT 1e-5
+#define SHADOW_AND_SKY
 
-#include "/programs/deferred/Deferred11.frag"
+#include "/programs/deferred/Deferred1.frag"
