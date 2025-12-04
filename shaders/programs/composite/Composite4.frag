@@ -57,7 +57,7 @@ void main() {
     vec3 worldDir = worldPos * worldDepth;
     vec4 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, worldDir);
 
-    vec4 solidColor = texelFetch(colortex3, texel, 0);
+    vec4 solidColor = vec4(texelFetch(colortex3, texel, 0).rgb, 1.0);
 
     float backDepth;
     vec3 backColor;

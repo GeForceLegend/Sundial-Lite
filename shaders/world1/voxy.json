@@ -1,0 +1,42 @@
+{
+    "version": 1,
+    "uniforms": [
+        "frameCounter",
+        "far",
+        "rainStrength",
+        "rainyStrength",
+        "weatherStrength",
+        "frameTimeCounter",
+        "taaOffsetVX",
+        "texelSize",
+        "screenSize",
+        "cameraPosition",
+        "gbufferModelView",
+        "gbufferProjection",
+        "gbufferModelViewInverse",
+        "gbufferProjectionInverse",
+        "gbufferPreviousModelView",
+        "gbufferPreviousProjection",
+        "vxProj",
+        "vxProjInv",
+        "vxProjPrev",
+        "vxRenderDistance"
+    ],
+    "samplers": {
+        "gtexture": "sampler2D",
+        "normals": "sampler2D",
+        "noisetex": "sampler2D",
+        "gaux2": "sampler2D",
+        "depthtex0": "sampler2D",
+        "depthtex1": "sampler2D",
+        "vxDepthTexOpaque": "sampler2D",
+        "vxDepthTexTrans": "sampler2D"
+    },
+    "blending": {
+        "-1": "off"
+    },
+    "excludeLodsFromVanillaDepth": true,
+    "taaOffset": "{return taaOffsetVX;}",
+    "opaqueDrawBuffers": [0, 1, 2],
+    "translucentDrawBuffers": [16, 17, 18]
+}

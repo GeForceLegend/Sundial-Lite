@@ -1,5 +1,6 @@
 uniform int frameCounter;
 uniform int isEyeInWater;
+uniform int heldBlockLightValue;
 uniform float far;
 uniform float blindness;
 uniform float frameTime;

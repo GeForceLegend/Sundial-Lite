@@ -23,8 +23,6 @@ layout(location = 0) out vec4 texBuffer3;
 
 in vec2 texcoord;
 
-uniform int heldBlockLightValue;
-
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"

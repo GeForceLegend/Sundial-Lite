@@ -37,12 +37,16 @@ const int colortex17Format = RGBA16;
 const int colortex18Format = RGBA16;
 */
 
-const float shadowDistanceRenderMul = 1.0;
+#ifdef SHADOW_AND_SKY
+    const float shadowDistanceRenderMul = 1.0;
+    const bool shadowtex0Mipmap = true;
+    const bool shadowcolor0Mipmap = true;
+    const bool shadowcolor1Mipmap = true;
+    const bool shadowHardwareFiltering0 = true;
+#else
+    const float shadowDistanceRenderMul = 0.0126;
+#endif
 
-const bool shadowtex0Mipmap = true;
-const bool shadowcolor0Mipmap = true;
-const bool shadowcolor1Mipmap = true;
-const bool shadowHardwareFiltering0 = true;
 const bool colortex5Clear = false;
 const bool colortex6Clear = false;
 const bool colortex7Clear = false;
