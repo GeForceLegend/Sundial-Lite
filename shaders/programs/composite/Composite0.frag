@@ -142,6 +142,9 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
     if (dot(totalWeight, totalWeight) > 1e-6) {
         vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);
         vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos + gbufferProjection[3].xyz, -viewPos.z);
+        #ifdef TAA
+            originProjPos.xy += taaOffset * originProjPos.w;
+        #endif
         float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
 
         float originProjScale = 0.5 / originProjPos.w;
@@ -160,9 +163,6 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         float noise = blueNoiseTemporal(texcoord).x + 0.1;
         vec4 stepSize = (targetCoord - sampleCoord) / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
         sampleCoord += noise * stepSize;
-        #ifdef TAA
-            sampleCoord.st += taaOffset * 0.5;
-        #endif
         sampleCoord.zw -= 2e-7;
 
         bool hitSky = true;
