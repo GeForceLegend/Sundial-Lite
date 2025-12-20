@@ -239,7 +239,7 @@ void main() {
     #ifdef LOD
         if (screenDepth == 1.0) {
             screenDepth = getLodDepthWater(sampleCoord);
-            viewDepth = screenToViewDepth(screenDepth);
+            viewDepth = screenToViewDepthLod(screenDepth);
         } else
     #endif
     {
