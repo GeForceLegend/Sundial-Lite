@@ -20,6 +20,7 @@
 
 layout(location = 0) out vec4 texBuffer3;
 layout(location = 1) out vec4 texBuffer5;
+layout(location = 2) out uvec2 texBuffer6;
 
 in vec2 texcoord;
 
@@ -53,14 +54,16 @@ vec2 getPrevCoord(inout vec3 prevWorldPos, vec3 viewPos, vec3 worldGeoNormal, fl
     return prevCoord;
 }
 
-vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 currNormal, vec3 geoNormal, float materialID, out float isPrevValid) {
+vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 currNormal, vec3 geoNormal, float materialID, out float isPrevValid, out float samplePrevFrames) {
     ivec2 sampleTexel = ivec2(sampleTexelCoord);
     vec4 prevSampleData = max(vec4(0.0), texelFetch(colortex5, sampleTexel, 0));
     #ifndef VBGI
         prevSampleData.rgb = vec3(0.0);
     #endif
     uvec2 prevGeometryData = texelFetch(colortex6, sampleTexel, 0).xy;
-    float prevSampleDepth = min(1.0, uintBitsToFloat(prevGeometryData.y));
+    vec2 prevFramesDepth = unpackF8D24(prevGeometryData.y);
+    samplePrevFrames = prevFramesDepth.x;
+    float prevSampleDepth = prevFramesDepth.y + float(prevFramesDepth.y == 0.0);
     vec3 prevNormal = decodeNormal(unpack2x16Bit(prevGeometryData.x));
 
     vec2 sampleCoord = sampleTexelCoord * texelSize;
@@ -95,7 +98,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 currNormal, v
     return vec4(prevSampleData);
 }
 
-vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 currNormal, vec3 geoNormal, float materialID) {
+vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 currNormal, vec3 geoNormal, float materialID, out float prevFrames) {
     vec2 sampleCoord = prevCoord;
     const float offset = 0.25;
     sampleCoord += prevTaaOffset * offset - taaOffset * 0.5 * offset;
@@ -107,24 +110,28 @@ vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 currNormal, v
     vec2 prevTexel = sampleCoord * screenSize;
     vec2 sampleCenter = round(prevTexel);
     vec4 dataAccum = vec4(0.0);
+    float framesAccum = 0.0;
     float weightAccum = 0.0;
     float sampleOffsetX = -0.5;
     for (int i = 0; i < 2; i++) {
         float sampleOffsetY = -0.5;
         for (int j = 0; j < 2; j++) {
             vec2 sampleTexel = sampleCenter + vec2(sampleOffsetX, sampleOffsetY);
-            float isSampleValid;
-            vec4 sampleData = samplePrevData(sampleTexel, prevWorldPos, currNormal, geoNormal, materialID, isSampleValid);
+            float isSampleValid, samplePrevFrames;
+            vec4 sampleData = samplePrevData(sampleTexel, prevWorldPos, currNormal, geoNormal, materialID, isSampleValid, samplePrevFrames);
             float weight = (1.0 - abs(sampleTexel.x - prevTexel.x)) * (1.0 - abs(sampleTexel.y - prevTexel.y));
             isSampleValid *= weight;
-            dataAccum += sampleData * isSampleValid;
+            samplePrevFrames *= isSampleValid;
+            dataAccum += sampleData * samplePrevFrames;
+            framesAccum += samplePrevFrames;
             weightAccum += isSampleValid;
             isPrevValid = max(isPrevValid, isSampleValid);
             sampleOffsetY += 1.0;
         }
         sampleOffsetX += 1.0;
     }
-    vec4 prevData = dataAccum / max(1e-5, weightAccum);
+    vec4 prevData = dataAccum / max(1e-5, framesAccum);
+    prevFrames = framesAccum / max(1e-5, weightAccum);
     return prevData;
 }
 
@@ -152,6 +159,7 @@ void main() {
         depth -= float(depth == 1.0) * (1.0 + getLodDepthSolidDeferred(texcoord));
     #endif
     vec4 prevData = vec4(0.0);
+    uvec2 temporalGeometry = uvec2(0u);
     if (abs(depth) < 0.999999) {
         ivec2 texel = ivec2 (gl_FragCoord.st);
         #ifdef LOD
@@ -167,9 +175,14 @@ void main() {
 
         vec3 prevWorldPos = worldPos;
         vec2 prevCoord = getPrevCoord(prevWorldPos, viewPos, worldGeoNormal, gbufferData.parallaxOffset, gbufferData.materialID);
-        prevData = prevVisibilityBitmask(prevCoord, prevWorldPos, worldNormal, worldGeoNormal, gbufferData.materialID);
+
+        float prevFrames;
+        prevData = prevVisibilityBitmask(prevCoord, prevWorldPos, worldNormal, worldGeoNormal, gbufferData.materialID, prevFrames);
+        temporalGeometry.x = pack2x16Bit(encodeNormal(worldGeoNormal));
+        temporalGeometry.y = packF8D24(prevFrames + 1.0, depth);
     }
     texBuffer5 = prevData;
+    texBuffer6 = temporalGeometry;
 }
 
-/* DRAWBUFFERS:35 */
+/* DRAWBUFFERS:356 */

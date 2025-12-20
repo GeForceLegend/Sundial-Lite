@@ -20,7 +20,6 @@
 #extension GL_ARB_shading_language_packing: enable
 
 layout(location = 0) out vec4 texBuffer3;
-layout(location = 1) out uvec2 texBuffer6;
 
 #ifdef SHADOW_AND_SKY
     in vec3 skyColorUp;
@@ -305,14 +304,12 @@ void main() {
     vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
 
     vec4 finalColor = vec4(vec3(0.0), parallaxData);
-    uvec2 temporalGeometry = uvec2(0.0, floatBitsToUint(gbufferData.depth));
 
     if (abs(gbufferData.depth) < 1.0) {
         float viewLength = inversesqrt(dot(viewPos, viewPos));
         vec3 viewDir = viewPos * viewLength;
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
-        temporalGeometry.x = pack2x16Bit(encodeNormal(worldGeoNormal));
         finalColor.w += 512.0 * float(gbufferData.materialID == MAT_HAND);
 
         float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
@@ -378,7 +375,6 @@ void main() {
     }
 
     texBuffer3 = finalColor;
-    texBuffer6 = temporalGeometry;
 }
 
-/* DRAWBUFFERS:36 */
+/* DRAWBUFFERS:3 */

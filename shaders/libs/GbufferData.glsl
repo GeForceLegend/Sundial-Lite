@@ -179,6 +179,21 @@ vec2 unpack2x16Bit(uint x) {
     return uintBitsToFloat(p) * 65536.0 / 65535.0 - 65536.0 / 65535.0;
 }
 
+uint packF8D24(float frames, float depth) {
+    frames = clamp(frames / 256.0, 0.0, 1.0);
+    uint uFrames = (floatBitsToUint(frames + 1.0) << 9) & 0xFF000000u;
+    uint uDepth = floatBitsToUint(abs(depth) + 1.0) & 0x007FFFFEu;
+    uDepth += floatBitsToUint(depth) >> 31;
+    return uFrames + uDepth;
+}
+
+vec2 unpackF8D24(uint x) {
+    float frames = uintBitsToFloat(((x & 0xFF000000u) >> 9) | 0x3F800000u) * 256.0 - 256.0;
+    uint signDepth = (x << 31) | 0x3F800000u;
+    float depth = uintBitsToFloat((x & 0x007FFFFEu) | signDepth) - uintBitsToFloat(signDepth);
+    return vec2(frames, depth);
+}
+
 void LabPBR(inout GbufferData dataSet, vec4 specularData) {
     dataSet.smoothness = specularData.r;
     dataSet.metalness = specularData.g;
