@@ -137,6 +137,9 @@ void main() {
         if (rawData.materialID == MAT_TORCH) {
             emissive *= 0.57 * length(rawData.albedo.rgb);
         }
+        else if (rawData.materialID == MAT_BREWING_STAND) {
+            emissive *= clamp(1.5 * rawData.albedo.r - 2.0 * rawData.albedo.b, 0.0, 1.0);
+        }
         else if (rawData.materialID == MAT_GLOWING_BERRIES) {
             emissive *= clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0);
         }
