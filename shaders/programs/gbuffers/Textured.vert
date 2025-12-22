@@ -73,7 +73,7 @@ void main() {
     if (clampCoord) {
         vec2 vertexCoord = gl_MultiTexCoord0.st;
         if (min(abs(mc_midTexCoord.s - gl_MultiTexCoord0.s), abs(mc_midTexCoord.t - gl_MultiTexCoord0.t)) < 1e-6) {
-            vec2 vertexCoord = gl_MultiTexCoord0.st + (mc_midTexCoord.st - gl_MultiTexCoord0.st).ts;
+            vertexCoord = gl_MultiTexCoord0.st + (mc_midTexCoord.st - gl_MultiTexCoord0.st).ts;
         }
         vec2 coordToCenter = abs(vertexCoord - mc_midTexCoord.st);
         minCoord = mc_midTexCoord.st - coordToCenter;

@@ -391,8 +391,6 @@ option.TEMPORAL_IGNORE_HAND_ANIMATION.comment=在时间性累积中忽略原版�
 
 # Experimental
 option.AUTHOR=作者
-option.SKYLIGHT_FIX=天空光照修复
-option.SKYLIGHT_FIX.comment=[实验性]修复1.14开始的完整方块光源周围天空光照等级下降导致的一系列问题
 option.GLOWING_OVERLAY=发光实体遮罩
 option.GLOWING_OVERLAY.comment=让拥有发光效果的实体透过其他物体渲染. 会严重影响景深（DoF）
 option.UNDERGROUND_MODE=地底模式

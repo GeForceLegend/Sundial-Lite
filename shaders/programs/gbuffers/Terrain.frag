@@ -25,14 +25,10 @@ layout(location = 2) out vec4 gbufferData2;
 
 in vec4 texlmcoord;
 in vec3 color;
+in vec3 viewPos;
 
 flat in uint material;
-flat in uvec2 blockData;
-flat in vec3 viewNormal;
-flat in vec4 skyLightFix;
 flat in vec4 coordRange;
-
-// #define SKYLIGHT_FIX
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -41,27 +37,44 @@ flat in vec4 coordRange;
 #include "/libs/Water.glsl"
 #include "/libs/Parallax.glsl"
 
+mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec3 normal, out vec2 textureScale) {
+    vec3 dPosDX = dFdx(position);
+    vec3 dPosDY = dFdy(position);
+
+    normal = normalize(cross(dPosDX, dPosDY));
+
+    vec3 dPosPerpX = cross(normal, dPosDX);
+    vec3 dPosPerpY = cross(dPosDY, normal);
+
+    dPosPerpX /= dot(dPosDY, dPosPerpX);
+    dPosPerpY /= dot(dPosDX, dPosPerpY);
+
+    vec3 tangent = dPosPerpY * dCoordDX.x + dPosPerpX * dCoordDY.x;
+    vec3 bitangent = dPosPerpY * dCoordDX.y + dPosPerpX * dCoordDY.y;
+
+    float tangentLen = inversesqrt(dot(tangent, tangent));
+    float bitangentLen = inversesqrt(dot(bitangent, bitangent));
+
+    textureScale = 1.0 / vec2(tangentLen, bitangentLen);
+
+    return mat3(tangent * tangentLen, bitangent * bitangentLen, normal);
+}
+
 void main() {
     GbufferData rawData;
 
-    vec2 albedoTexSize = vec2(atlasSize);
-    #ifdef MC_ANISOTROPIC_FILTERING
-        albedoTexSize *= spriteBounds.zw - spriteBounds.xy;
-    #endif
-    vec2 albedoTexelSize = uintBitsToFloat(0x7F000000u - floatBitsToUint(albedoTexSize));
+    vec2 texGradX = dFdx(texlmcoord.st);
+    vec2 texGradY = dFdy(texlmcoord.st);
+    vec2 textureScale;
+    vec3 viewNormal;
+    mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, viewNormal, textureScale);
 
-    vec4 viewTangent = vec4(unpackHalf2x16(blockData.x), unpackHalf2x16(blockData.y));
-    float tangentLenInv = inversesqrt(dot(viewTangent.xyz, viewTangent.xyz));
-    vec3 tangent = viewTangent.xyz;
-    vec3 bitangent = cross(viewNormal, tangent) * (signI(viewTangent.w) * tangentLenInv);
-    mat3 tbnMatrix = mat3(tangent, bitangent, viewNormal);
-
-    vec3 viewPos = screenToViewPos(gl_FragCoord.st * texelSize, gl_FragCoord.z);
-    vec3 worldPos = viewToWorldPos(viewPos) + cameraPosition;
-    vec2 lightLevel = texlmcoord.pq;
-    #ifdef SKYLIGHT_FIX
-        lightLevel.y = clamp(lightLevel.y + skyLightFix.w - dot(worldPos, skyLightFix.xyz), 0.0, 1.0);
-    #endif
+    vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
+    vec2 albedoTexelSize = 1.0 / albedoTexSize;
+    int textureResolutionFixed = (floatBitsToInt(max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y)) & 0x7FC00000) >> 22;
+    textureResolutionFixed = ((textureResolutionFixed >> 1) + (textureResolutionFixed & 1)) - 0x0000007F;
+    textureResolutionFixed = 1 << textureResolutionFixed;
+    vec2 pixelScale = albedoTexelSize / textureScale;
     vec2 quadSize = 1.0 / coordRange.zw;
 
     float parallaxOffset = 0.0;
@@ -73,7 +86,7 @@ void main() {
         #endif
         {
             vec3 textureViewer = viewPos * tbnMatrix;
-            textureViewer.y /= abs(viewTangent.w);
+            textureViewer.xy *= textureScale;
             #ifdef VOXEL_PARALLAX
                 texcoord = perPixelParallax(texlmcoord.st, textureViewer, albedoTexSize, albedoTexelSize, coordRange, parallaxTexNormal, parallaxOffset);
             #else
@@ -81,10 +94,7 @@ void main() {
             #endif
         }
     #endif
-    tbnMatrix[0] *= tangentLenInv;
 
-    vec2 texGradX = dFdx(texlmcoord.st);
-    vec2 texGradY = dFdy(texlmcoord.st);
     #if ANISOTROPIC_FILTERING_QUALITY > 0 && !defined MC_ANISOTROPIC_FILTERING
         vec4 albedoData = anisotropicFilter(texcoord, albedoTexSize, albedoTexelSize, texGradX, texGradY, coordRange, quadSize);
     #else
@@ -102,7 +112,7 @@ void main() {
 
     albedoData.rgb *= color;
     rawData.albedo = albedoData;
-    rawData.lightmap = lightLevel;
+    rawData.lightmap = texlmcoord.pq;
     rawData.normal = tbnMatrix[2];
     rawData.geoNormal = tbnMatrix[2];
     rawData.smoothness = 0.0;
@@ -153,6 +163,7 @@ void main() {
     vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
     float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
     vec3 viewDir = viewPos * (-viewDepthInv);
+    vec3 worldPos = viewToWorldPos(viewPos) + cameraPosition;
     if (rainyStrength > 0.0 && rawData.materialID != MAT_LAVA) {
         float porosity = rawData.porosity * 255.0 / 64.0;
         porosity *= step(porosity, 1.0);
@@ -176,12 +187,11 @@ void main() {
     }
 
     vec2 quadTexelSize = albedoTexelSize * quadSize;
-    vec2 pixelScale = vec2(tangentLenInv, abs(viewTangent.w)) * albedoTexelSize;
     #ifdef PARALLAX
         #if (defined VOXEL_PARALLAX) || (defined PARALLAX_BASED_NORMAL)
             if (rawData.parallaxOffset > 0.0
                 #ifdef VOXEL_PARALLAX
-                    || parallaxTexNormal.z < 0.5
+                    && parallaxTexNormal.z < 0.5
                 #endif
             ) {
                 #ifdef VOXEL_PARALLAX

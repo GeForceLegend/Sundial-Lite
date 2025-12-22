@@ -21,16 +21,21 @@
 #if MC_VERSION >= 11700
 in vec3 vaPosition;
 in vec4 mc_Entity;
+in vec4 mc_midTexCoord;
 #elif MC_VERSION >= 11500
 layout(location = 11) in vec4 mc_Entity;
+layout(location = 12) in vec4 mc_midTexCoord;
 #else
 layout(location = 10) in vec4 mc_Entity;
+layout(location = 11) in vec4 mc_midTexCoord;
 #endif
 
-out vec4 vTexlmCoord;
-out vec3 vColor;
+out vec4 texlmcoord;
+out vec3 color;
+out vec3 viewPos;
 
-out uint vMaterial;
+flat out uint material;
+flat out vec4 coordRange;
 
 // #define MOD_PLANT_DETECTION
 
@@ -41,15 +46,26 @@ out uint vMaterial;
 uniform vec3 cameraPositionFract;
 
 void main() {
-    vec3 viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+    viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
 
     gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
-    vColor = gl_Color.rgb * gl_Color.a;
-    vTexlmCoord.st = gl_MultiTexCoord0.st;
-    vTexlmCoord.pq = gl_MultiTexCoord1.st / 240.0;
+    color = gl_Color.rgb * gl_Color.a;
+    texlmcoord.st = gl_MultiTexCoord0.st;
+    texlmcoord.pq = gl_MultiTexCoord1.st / 240.0;
     #ifdef IS_IRIS
-        vTexlmCoord.pq = clamp(gl_MultiTexCoord1.st / 232.0 - 8.0 / 232.0, 0.0, 1.0);
+        texlmcoord.pq = clamp(gl_MultiTexCoord1.st / 232.0 - 8.0 / 232.0, 0.0, 1.0);
     #endif
+
+    vec2 minCoord = vec2(0.0);
+    vec2 coordSize = vec2(1.0);
+    vec2 vertexCoord = gl_MultiTexCoord0.st;
+    if (min(abs(mc_midTexCoord.s - gl_MultiTexCoord0.s), abs(mc_midTexCoord.t - gl_MultiTexCoord0.t)) < 1e-6) {
+        vertexCoord = gl_MultiTexCoord0.st + (mc_midTexCoord.st - gl_MultiTexCoord0.st).ts;
+    }
+    vec2 coordToCenter = abs(vertexCoord - mc_midTexCoord.st);
+    minCoord = mc_midTexCoord.st - coordToCenter;
+    coordSize = coordToCenter * 2.0;
+    coordRange = vec4(minCoord, coordSize);
 
     uint isEmissive = uint(511.5 < mc_Entity.x && mc_Entity.x < 2048.5);
     int materialID = MAT_OPAQUE;
@@ -85,7 +101,7 @@ void main() {
             materialID = MAT_CAULDRON;
             if (abs(gl_Color.r - gl_Color.b) > 1e-5) {
                 materialID = MAT_WATER;
-                vColor *= 0.5;
+                color *= 0.5;
             }
         }
         else if (mc_Entity.x == 513 || abs(mc_Entity.x - 669) < 5.5) {
@@ -107,8 +123,8 @@ void main() {
         }
     }
 
-    vMaterial = isEmissive;
-    vMaterial |= uint(materialID) << 1;
+    material = isEmissive;
+    material |= uint(materialID) << 1;
 
     #ifdef TAA
         gl_Position.xy += taaOffset * gl_Position.w;
