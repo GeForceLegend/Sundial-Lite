@@ -49,7 +49,7 @@ void main() {
     viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
 
     gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
-    color = gl_Color.rgb * gl_Color.a;
+    color = gl_Color.rgb;
     texlmcoord.st = gl_MultiTexCoord0.st;
     texlmcoord.pq = gl_MultiTexCoord1.st / 240.0;
     #ifdef IS_IRIS
