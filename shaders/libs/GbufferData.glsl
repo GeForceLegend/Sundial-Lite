@@ -76,13 +76,17 @@
         #ifdef TAA
             projPos.xy -= taaOffset;
         #endif
-        vec4 viewPos = vec4(projInvLod()[0].x, projInvLod()[1].y, projInvLod()[2].zw) * projPos.xyzz + projInvLod()[3];
-        return viewPos.xyz / viewPos.w;
+        vec3 viewDirection = vec3(vec2(projInvLod()[0].x, projInvLod()[1].y) * projPos.xy, projInvLod()[3].z);
+        viewDirection.xy += vec2(projInvLod()[3].xy);
+        float viewDepth = projInvLod()[2].w * projPos.z + projInvLod()[3].w;
+        return viewDirection / viewDepth;
     }
 
     vec3 projectionToViewPosLod(vec3 projPos) {
-        vec4 viewPos = vec4(projInvLod()[0].x, projInvLod()[1].y, projInvLod()[2].zw) * projPos.xyzz + projInvLod()[3];
-        return viewPos.xyz / viewPos.w;
+        vec3 viewDirection = vec3(vec2(projInvLod()[0].x, projInvLod()[1].y) * projPos.xy, projInvLod()[3].z);
+        viewDirection.xy += vec2(projInvLod()[3].xy);
+        float viewDepth = projInvLod()[2].w * projPos.z + projInvLod()[3].w;
+        return viewDirection / viewDepth;
     }
 
     vec3 viewToProjectionPosLod(vec3 viewPos) {
@@ -90,6 +94,7 @@
     }
 
     vec3 prevProjectionToViewPosLod(vec3 projPos) {
+        projPos.xy += projPrevLod()[2].xy;
         projPos.x /= projPrevLod()[0].x;
         projPos.y /= projPrevLod()[1].y;
         projPos.z = projPrevLod()[3].z / (projPos.z + projPrevLod()[2].z);
@@ -97,7 +102,10 @@
     }
 
     vec3 prevViewToProjectionPosLod(vec3 viewPos) {
-        return -(vec3(projPrevLod()[0].x, projPrevLod()[1].y, projPrevLod()[2].z) * viewPos + projPrevLod()[3].xyz) / viewPos.z;
+        vec3 projPos = vec3(projPrevLod()[0].x, projPrevLod()[1].y, projPrevLod()[2].z) * viewPos;
+        projPos.xy += projPrevLod()[2].xy * viewPos.z;
+        projPos.z += projPrevLod()[3].z;
+        return -projPos / viewPos.z;
     }
 
     float screenToViewDepthLod(float depth) {
@@ -334,7 +342,10 @@ vec3 prevProjectionToViewPos(vec3 projPos) {
 }
 
 vec3 prevViewToProjectionPos(vec3 viewPos) {
-    return -(vec3(gbufferPreviousProjection[0].x, gbufferPreviousProjection[1].y, gbufferPreviousProjection[2].z) * viewPos + gbufferPreviousProjection[3].xyz) / viewPos.z;
+    vec3 projPos = vec3(gbufferPreviousProjection[0].x, gbufferPreviousProjection[1].y, gbufferPreviousProjection[2].z) * viewPos;
+    projPos.xy += gbufferPreviousProjection[2].xy * viewPos.z;
+    projPos.z += gbufferPreviousProjection[3].z;
+    return -projPos / viewPos.z;
 }
 
 vec3 prevViewToWorldPos(vec3 viewPos) {
