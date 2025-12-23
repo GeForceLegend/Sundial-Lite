@@ -29,7 +29,7 @@ layout(location = 0) out vec4 texBuffer3;
 
 in vec2 texcoord;
 
-uniform vec4 projShadowDirection;
+uniform vec3 viewShadowDirection;
 
 #define PCSS
 #define PCSS_SAMPLES 9 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 25 30 36]
@@ -169,14 +169,17 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
     }
 
     float screenSpaceShadow(vec3 viewPos, float NdotL, float viewLength, float porosity, vec2 noise, float materialID) {
-        vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos + gbufferProjection[3].xyz, -viewPos.z);
+        vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos, -viewPos.z);
+        originProjPos.z += gbufferProjection[3].z;
+        originProjPos.xy += gbufferProjection[2].xy * viewPos.z;
         #ifdef TAA
             originProjPos.xy += taaOffset * originProjPos.w;
         #endif
         float projScale = 0.5 / originProjPos.w;
         vec4 originCoord = vec4(originProjPos.xyz * projScale + 0.5, 0.0);
 
-        vec4 projDirection = projShadowDirection;
+        vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewShadowDirection, -viewShadowDirection.z);
+        projDirection.xy += gbufferProjection[2].xy * viewShadowDirection.z;
         float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
         vec4 targetProjPos = originProjPos + projDirection * traceLength;
         float targetProjScale = 0.5 / targetProjPos.w;

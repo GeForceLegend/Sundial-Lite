@@ -282,6 +282,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
             vec3 rayDir = Transform_Vz0Qz0(screenDir, Q_toV);
 
             vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);
+            projDirection.xy += gbufferProjection[2].xy * rayDir.z;
             float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
 
             vec4 targetProjPos = originProjPos + projDirection * traceLength;

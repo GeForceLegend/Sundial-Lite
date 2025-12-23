@@ -141,7 +141,10 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
     vec4 reflectionColor = vec4(0.0);
     if (dot(totalWeight, totalWeight) > 1e-6) {
         vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);
-        vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos + gbufferProjection[3].xyz, -viewPos.z);
+        vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos, -viewPos.z);
+        projDirection.xy += gbufferProjection[2].xy * rayDir.z;
+        originProjPos.z += gbufferProjection[3].z;
+        originProjPos.xy += gbufferProjection[2].xy * viewPos.z;
         #ifdef TAA
             originProjPos.xy += taaOffset * originProjPos.w;
         #endif
@@ -222,7 +225,8 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                     #ifdef TAA
                         sampleProjPos.st -= taaOffset;
                     #endif
-                    sampleProjPos.xy /= vec2(projLod()[0].x, projLod()[1].y);
+                    sampleProjPos.xy *= vec2(projInvLod()[0].x, projInvLod()[1].y);
+                    sampleProjPos.xy += projInvLod()[3].xy;
                     float projectionScale = projLod()[3].z / (sampleProjPos.z + projLod()[2].z);
                     sampleViewPos = vec3(sampleProjPos.xy * projectionScale, -projectionScale);
                 } else
@@ -232,7 +236,8 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                 #ifdef TAA
                     sampleProjPos.st -= taaOffset;
                 #endif
-                sampleProjPos.xy /= vec2(gbufferProjection[0].x, gbufferProjection[1].y);
+                sampleProjPos.xy *= vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y);
+                sampleProjPos.xy += gbufferProjectionInverse[3].xy;
                 float projectionScale = gbufferProjection[3].z / (sampleProjPos.z + gbufferProjection[2].z);
                 sampleViewPos = vec3(sampleProjPos.xy * projectionScale, -projectionScale);
             }
