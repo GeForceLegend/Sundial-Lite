@@ -186,7 +186,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec4 targetCoord = vec4(targetProjPos.xyz * targetProjScale + 0.5, 0.0);
 
         #ifdef LOD
-            projDirection.z = projShadowDirection.z / gbufferProjection[2].z * projLod()[2].z;
+            projDirection.z = projDirection.z / gbufferProjection[2].z * projLod()[2].z;
             float originProjDepthLod = viewPos.z * projLod()[2].z + projLod()[3].z;
             originCoord.w = originProjDepthLod * projScale + 0.5;
             targetCoord.w = (originProjDepthLod + projDirection.z * traceLength) * targetProjScale + 0.5;
