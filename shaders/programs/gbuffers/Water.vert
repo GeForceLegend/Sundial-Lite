@@ -67,14 +67,14 @@ void main() {
         texlmcoord.pq = clamp(gl_MultiTexCoord1.st / 232.0 - 8.0 / 232.0, 0.0, 1.0);
     #endif
 
-    isEmissive = floor(mc_Entity.x / 512.0);
-    materialID = MAT_STAINED_GLASS;
+    isEmissive = clamp(float(max(0, int(mc_Entity.x)) & 0x7000) - 16384.0, 0.0, 1.0);
+    materialID = MAT_DEFAULT;
 
     if (mc_Entity.x < -0.5) {
         // Used for MOD_LIGHT_DETECTION
         materialID = -1.0;
     }
-    if (mc_Entity.x == 264) {
+    if (mc_Entity.x == 8192) {
         materialID = MAT_WATER;
     }
 

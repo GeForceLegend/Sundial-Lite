@@ -39,12 +39,12 @@ void main() {
     color = gl_Color;
     blockLight = (gl_TextureMatrix[1] * gl_MultiTexCoord1).st * 16.0 / 15.0 - 0.5 / 15.0;
 
-    materialID = MAT_STAINED_GLASS;
+    materialID = MAT_DEFAULT;
     if (dhMaterialId == DH_BLOCK_WATER) {
         materialID = MAT_WATER;
     }
     if (dhMaterialId == DH_BLOCK_ILLUMINATED) {
-        materialID = MAT_TORCH;
+        materialID = -1.0;
     }
 
     vec3 normal = normalize(gl_NormalMatrix * gl_Normal);

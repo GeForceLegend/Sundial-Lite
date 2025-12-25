@@ -58,13 +58,13 @@ void main() {
     rawData.geoNormal = viewNormal;
     rawData.smoothness = 0.0;
     rawData.metalness = 0.0;
-    rawData.porosity = 0.7 * float(blockData.z == MAT_LEAVES);
-    rawData.emissive = float(blockData.z == MAT_TORCH);
-    rawData.materialID = blockData.z;
+    rawData.porosity = 0.75 * float(blockData.z == 1.0);
+    rawData.emissive = clamp(blockData.z - 1.0, 0.0, 1.0);
+    rawData.materialID = MAT_DEFAULT;
     rawData.parallaxOffset = 0.0;
     rawData.depth = 0.0;
 
-    if (rainyStrength > 0.0) {
+    if (rainyStrength > 0.0 && blockData.z < 2.5) {
         float wetStrength = 0.0;
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
         vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;

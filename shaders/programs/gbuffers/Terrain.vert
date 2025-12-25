@@ -34,7 +34,7 @@ out vec4 texlmcoord;
 out vec3 color;
 out vec3 viewPos;
 
-flat out uint material;
+flat out int material;
 flat out vec4 coordRange;
 
 // #define MOD_PLANT_DETECTION
@@ -66,16 +66,13 @@ void main() {
     minCoord = mc_midTexCoord.st - coordToCenter;
     coordSize = coordToCenter * 2.0;
     coordRange = vec4(minCoord, coordSize);
-
-    uint isEmissive = uint(511.5 < mc_Entity.x && mc_Entity.x < 2048.5);
-    int materialID = MAT_OPAQUE;
+    material = int(mc_Entity.x);
 
     if (mc_Entity.x < -0.5) {
         // Used for MOD_LIGHT_DETECTION
-        materialID = 0;
         #ifdef MOD_PLANT_DETECTION
-            if (abs(max(abs(gl_Normal.x), abs(gl_Normal.z)) - 0.5) < 0.45) {
-                materialID = MAT_GRASS;
+            if (abs(max(abs(gl_Normal.x), abs(gl_Normal.z)) - 0.5) < 0.4) {
+                material = 19968;
             }
         #endif
     }
@@ -91,40 +88,31 @@ void main() {
             #endif
         #endif
 
-        if (abs(mc_Entity.x - 188.5) < 1.0 || mc_Entity.x == 265 || abs(mc_Entity.x - 225.5) < 31 || abs(mc_Entity.x - 736.5) < 31) {
-            materialID = MAT_GRASS;
-        }
-        else if (mc_Entity.x == 2) {
-            materialID = MAT_LEAVES;
-        }
-        else if (mc_Entity.x == 119) {
-            materialID = MAT_CAULDRON;
+        if (mc_Entity.x == 8194) {
             if (abs(gl_Color.r - gl_Color.b) > 1e-5) {
-                materialID = MAT_WATER;
+                material = 8192;
                 color *= 0.5;
             }
         }
-        else if (mc_Entity.x == 513 || abs(mc_Entity.x - 669) < 5.5) {
-            materialID = MAT_TORCH;
+        else if (mc_Entity.x == 8196) {
+            if (gl_Normal.y > 0.5 && abs(blockPos.y - 0.9375) < 0.01) {
+                material = 8195;
+            }
         }
-        else if (mc_Entity.x == 514) {
-            materialID = MAT_LAVA;
+        else if (mc_Entity.x == 8197 || mc_Entity.x == 8201) {
+            if (mc_Entity.x == 8201) {
+                material = 20480;
+            }
+            if (abs(dot(gl_Normal * vec3(16.0, 16.0 / 7.0, 16.0), blockPos - vec3(0.5, 0.4375, 0.5)) - 1.0) > 0.1) {
+                material = 0;
+            }
         }
-        else if (mc_Entity.x == 630) {
-            isEmissive = uint(gl_Normal.y > 0.5 && abs(blockPos.y - 0.9375) < 0.01);
-            materialID = MAT_LAVA_CAULDRON;
-        }
-        else if (abs(mc_Entity.x - 681.5) < 1.0) {
-            isEmissive = uint(abs(dot(gl_Normal * vec3(16.0, 16.0 / 7.0, 16.0), blockPos - vec3(0.5, 0.4375, 0.5)) - 1.0) < 0.1);
-            materialID = MAT_BREWING_STAND;
-        }
-        else if (abs(mc_Entity.x - 702.5) < 3.5) {
-            materialID = MAT_GLOWING_BERRIES;
+        else if (mc_Entity.x == 8199) {
+            if (abs(dot(gl_Normal * vec3(16.0 / 5.0, 16.0 / 5.5, 16.0 / 5.0), blockPos - vec3(0.5, 8.5 / 16.0, 0.5)) - 1.0) < 0.1) {
+                material = 20480;
+            }
         }
     }
-
-    material = isEmissive;
-    material |= uint(materialID) << 1;
 
     #ifdef TAA
         gl_Position.xy += taaOffset * gl_Position.w;

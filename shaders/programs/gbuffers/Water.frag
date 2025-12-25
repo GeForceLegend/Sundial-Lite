@@ -86,7 +86,6 @@ void main() {
             rawData.emissive += step(rawData.emissive, 1e-3) * step(rawData.materialID, -0.5);
         }
     #endif
-    rawData.materialID = mix(rawData.materialID, MAT_STAINED_GLASS, float(rawData.materialID < 0.0));
 
     #ifndef LABPBR_POROSITY
         rawData.porosity = 0.0;

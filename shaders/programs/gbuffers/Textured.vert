@@ -38,7 +38,6 @@ out vec4 viewPos;
 out vec4 texlmcoord;
 out vec3 mcPos;
 
-flat out float materialID;
 flat out vec4 coordRange;
 
 #ifdef ENTITIES
@@ -60,7 +59,6 @@ void main() {
     color = gl_Color;
     texlmcoord.st = vec2(gl_TextureMatrix[0] * gl_MultiTexCoord0);
     texlmcoord.pq = gl_MultiTexCoord1.st / 240.0;
-    materialID = MAT_OPAQUE;
 
     vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
     bool clampCoord = textureSize(gaux1, 0) == albedoTexSize;
@@ -98,14 +96,6 @@ void main() {
 
     #ifdef TAA
         gl_Position.xy += taaOffset * gl_Position.w;
-    #endif
-
-    #ifdef HAND
-        materialID = MAT_HAND;
-    #endif
-
-    #ifdef PARTICLE
-        materialID = MAT_PARTICLE;
     #endif
 
     #if MC_VERSION < 11300

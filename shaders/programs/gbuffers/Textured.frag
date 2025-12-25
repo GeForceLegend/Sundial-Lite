@@ -32,7 +32,6 @@ in vec4 viewPos;
 in vec4 texlmcoord;
 in vec3 mcPos;
 
-flat in float materialID;
 flat in vec4 coordRange;
 
 #define ENTITY_TEXTURE_RESOLUTION 16 // [4 8 16 32 64 128 256 512 1024 2048 4096 8192]
@@ -153,12 +152,18 @@ void main() {
     rawData.lightmap = texlmcoord.pq;
     rawData.geoNormal = viewNormal;
     rawData.normal = viewNormal;
-    rawData.materialID = materialID;
+    rawData.materialID = MAT_DEFAULT;
+    #ifdef HAND
+        rawData.materialID = MAT_HAND;
+    #endif
+    #ifdef PARTICLE
+        rawData.materialID = MAT_PARTICLE;
+    #endif
     rawData.parallaxOffset = 0.0;
     rawData.depth = 0.0;
 
     #ifdef END_PORTAL
-        if (blockEntityId == 375) {
+        if (blockEntityId == 8193) {
             vec3 worldDir = -mat3(gbufferModelViewInverse) * viewDir;
 	        vec3 worldDirAbs = abs(worldDir);
             vec3 samplePartAbs = step(vec3(max(worldDirAbs.x, max(worldDirAbs.y, worldDirAbs.z))), worldDirAbs);

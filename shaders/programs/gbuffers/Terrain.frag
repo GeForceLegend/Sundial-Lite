@@ -27,7 +27,7 @@ in vec4 texlmcoord;
 in vec3 color;
 in vec3 viewPos;
 
-flat in uint material;
+flat in int material;
 flat in vec4 coordRange;
 
 #include "/settings/GlobalSettings.glsl"
@@ -82,7 +82,7 @@ void main() {
     #ifdef PARALLAX
         vec3 parallaxTexNormal = vec3(0.0, 0.0, 1.0);
         #if WATER_TYPE == 0 && defined CAULDRON_WAVE
-            if ((material >> 1) != MAT_WATER)
+            if (material != 8192)
         #endif
         {
             vec3 textureViewer = viewPos * tbnMatrix;
@@ -119,7 +119,7 @@ void main() {
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;
     rawData.emissive = 0.0;
-    rawData.materialID = material >> 1;
+    rawData.materialID = MAT_DEFAULT;
     rawData.parallaxOffset = parallaxOffset;
     rawData.depth = 0.0;
 
@@ -133,23 +133,21 @@ void main() {
     #endif
 
     #ifdef HARDCODED_EMISSIVE
-        float emissive = clamp(float(material & 1u) - rawData.emissive * 1e+3, 0.0, 1.0);
-        if (rawData.materialID == MAT_TORCH) {
-            emissive *= 0.57 * length(rawData.albedo.rgb);
-        }
-        else if (rawData.materialID == MAT_BREWING_STAND) {
-            emissive *= clamp(1.5 * rawData.albedo.r - 2.0 * rawData.albedo.b, 0.0, 1.0);
-        }
-        else if (rawData.materialID == MAT_GLOWING_BERRIES) {
-            emissive *= clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0);
-        }
-        rawData.emissive += emissive;
+        float hardcodedEmissive = clamp(1.0 - rawData.emissive * 1e+3, 0.0, 1.0);
+        int commonEmissive = max(0, material) & 0x7000;
+        rawData.emissive += hardcodedEmissive * (
+            float(material == 8195) +
+            float(material == 8197) * clamp(1.5 * rawData.albedo.r - 2.0 * rawData.albedo.b, 0.0, 1.0) + 
+            float(material == 8198) * clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0) + 
+            float(material == 8200) * clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0) + 
+            clamp(commonEmissive - 16384, 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0)
+        );
     #endif
-    bool isCauldronWater = rawData.materialID == MAT_WATER;
+    bool isCauldronWater = material == 8192;
     rawData.smoothness += float(rawData.smoothness < 1e-3 && isCauldronWater);
 
     #ifdef MOD_LIGHT_DETECTION
-        if (rawData.lightmap.x > 0.99999) {
+        if (rawData.lightmap.x > 0.99999 && material < 0) {
             rawData.emissive += float(rawData.emissive < 1e-3 && rawData.materialID < 0.5);
         }
     #endif
@@ -158,16 +156,17 @@ void main() {
         rawData.porosity = 0.0;
     #endif
 
+    int commonPorosity = max(0, material) & 0x0E00;
     rawData.porosity +=
-        clamp(1.0 - rawData.porosity * 1e+3, 0.0, 1.0) *
-        (0.5 * float(rawData.materialID == MAT_GRASS) + 0.7 * float(rawData.materialID == MAT_LEAVES || rawData.materialID == MAT_GLOWING_BERRIES));
+        clamp(1.0 - rawData.porosity * 1e+3, 0.0, 1.0) * clamp(commonPorosity, 0.0, 1.0) *
+        intBitsToFloat(0x3F400000 - ((commonPorosity & 0x0800) << 11));
 
     float wetStrength = 0.0;
     vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
     float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
     vec3 viewDir = viewPos * (-viewDepthInv);
     vec3 worldPos = viewToWorldPos(viewPos) + cameraPosition;
-    if (rainyStrength > 0.0 && rawData.materialID != MAT_LAVA) {
+    if (rainyStrength > 0.0 && material != 8195) {
         float porosity = rawData.porosity * 255.0 / 64.0;
         porosity *= step(porosity, 1.0);
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
@@ -258,7 +257,9 @@ void main() {
         weight = max(NdotV, curveStart) - weight;
         rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
     }
-    rawData.lightmap = clamp(rawData.lightmap + blueNoiseTemporal(gl_FragCoord.st * texelSize).xy * 2.0 / 255.0 - 1.0 / 255.0, 0.0, 1.0) * clamp(rawData.lightmap * 500.0, 0.0, 1.0);
+    rawData.lightmap = 
+        clamp(rawData.lightmap + blueNoiseTemporal(gl_FragCoord.st * texelSize).xy * 2.0 / 255.0 - 1.0 / 255.0, 0.0, 1.0) *
+        clamp(rawData.lightmap * 500.0, 0.0, 1.0);
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);
 }

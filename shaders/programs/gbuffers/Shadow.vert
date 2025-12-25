@@ -57,7 +57,7 @@ void main() {
         worldPos = mat3(shadowModelViewInverse) * viewPos.xyz + shadowModelViewInverse[3].xyz;
 
         shadowOffset = vec2(0.0, 0.0);
-        float isWater = float(mc_Entity.x == 264);
+        float isWater = float(mc_Entity.x == 8192);
         shadowOffset.y = -isWater;
         float isTransparent = float(abs(textureLod(gtexture, mc_midTexCoord + 1e-6, 0.0).w - 0.5) + 1e-4 < 0.49) * (1.0 - isWater);
         shadowOffset.x = -isTransparent;

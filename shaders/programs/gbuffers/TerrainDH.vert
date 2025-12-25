@@ -37,15 +37,15 @@ void main() {
     color = gl_Color.rgb;
     blockData.xy = (gl_TextureMatrix[1] * gl_MultiTexCoord1).st * 16.0 / 15.0 - 0.5 / 15.0;
 
-    blockData.z = MAT_OPAQUE;
+    blockData.z = MAT_DEFAULT;
     if (dhMaterialId == DH_BLOCK_LEAVES) {
-        blockData.z = MAT_LEAVES;
-    }
-    if (dhMaterialId == DH_BLOCK_LAVA) {
-        blockData.z = MAT_TORCH;
+        blockData.z = 1.0;
     }
     if (dhMaterialId == DH_BLOCK_ILLUMINATED) {
-        blockData.z = MAT_TORCH;
+        blockData.z = 2.0;
+    }
+    if (dhMaterialId == DH_BLOCK_LAVA) {
+        blockData.z = 3.0;
     }
 
     #ifdef TAA
