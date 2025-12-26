@@ -17,7 +17,6 @@
 //
 
 #extension GL_ARB_gpu_shader5 : enable
-#extension GL_ARB_shading_language_packing : enable
 
 layout(location = 0) out vec4 gbufferData0;
 layout(location = 1) out vec4 gbufferData1;
@@ -140,7 +139,7 @@ void main() {
             float(material == 8197) * clamp(1.5 * rawData.albedo.r - 2.0 * rawData.albedo.b, 0.0, 1.0) + 
             float(material == 8198) * clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0) + 
             float(material == 8200) * clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0) + 
-            clamp(commonEmissive - 16384, 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0)
+            clamp(float(commonEmissive - 16384), 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0)
         );
     #endif
     bool isCauldronWater = material == 8192;
@@ -158,7 +157,7 @@ void main() {
 
     int commonPorosity = max(0, material) & 0x0E00;
     rawData.porosity +=
-        clamp(1.0 - rawData.porosity * 1e+3, 0.0, 1.0) * clamp(commonPorosity, 0.0, 1.0) *
+        clamp(1.0 - rawData.porosity * 1e+3, 0.0, 1.0) * clamp(float(commonPorosity), 0.0, 1.0) *
         intBitsToFloat(0x3F400000 - ((commonPorosity & 0x0800) << 11));
 
     float wetStrength = 0.0;

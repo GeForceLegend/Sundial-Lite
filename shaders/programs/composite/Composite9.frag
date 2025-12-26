@@ -16,8 +16,6 @@
 //  TAA stage 2: sample and blend
 //
 
-#extension GL_ARB_shading_language_packing: enable
-
 layout(location = 0) out vec4 texBuffer3;
 
 in vec2 texcoord;

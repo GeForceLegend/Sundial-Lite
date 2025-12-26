@@ -90,22 +90,3 @@ const float PI = 3.1415926535897;
     float nightBrightness = mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);
     vec3 sunColor = sunlightColor * clamp(nightBrightness + clamp(sunDirection.y * 1e+5, 0.0, 1.0), 0.0, 1.0);
 #endif
-
-#ifndef MC_GL_ARB_shading_language_packing
-vec2 unpackHalf2x16(uint x) {
-    uvec2 data = uvec2(x & 0xFFFFu, x >> 16u);
-    uvec2 signData = (data & 0x8000u) << 16u;
-    uvec2 expData = ((data & 0x7C00u) - 0x3C00u + 0x1FC00u) << 13u;
-    uvec2 fracData = (data & 0x03FFu) << 13u;
-    return uintBitsToFloat(signData | expData | fracData);
-}
-
-uint packHalf2x16(vec2 x) {
-    uvec2 data = uvec2(floatBitsToUint(x));
-    uvec2 signData = (data & 0x80000000u) >> 16u;
-    uvec2 expData = clamp(((data & 0x7F800000u) >> 13u) - 0x1FC00u + 0x3C00u, 0u, 0x7C00u);
-    uvec2 fracData = (data & 0x007FFFFFu) >> 13u;
-    uvec2 result = signData | expData | fracData;
-    return result.x | (result.y << 16u);
-}
-#endif

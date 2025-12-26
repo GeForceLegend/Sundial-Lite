@@ -16,8 +16,6 @@
 //  Parallax depth offset for less calculation in upcoming shaders; Move previous visibility mask result to current frame position
 //
 
-#extension GL_ARB_shading_language_packing: enable
-
 layout(location = 0) out vec4 texBuffer3;
 layout(location = 1) out vec4 texBuffer5;
 layout(location = 2) out uvec2 texBuffer6;

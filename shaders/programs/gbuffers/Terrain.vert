@@ -16,8 +16,6 @@
 //  Gbuffer for solid terrain
 //
 
-#extension GL_ARB_shading_language_packing : enable
-
 #if MC_VERSION >= 11700
 in vec3 vaPosition;
 in vec4 mc_Entity;
