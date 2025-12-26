@@ -136,9 +136,11 @@ void main() {
         int commonEmissive = max(0, material) & 0x7000;
         rawData.emissive += hardcodedEmissive * (
             float(material == 8195) +
-            float(material == 8197) * clamp(1.5 * rawData.albedo.r - 2.0 * rawData.albedo.b, 0.0, 1.0) + 
             float(material == 8198) * clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0) + 
             float(material == 8200) * clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0) + 
+            float(material == 8197 || material == 8202) * clamp((0.8 * rawData.albedo.r - 1.2 * rawData.albedo.b) * dot(rawData.albedo.rgb, vec3(0.3333)), 0.0, 1.0) + 
+            float(material == 8203) * float(rawData.albedo.r > 0.4 * (rawData.albedo.b + rawData.albedo.g) + 0.35 || dot(rawData.albedo.rgb, vec3(1.0)) > 2.999) + 
+            float(material == 8204) * (clamp(2.0 * rawData.albedo.b - 4.5 * rawData.albedo.r, 0.0, 1.0) + clamp(2.0 * rawData.albedo.r - 3.0 * rawData.albedo.b, 0.0, 1.0)) + 
             clamp(float(commonEmissive - 16384), 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0)
         );
     #endif
