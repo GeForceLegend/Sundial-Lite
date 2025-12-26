@@ -54,12 +54,12 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;
     rawData.emissive = 0.0;
-    rawData.materialID = MAT_STAINED_GLASS;
+    rawData.materialID = MAT_DEFAULT;
     rawData.parallaxOffset = 0.0;
     rawData.depth = 0.0;
 
-    float blockId = parameters.customId;
-    float emissive = float(511.5 < blockId && blockId < 2048.5);
+    int blockId = int(parameters.customId);
+    float emissive = clamp(float(max(0, blockId) & 0x7000) - 16384.0, 0.0, 1.0);
     if (blockId < -0.5) {
         #ifdef MOD_WATER_DETECTION
             if (dot(parameters.tinting.rgb, vec3(1.0)) < 2.999) {
@@ -70,7 +70,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
             rawData.emissive = float(rawData.lightmap.x > 0.99999);
         #endif
     }
-    if (blockId == 264) {
+    if (blockId == 8192) {
         rawData.materialID = MAT_WATER;
     }
 
@@ -85,7 +85,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
     float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
     vec3 viewDir = viewPos * (-viewDepthInv);
-    if (rainyStrength > 0.0 && rawData.materialID != MAT_LAVA) {
+    if (rainyStrength > 0.0) {
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
 
         vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;

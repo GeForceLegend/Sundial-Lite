@@ -31,7 +31,6 @@ uniform sampler2D colortex2;
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/GbufferData.glsl"
 #include "/libs/Common.glsl"
-#include "/libs/Water.glsl"
 #include "/libs/Parallax.glsl"
 
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
@@ -54,47 +53,32 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;
     rawData.emissive = 0.0;
-    rawData.materialID = MAT_OPAQUE;
+    rawData.materialID = MAT_DEFAULT;
     rawData.parallaxOffset = 0.0;
     rawData.depth = 0.0;
 
-    float blockId = parameters.customId;
-    float emissive = float(511.5 < blockId && blockId < 2048.5 && rawData.emissive < 1e-3);
-    if (abs(blockId - 188.5) < 1.0 || blockId == 265 || abs(blockId - 225.5) < 31 || abs(blockId - 736.5) < 31) {
-        rawData.materialID = MAT_GRASS;
-        rawData.porosity = 0.5;
-    }
-    else if (blockId == 2) {
-        rawData.materialID = MAT_LEAVES;
-        rawData.porosity = 0.7;
-    }
-    else if (blockId == 119) {
-        rawData.materialID = MAT_CAULDRON;
+    int blockId = int(parameters.customId);
+    int commonEmissive = max(0, blockId) & 0x7000;
+    float emissive = (
+        float(blockId == 8195) +
+        float(blockId == 8198) * clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0) + 
+        float(blockId == 8200) * clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0) + 
+        float(blockId == 8197 || blockId == 8202) * clamp((0.8 * rawData.albedo.r - 1.2 * rawData.albedo.b) * dot(rawData.albedo.rgb, vec3(0.3333)), 0.0, 1.0) + 
+        float(blockId == 8203) * float(rawData.albedo.r > 0.4 * (rawData.albedo.b + rawData.albedo.g) + 0.35 || dot(rawData.albedo.rgb, vec3(1.0)) > 2.999) + 
+        float(blockId == 8204) * (clamp(2.0 * rawData.albedo.b - 4.5 * rawData.albedo.r, 0.0, 1.0) + clamp(2.0 * rawData.albedo.r - 3.0 * rawData.albedo.b, 0.0, 1.0)) + 
+        float(blockId == 8205) * clamp(0.5 * rawData.albedo.b - 1.0 * rawData.albedo.r - 0.2, 0.0, 1.0) + 
+        clamp(float(commonEmissive - 16384), 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0)
+    );
+    if (blockId == 8194) {
         if (abs(parameters.tinting.r - parameters.tinting.b) > 1e-5) {
-            rawData.materialID = MAT_WATER;
             parameters.tinting.rgb *= 0.5;
             rawData.smoothness = 1.0;
         }
     }
-    else if (blockId == 513 || abs(blockId - 669) < 5.5) {
-        rawData.materialID = MAT_TORCH;
-        emissive *= 0.57 * length(rawData.albedo.rgb);
-    }
-    else if (blockId == 514) {
-        rawData.materialID = MAT_LAVA;
-    }
-    else if (blockId == 630) {
-        emissive = float(rawData.albedo.r - rawData.albedo.b > 0.3);
-        rawData.materialID = MAT_LAVA_CAULDRON;
-    }
-    else if (abs(blockId - 681.5) < 1.0) {
-        emissive = 0.0;
-        rawData.materialID = MAT_BREWING_STAND;
-    }
-    else if (abs(blockId - 702.5) < 3.5) {
-        rawData.materialID = MAT_GLOWING_BERRIES;
-        emissive *= clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0);
-    }
+    int commonPorosity = max(0, blockId) & 0x4E00;
+    rawData.porosity +=
+        clamp(1.0 - rawData.porosity * 1e+3, 0.0, 1.0) * clamp(float(commonPorosity - 16384), 0.0, 1.0) *
+        intBitsToFloat(0x3F400000 - ((commonPorosity & 0x0800) << 11));
     #ifndef HARDCODED_EMISSIVE
         emissive = 0.0;
     #endif
@@ -114,7 +98,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
     float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
     vec3 viewDir = viewPos * (-viewDepthInv);
-    if (rainyStrength > 0.0 && rawData.materialID != MAT_LAVA) {
+    if (rainyStrength > 0.0 && blockId != 8195) {
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
 
         vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
