@@ -16,8 +16,6 @@
 //  Visibility bitmask things
 //
 
-#extension GL_ARB_gpu_shader5 : enable
-
 layout(location = 0) out vec4 texBuffer5;
 
 in vec2 texcoord;

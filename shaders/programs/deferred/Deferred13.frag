@@ -16,8 +16,6 @@
 //  Lighting that don't need calculated in visibility bitmask
 //
 
-#extension GL_ARB_gpu_shader5 : enable
-
 layout(location = 0) out vec4 texBuffer3;
 
 in vec2 texcoord;
