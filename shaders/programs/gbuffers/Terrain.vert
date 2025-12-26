@@ -99,7 +99,7 @@ void main() {
         }
         else if (mc_Entity.x == 8197 || mc_Entity.x == 8201) {
             if (mc_Entity.x == 8201) {
-                material = 20480;
+                material = 20480 * int(gl_Normal.y > -0.5);
             }
             if (abs(dot(gl_Normal * vec3(16.0, 16.0 / 7.0, 16.0), blockPos - vec3(0.5, 0.4375, 0.5)) - 1.0) > 0.1) {
                 material = 0;
