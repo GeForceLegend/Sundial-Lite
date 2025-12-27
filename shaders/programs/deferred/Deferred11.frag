@@ -331,7 +331,7 @@ void main() {
             vec3 plantSkyNormal = worldNormal;
             plantSkyNormal.y = mix(worldNormal.y, 1.0, sqrt(clamp(gbufferData.porosity * 1.33333 - 0.25 * 1.33333, 0.0, 1.0)));
             finalColor.rgb +=
-                pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.6 - 0.3 * weatherStrength) * ambientOcclusion *
+                pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength) * ambientOcclusion *
                 (plantSkyNormal.y * 0.3 + 0.6 + mix(dot(plantSkyNormal, sunDirection), dot(plantSkyNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
         #endif
         float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
