@@ -322,7 +322,7 @@ vec3 viewToProjectionPos(vec3 viewPos) {
     vec3 projPos = vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos;
     projPos.z += gbufferProjection[3].z;
     projPos.xy += gbufferProjection[2].xy * viewPos.z;
-    return -projPos / projPos.z;
+    return -projPos / viewPos.z;
 }
 
 vec3 viewToWorldPos(vec3 viewPos) {
