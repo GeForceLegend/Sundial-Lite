@@ -203,7 +203,7 @@ void main() {
                 #endif
                 vec3 shadow = singleSampleShadow(
                     waterWorldPos, mat3(gbufferModelViewInverse) * gbufferData.geoNormal, NdotL, shadowLightFactor,
-                    gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, 0.0
+                    gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y
                 );
                 shadow *= (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle + sunlightSpecular(
                     waterWorldDir, shadowDirection, worldNormal, gbufferData.albedo.rgb,

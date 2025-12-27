@@ -128,16 +128,16 @@ void main() {
                     abs(sampleShadowCoord - vec3(vec2(0.75), 0.5)),
                     vec3(vec2(0.25), 0.5))
                 )) {
-                    float solidShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 2.0);
+                    float solidShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 0.0);
                     singleLight *= vec3(solidShadowStrength);
                     sampleShadowCoord.y -= 0.5;
-                    vec3 caustic = waterCaustic(sampleShadowCoord, samplePos, shadowDirection, 2.0);
+                    vec3 caustic = waterCaustic(sampleShadowCoord, samplePos, shadowDirection);
                     singleLight *= caustic;
                     #ifdef TRANSPARENT_SHADOW
                         sampleShadowCoord.xy += vec2(-0.5, 0.5);
-                        float transparentShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 2.0);
+                        float transparentShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 0.0);
                         if (transparentShadowStrength < 1.0) {
-                            vec4 transparentShadowColor = textureLod(shadowcolor0, sampleShadowCoord.st, 2.0);
+                            vec4 transparentShadowColor = textureLod(shadowcolor0, sampleShadowCoord.st, 0.0);
                             transparentShadowColor.rgb = pow(
                                 transparentShadowColor.rgb * (1.0 - 0.5 * pow2(transparentShadowColor.w)),
                                 vec3(sqrt(transparentShadowColor.w * 2.2 * 2.2 * 1.5))
