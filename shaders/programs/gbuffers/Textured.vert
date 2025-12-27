@@ -53,6 +53,9 @@ uniform sampler2D gaux1;
 
 void main() {
     viewPos = gl_ModelViewMatrix * gl_Vertex;
+    #ifdef HAND
+        viewPos.xyz *= 0.8;
+    #endif
     mcPos = (gbufferModelViewInverse * viewPos).xyz + cameraPosition;
 
     gl_Position = gl_ProjectionMatrix * viewPos;
