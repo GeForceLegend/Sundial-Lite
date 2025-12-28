@@ -159,6 +159,9 @@ void main() {
     #endif
 
     int commonPorosity = max(0, material) & 0x4E00;
+    if (material == 8198) {
+        commonPorosity = 0x4E00;
+    }
     rawData.porosity +=
         clamp(1.0 - rawData.porosity * 1e+3, 0.0, 1.0) * clamp(float(commonPorosity - 16384), 0.0, 1.0) *
         intBitsToFloat(0x3F400000 - ((commonPorosity & 0x0800) << 11));

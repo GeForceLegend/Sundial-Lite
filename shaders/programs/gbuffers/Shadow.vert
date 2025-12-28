@@ -36,6 +36,7 @@ out vec2 shadowOffset;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
+#include "/libs/Common.glsl"
 #include "/libs/PhysicsOcean.glsl"
 
 const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
@@ -55,6 +56,40 @@ void main() {
             vec4 viewPos = gl_ModelViewMatrix * gl_Vertex;
         #endif
         worldPos = mat3(shadowModelViewInverse) * viewPos.xyz + shadowModelViewInverse[3].xyz;
+
+        #ifdef PLANT_WAVE
+            int material = int(mc_Entity.x);
+            if (material == 8198) {
+                material = 16896;
+            }
+            if (abs(mc_Entity.x - 8206.5) < 1.0) {
+                material = int(abs(max(abs(gl_Normal.x), abs(gl_Normal.z)) - 0.5) < 0.4) * (18432 + (material - 8206) * 1024);
+            }
+            if (material == 8209) {
+                material = 16896;
+                if (abs(max(abs(gl_Normal.x), abs(gl_Normal.z)) - 0.5) < 0.4) {
+                    material = 18944 + 1024 * int(mc_midTexCoord.t < gl_MultiTexCoord0.t);
+                }
+            }
+
+            vec3 mcPos = worldPos + cameraPosition;
+            int commonWave = max(0, material) & 0x4E00;
+            if (commonWave > 16384) {
+                int waveType = commonWave & 0x0600;
+                vec2 waveNoise = vec2(
+                    smooth3DNoise((mcPos / vec3(6.0, 4.0, 12.0) + vec3(1.0,-0.2, 0.5) * frameTimeCounter * PLANT_WAVE_SPEED) / 64.0) - 0.4,
+                    smooth3DNoise((mcPos / vec3(2.0, 1.0, 1.0 ) + vec3(1.0, 0.4,-2.0) * frameTimeCounter * PLANT_WAVE_SPEED) / 64.0) - 0.5
+                ) * (PLANT_WAVE_STRENGTH + weatherStrength * PLANT_WAVE_RAIN_EXTRA_STRENGTH);
+                if ((commonWave & 0x0200) == 0) {
+                    float height = float(((commonWave & 0x0400) >> 10) + int(mc_midTexCoord.t > gl_MultiTexCoord0.t));
+                    worldPos.xz -= (waveNoise.x * vec2(0.1, 0.05) + waveNoise.y * vec2(0.02, 0.02)) * height;
+                }
+                else if ((commonWave & 0x0600) == 0x0200) {
+                    worldPos -= waveNoise.x * vec3(0.1 , 0.04, 0.07) + waveNoise.y * vec3(0.02, 0.01, 0.02); 
+                }
+            }
+            viewPos.xyz = mat3(shadowModelView) * worldPos + shadowModelView[3].xyz;
+        #endif
 
         shadowOffset = vec2(0.0, 0.0);
         float isWater = float(mc_Entity.x == 8192);

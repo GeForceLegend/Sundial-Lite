@@ -2,6 +2,7 @@
 
 screen.Texture=Texture
 screen.Texture.comment=Texture resolution, normal, parallax and specular
+screen.PlantWave=Plant wave
 screen.Water=Water
 screen.Normal=Normal
 screen.Parallax=Parallax
@@ -36,9 +37,6 @@ screen.ModSupport=Mod support
 screen.Experimental=Experimental effect
 
 # Texture
-option.TEXTURE_RESOLUTION=Texture resolution
-option.TEXTURE_RESOLUTION.comment=No effect currently
-value.TEXTURE_RESOLUTION.0=Auto
 option.ENTITY_TEXTURE_RESOLUTION=Entity texture resolution
 option.ENTITY_TEXTURE_RESOLUTION.comment=Set to resolution of current resource pack. Entity texture resolution cannot set to Auto. Affect entity parallax
 option.ANISOTROPIC_FILTERING_QUALITY=Anisotropic filter
@@ -53,6 +51,20 @@ value.ANISOTROPIC_FILTERING_QUALITY.32=32x
 option.REFRACTION_STRENGTH=Refraction strength
 option.REFRACTION_EDGE_FADE=Refraction edge fade
 option.REFRACTION_EDGE_FADE.comment=Reduce refraction strength when target near or out of screen edge, to reduce hard edge when refraction target out of screen
+# PlantWave
+option.PLANT_WAVE=Plant wave
+option.PLANT_WAVE_STRENGTH=Wave strength
+option.PLANT_WAVE_SPEED=Wave speed
+option.PLANT_WAVE_RAIN_EXTRA_STRENGTH=Rain extra wave strength
+# Water
+option.WATER_TYPE=Water type
+value.WATER_TYPE.0=Default
+value.WATER_TYPE.1=Vanilla
+option.CAULDRON_WAVE=Cauldron water wave
+option.CAULDRON_WAVE.comment=Render water waves for water in cauldron. Requires Water type setting to default
+option.WATER_WAVE_SCALE=Water wave scale
+option.WATER_WAVE_HEIGHT=Water wave height
+option.WATER_WAVE_SPEED=Water wave speed
 # Normal
 option.NORMAL_FORMAT=Normal format
 option.NORMAL_FORMAT.comment=LabPBR uses data of x and y axis to reconstructe z axis. ClassicPBR uses normalize(normal.xyz)
@@ -90,15 +102,6 @@ option.LABPBR_POROSITY=LabPBR porosity
 option.LABPBR_POROSITY.comment=Porosity data in LabPBR, usually used for sub-surface scattering
 option.LABPBR_TEXTURE_AO=LabPBR texture AO
 option.LABPBR_TEXTURE_AO.comment=Texture AO in LabPBR, will make some pixels become darker. Do not enable it unless your resource pack supports this
-# Water
-option.WATER_TYPE=Water type
-value.WATER_TYPE.0=Default
-value.WATER_TYPE.1=Vanilla
-option.CAULDRON_WAVE=Cauldron water wave
-option.CAULDRON_WAVE.comment=Render water waves for water in cauldron. Requires Water type setting to default
-option.WATER_WAVE_SCALE=Water wave scale
-option.WATER_WAVE_HEIGHT=Water wave height
-option.WATER_WAVE_SPEED=Water wave speed
 
 # Reflection
 option.REFLECTION=Reflection
@@ -117,7 +120,7 @@ option.SCREEN_SPACE_REFLECTION_REFINEMENTS=Screen space reflection refinements
 option.shadowMapResolution=Shadowmap resolution
 option.shadowMapResolution.comment=Increase shadow quality
 option.shadowDistance=Shadow distance
-option.shadowDistance.comment=Set higher for better distance shadow quality. Set lower for better closer shadow quality. Affects voxelization distance
+option.shadowDistance.comment=Set higher for better distance shadow quality. Set lower for better closer shadow quality
 option.SHADOW_DISTORTION_STRENGTH=Shadow distortion strength
 option.SHADOW_DISTORTION_STRENGTH.comment=Set higher for better closer shadow quality. Set lower for better distance shadow quality
 option.sunPathRotation=Sun path rotation

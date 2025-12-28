@@ -27,7 +27,6 @@ in vec2 texcoord;
 
 #include "/settings/CloudSettings.glsl"
 #include "/settings/GlobalSettings.glsl"
-#include "/settings/VolumetricLightSettings.glsl"
 
 #ifdef SHADOW_AND_SKY
     in vec3 skyColorUp;
