@@ -45,6 +45,12 @@ flat out vec4 coordRange;
 uniform vec3 cameraPositionFract;
 
 void main() {
+    color = gl_Color.rgb;
+    texlmcoord.st = gl_MultiTexCoord0.st;
+    texlmcoord.pq = gl_MultiTexCoord1.st / 240.0;
+    #ifdef IS_IRIS
+        texlmcoord.pq = clamp(gl_MultiTexCoord1.st / 232.0 - 8.0 / 232.0, 0.0, 1.0);
+    #endif
     viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
     vec3 worldPos = viewToWorldPos(viewPos);
     vec3 mcPos = worldPos + cameraPosition;
@@ -130,12 +136,6 @@ void main() {
 
     viewPos = worldToViewPos(worldPos);
     gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
-    color = gl_Color.rgb;
-    texlmcoord.st = gl_MultiTexCoord0.st;
-    texlmcoord.pq = gl_MultiTexCoord1.st / 240.0;
-    #ifdef IS_IRIS
-        texlmcoord.pq = clamp(gl_MultiTexCoord1.st / 232.0 - 8.0 / 232.0, 0.0, 1.0);
-    #endif
 
     vec2 minCoord = vec2(0.0);
     vec2 coordSize = vec2(1.0);
