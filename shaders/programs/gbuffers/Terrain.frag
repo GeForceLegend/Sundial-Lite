@@ -122,6 +122,10 @@ void main() {
     rawData.parallaxOffset = parallaxOffset;
     rawData.depth = 0.0;
 
+    if ((max(material, 0) & 0x4800) == 0x4800 || material == 8198 || material == 8206 || material == 8207) {
+        rawData.materialID = MAT_GRASS;
+    }
+
     #ifdef MC_SPECULAR_MAP
         vec4 specularData = textureLod(specular, texcoord, 0.0);
         SPECULAR_FORMAT(rawData, specularData);

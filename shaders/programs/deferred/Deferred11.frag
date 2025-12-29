@@ -329,7 +329,9 @@ void main() {
         #ifdef SHADOW_AND_SKY
             float ambientOcclusion = 1.0 - texelFetch(colortex5, texel, 0).w;
             vec3 plantSkyNormal = worldNormal;
-            plantSkyNormal.y = mix(worldNormal.y, 1.0, sqrt(clamp(gbufferData.porosity * 1.33333 - 0.25 * 1.33333, 0.0, 1.0)));
+            if (gbufferData.materialID == MAT_GRASS) {
+                plantSkyNormal = vec3(0.0, 1.0, 0.0);
+            }
             finalColor.rgb +=
                 pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength) * ambientOcclusion *
                 (plantSkyNormal.y * 0.3 + 0.6 + mix(dot(plantSkyNormal, sunDirection), dot(plantSkyNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
