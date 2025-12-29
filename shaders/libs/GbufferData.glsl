@@ -174,6 +174,20 @@ vec2 unpack2x8Bit(float x) {
     return uintBitsToFloat(p) * 256.0 / 255.0 - 256.0 / 255.0;
 }
 
+float packM3P13(vec2 x) {
+    x = clamp(x, 0.0, 1.0);
+    x = x * vec2(7.0 / 8.0, 8191.0 / 8192.0) + vec2(8.5 / 8.0, 8192.5 / 8192.0);
+    uvec2 u = floatBitsToUint(x);
+    uint p = (u.x & 0xFFF00000u) + ((u.y & 0x007FFC00u) >> 3) + 0x00000020u;
+    return clamp(uintBitsToFloat(p) * 65536.0 / 65535.0 - 65536.0 / 65535.0, 0.0, 1.0);
+}
+
+vec2 unpackM3P13(float x) {
+    uint u = floatBitsToUint(x * 65535.0 / 65536.0 + 65536.5 / 65536.0);
+    uvec2 p = (uvec2(u, u << 3) & uvec2(0x00700000u, 0x007FFC00u)) | 0x3F800000u;
+    return uintBitsToFloat(p) * vec2(8.0 / 7.0, 8192.0 / 8191.0) - vec2(8.0 / 7.0, 8192.0 / 8191.0);
+}
+
 uint pack2x16Bit(vec2 x) {
     x = clamp(x, 0.0, 1.0);
     x = x * vec2(65535.0 / 65536.0) + vec2(65536.5 / 65536.0);
@@ -267,7 +281,7 @@ void packUpGbufferDataSolid(in GbufferData rawData, out vec4 data0, out vec4 dat
         pack2x8Bit(vec2(rawData.lightmap.x, rawData.lightmap.y)),
         pack2x8Bit(vec2(rawData.smoothness, rawData.metalness)),
         pack2x8Bit(vec2(rawData.porosity, rawData.emissive)),
-        pack2x8Bit(vec2(rawData.materialID / 255.0, rawData.parallaxOffset))
+        packM3P13(vec2(rawData.materialID / 7.0, rawData.parallaxOffset))
     );
 }
 
@@ -278,7 +292,7 @@ GbufferData getGbufferData(ivec2 texel, vec2 coord) {
 
     vec2 unpacked2g = unpack2x8Bit(tex2.g);
     vec2 unpacked2b = unpack2x8Bit(tex2.b);
-    vec2 unpacked2a = unpack2x8Bit(tex2.a);
+    vec2 unpacked2a = unpackM3P13(tex2.a);
 
     GbufferData data;
 
@@ -292,7 +306,7 @@ GbufferData getGbufferData(ivec2 texel, vec2 coord) {
     data.porosity = unpacked2b.x;
     data.emissive = unpacked2b.y;
 
-    data.materialID = round(unpacked2a.x * 255.0);
+    data.materialID = round(unpacked2a.x * 7.0);
     data.parallaxOffset = unpacked2a.y;
 
     data.depth = textureLod(depthtex1, coord, 0.0).x;
