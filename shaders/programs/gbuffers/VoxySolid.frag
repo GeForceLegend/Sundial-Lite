@@ -58,13 +58,17 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     rawData.depth = 0.0;
 
     int blockId = int(parameters.customId);
+    if ((max(blockId, 0) & 0x4800) == 0x4800 || blockId == 8198 || blockId == 8206 || blockId == 8207) {
+        rawData.materialID = MAT_GRASS;
+    }
+
     int commonEmissive = max(0, blockId) & 0x7000;
     float emissive = (
         float(blockId == 8195) +
         float(blockId == 8198) * clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0) + 
         float(blockId == 8200) * clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0) + 
         float(blockId == 8197 || blockId == 8202) * clamp((0.8 * rawData.albedo.r - 1.2 * rawData.albedo.b) * dot(rawData.albedo.rgb, vec3(0.3333)), 0.0, 1.0) + 
-        float(blockId == 8203) * float(rawData.albedo.r > 0.4 * (rawData.albedo.b + rawData.albedo.g) + 0.35 || dot(rawData.albedo.rgb, vec3(1.0)) > 2.999) + 
+        float(blockId == 8203) * float(pow2(rawData.albedo.r) > 0.3 * (pow2(rawData.albedo.b) + pow2(rawData.albedo.g)) + 0.3) + 
         float(blockId == 8204) * (clamp(2.0 * rawData.albedo.b - 4.5 * rawData.albedo.r, 0.0, 1.0) + clamp(2.0 * rawData.albedo.r - 3.0 * rawData.albedo.b, 0.0, 1.0)) + 
         float(blockId == 8205) * clamp(0.5 * rawData.albedo.b - 1.0 * rawData.albedo.r - 0.2, 0.0, 1.0) + 
         clamp(float(commonEmissive - 16384), 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0)
@@ -76,6 +80,9 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         }
     }
     int commonPorosity = max(0, blockId) & 0x4E00;
+    if (blockId == 8198) {
+        commonPorosity = 0x4E00;
+    }
     rawData.porosity +=
         clamp(1.0 - rawData.porosity * 1e+3, 0.0, 1.0) * clamp(float(commonPorosity - 16384), 0.0, 1.0) *
         intBitsToFloat(0x3F400000 - ((commonPorosity & 0x0800) << 11));
