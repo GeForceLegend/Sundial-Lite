@@ -188,7 +188,7 @@ vec2 unpack2x16Bit(uint x) {
 }
 
 uint packF8D24(float frames, float depth) {
-    frames = clamp(frames / 256.0, 0.0, 1.0);
+    frames = clamp(min(frames, 255.0) / 256.0, 0.0, 1.0);
     uint uFrames = (floatBitsToUint(frames + 1.0) << 9) & 0xFF000000u;
     uint uDepth = floatBitsToUint(abs(depth) + 1.0) & 0x007FFFFEu;
     uDepth += floatBitsToUint(depth) >> 31;
