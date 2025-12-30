@@ -298,18 +298,24 @@ void main() {
         if (gbufferData.materialID == MAT_HAND) {
             depthWithHand = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
         }
-        viewPosNoPOM = screenToViewPos(texcoord, depthWithHand - 1e-7);
-        depthWithHand += parallaxData / 512.0;
-        viewPos = screenToViewPos(texcoord, depthWithHand - 1e-7);
+        depthWithHand -= 1e-7;
+        vec3 viewDirection = vec3(texcoord * 2.0 - 1.0, gbufferProjectionInverse[3].z);
+        #ifdef TAA
+            viewDirection.xy -= taaOffset;
+        #endif
+        viewDirection.xy = vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * viewDirection.xy + gbufferProjectionInverse[3].xy;
+        depthWithHand = depthWithHand * 2.0 - 1.0;
+        viewPosNoPOM = viewDirection / (gbufferProjectionInverse[2].w * depthWithHand + gbufferProjectionInverse[3].w);
+        depthWithHand += parallaxData / 512.0 * 2.0;
+        viewPos = viewDirection / (gbufferProjectionInverse[2].w * depthWithHand + gbufferProjectionInverse[3].w);
     }
     vec3 worldPos = viewToWorldPos(viewPosNoPOM);
     vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
 
-    vec4 finalColor = vec4(vec3(0.0), parallaxData);
+    vec4 finalColor = vec4(0.0);
 
     if (abs(gbufferData.depth) < 1.0) {
         float viewLength = inversesqrt(dot(viewPos, viewPos));
-        vec3 viewDir = viewPos * viewLength;
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
         finalColor.w += 512.0 * float(gbufferData.materialID == MAT_HAND);
@@ -336,7 +342,7 @@ void main() {
                 pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength) * ambientOcclusion *
                 (plantSkyNormal.y * 0.3 + 0.6 + mix(dot(plantSkyNormal, sunDirection), dot(plantSkyNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
         #endif
-        float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
+        float NdotV = clamp(dot(viewPos, -gbufferData.normal) * viewLength, 0.0, 1.0);
         vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
         finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;
         finalColor.rgb += gbufferData.emissive * PBR_BRIGHTNESS * PI;
@@ -379,6 +385,7 @@ void main() {
             finalColor.rgb = renderSun(worldDir, sunDirection, vec3(300.0)) + gbufferData.albedo.rgb * 2.0;
     #endif
     }
+    finalColor.w += parallaxData;
 
     texBuffer3 = finalColor;
 }
