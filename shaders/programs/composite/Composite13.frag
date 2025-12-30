@@ -28,7 +28,7 @@ const int colortex2Format = RGBA16;
 const int colortex3Format = RGBA16F;
 const int colortex4Format = RGBA16F;
 const int colortex5Format = RGBA16F;
-const int colortex6Format = RG32UI;
+const int colortex6Format = R32UI;
 const int colortex7Format = RGBA32F;
 
 // Voxy support

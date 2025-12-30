@@ -18,7 +18,7 @@
 
 layout(location = 0) out vec4 texBuffer3;
 layout(location = 1) out vec4 texBuffer5;
-layout(location = 2) out uvec2 texBuffer6;
+layout(location = 2) out uint texBuffer6;
 
 in vec2 texcoord;
 
@@ -58,11 +58,10 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 currNormal, v
     #ifndef VBGI
         prevSampleData.rgb = vec3(0.0);
     #endif
-    uvec2 prevGeometryData = texelFetch(colortex6, sampleTexel, 0).xy;
-    vec2 prevFramesDepth = unpackF8D24(prevGeometryData.y);
+    uint prevGeometryData = texelFetch(colortex6, sampleTexel, 0).x;
+    vec2 prevFramesDepth = unpackF8D24(prevGeometryData);
     samplePrevFrames = prevFramesDepth.x;
     float prevSampleDepth = prevFramesDepth.y + float(prevFramesDepth.y == 0.0);
-    vec3 prevNormal = decodeNormal(unpack2x16Bit(prevGeometryData.x));
 
     vec2 sampleCoord = sampleTexelCoord * texelSize;
     vec2 screenCoord = sampleCoord;
@@ -79,8 +78,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 currNormal, v
         prevSampleViewPos = prevProjectionToViewPos(vec3(screenCoord, prevSampleDepth) * 2.0 - 1.0);
     }
 
-    float normalFactor = pow(clamp(dot(currNormal, prevNormal) + 1e-5, 0.0, 1.0), 32.0);
-    isPrevValid = step(dot(abs(sampleCoord - clamp(sampleCoord, 0.0, 1.0)) * screenSize, vec2(1.0)), 0.5) * normalFactor;
+    isPrevValid = step(dot(abs(sampleCoord - clamp(sampleCoord, 0.0, 1.0)) * screenSize, vec2(1.0)), 0.5);
 
     vec3 prevSampleWorldPos = prevViewToWorldPos(prevSampleViewPos);
     vec3 positionDiff = prevSampleWorldPos - prevWorldPos;
@@ -157,7 +155,7 @@ void main() {
         depth -= float(depth == 1.0) * (1.0 + getLodDepthSolidDeferred(texcoord));
     #endif
     vec4 prevData = vec4(0.0);
-    uvec2 temporalGeometry = uvec2(0u);
+    uint temporalGeometry = 0u;
     if (abs(depth) < 0.999999) {
         ivec2 texel = ivec2 (gl_FragCoord.st);
         #ifdef LOD
@@ -176,8 +174,7 @@ void main() {
 
         float prevFrames;
         prevData = prevVisibilityBitmask(prevCoord, prevWorldPos, worldNormal, worldGeoNormal, gbufferData.materialID, prevFrames);
-        temporalGeometry.x = pack2x16Bit(encodeNormal(worldGeoNormal));
-        temporalGeometry.y = packF8D24(prevFrames + 1.0, depth);
+        temporalGeometry = packF8D24(prevFrames + 1.0, depth);
     }
     texBuffer5 = prevData;
     texBuffer6 = temporalGeometry;
