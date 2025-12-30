@@ -102,7 +102,6 @@ vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 currNormal, v
         sampleCoord += taaOffset * 0.5;
     #endif
 
-    float isPrevValid = 0.0;
     vec2 prevTexel = sampleCoord * screenSize;
     vec2 sampleCenter = round(prevTexel);
     vec4 dataAccum = vec4(0.0);
@@ -121,7 +120,6 @@ vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 currNormal, v
             dataAccum += sampleData * samplePrevFrames;
             framesAccum += samplePrevFrames;
             weightAccum += isSampleValid;
-            isPrevValid = max(isPrevValid, isSampleValid);
             sampleOffsetY += 1.0;
         }
         sampleOffsetX += 1.0;
