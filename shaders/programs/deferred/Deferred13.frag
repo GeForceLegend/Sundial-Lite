@@ -45,10 +45,7 @@ void main() {
 
     vec4 finalColor = vec4(0.0);
     if (abs(gbufferData.depth) < 1.0) {
-        vec3 viewDir = normalize(viewPos);
         vec3 worldPos = viewToWorldPos(viewPos);
-        vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
-        vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
 
         finalColor.rgb += vec3(BASIC_LIGHT);
         finalColor.rgb += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
@@ -64,7 +61,7 @@ void main() {
         #ifdef VBGI
             finalColor.rgb += visibilityBitmask.rgb;
         #endif
-        float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
+        float NdotV = clamp(dot(viewPos, -gbufferData.normal) * inversesqrt(dot(viewPos, viewPos)), 0.0, 1.0);
 
         float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
         vec3 n = vec3(1.5);
