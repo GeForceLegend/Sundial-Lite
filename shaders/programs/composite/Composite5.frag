@@ -85,12 +85,9 @@ void main() {
     vec3 reflectionColor = texelFetch(colortex4, texel, 0).rgb;
     if (waterDepth < solidDepth) {
         reflectionColor *= solidColor.w;
-        vec3 worldDir = waterWorldDir;
-        vec3 waterWorldPos = waterWorldDir * waterViewDepthNoLimit + gbufferModelViewInverse[3].xyz;
         bool isTargetWater = gbufferData.materialID == MAT_WATER;
         bool isTargetNotParticle = gbufferData.materialID != MAT_PARTICLE;
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
-        vec3 worldGeoNormal = mat3(gbufferModelViewInverse) * gbufferData.geoNormal;
         float LdotH = clamp(dot(-worldNormal, waterWorldDir), 0.0, 1.0);
         vec3 stainedColor = vec3(0.0);
         if (isTargetNotParticle) {
@@ -101,9 +98,10 @@ void main() {
             vec2 blueNoise = textureLod(noisetex, texcoord * screenSize / 64.0, 0.0).xy;
             vec2 randomOffset = vec2(cos(blueNoise.x * 2.0 * PI), sin(blueNoise.x * 2.0 * PI)) * blueNoise.y;
             float k = sqrt(n * n - (1.0 - LdotH * LdotH));
+            vec3 viewDir = viewPos * worldDistanceInv;
             vec3 refractDirection = normalize(
-                viewPos * worldDistanceInv - (LdotH + k) * gbufferData.normal +
-                (dot(-worldGeoNormal, waterWorldDir) + k) * gbufferData.geoNormal * float(isTargetWater) // Get this idea from zombye/spectrum, MIT Licence
+                viewDir - (LdotH + k) * gbufferData.normal +
+                (dot(-gbufferData.geoNormal, viewDir) + k) * gbufferData.geoNormal * float(isTargetWater) // Get this idea from zombye/spectrum, MIT Licence
             );
             vec2 refractionOffset = (refractDirection.xy - viewPos.xy / viewPos.z * refractDirection.z + roughness * randomOffset) * refractionStrength;
             vec2 screenEdgeIntersection = mix(texcoord, 1.0 - texcoord, clamp(refractionOffset * 1e+20, 0.0, 1.0)) / abs(refractionOffset);
@@ -130,10 +128,12 @@ void main() {
                     viewPos = screenToViewPos(refractionTarget, solidDepth);
                 }
                 worldPos = mat3(gbufferModelViewInverse) * viewPos;
-                worldDir = normalize(worldPos);
             }
         }
 
+        vec3 worldDir = normalize(worldPos);
+        worldPos += gbufferModelViewInverse[3].xyz;
+        vec3 waterWorldPos = waterWorldDir * waterViewDepthNoLimit + gbufferModelViewInverse[3].xyz;
         float waterDistance = distance(worldPos, waterWorldPos);
         vec3 rawSolidColor = solidColor.rgb;
         n -= 0.166666 * float(isTargetWater);
