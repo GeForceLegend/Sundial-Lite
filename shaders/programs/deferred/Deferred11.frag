@@ -315,24 +315,22 @@ void main() {
     vec4 finalColor = vec4(0.0);
 
     if (abs(gbufferData.depth) < 1.0) {
-        float viewLength = inversesqrt(dot(viewPos, viewPos));
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
-        finalColor.w += 512.0 * float(gbufferData.materialID == MAT_HAND);
-
-        float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
-        vec3 n = vec3(1.5);
-        vec3 k = vec3(0.0);
-        #ifdef LABPBR_F0
-            n = mix(n, vec3(f0ToIor(gbufferData.metalness)), step(0.001, gbufferData.metalness));
-            hardcodedMetal(gbufferData.metalness, n, k);
-            gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
-        #endif
-        #ifndef FULL_REFLECTION
-            diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
-        #endif
+        finalColor.w = 512.0 * float(gbufferData.materialID == MAT_HAND);
 
         #ifdef SHADOW_AND_SKY
+            float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
+            vec3 n = vec3(1.5);
+            vec3 k = vec3(0.0);
+            #ifdef LABPBR_F0
+                n = mix(n, vec3(f0ToIor(gbufferData.metalness)), step(0.001, gbufferData.metalness));
+                hardcodedMetal(gbufferData.metalness, n, k);
+                gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
+            #endif
+            #ifndef FULL_REFLECTION
+                diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
+            #endif
             float ambientOcclusion = 1.0 - texelFetch(colortex5, texel, 0).w;
             vec3 plantSkyNormal = worldNormal;
             if (gbufferData.materialID == MAT_GRASS) {
@@ -341,10 +339,10 @@ void main() {
             finalColor.rgb +=
                 pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength) * ambientOcclusion *
                 (plantSkyNormal.y * 0.3 + 0.6 + mix(dot(plantSkyNormal, sunDirection), dot(plantSkyNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
+            float NdotV = clamp(dot(worldDir, -gbufferData.normal), 0.0, 1.0);
+            vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
+            finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;
         #endif
-        float NdotV = clamp(dot(viewPos, -gbufferData.normal) * viewLength, 0.0, 1.0);
-        vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
-        finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;
         finalColor.rgb += gbufferData.emissive * PBR_BRIGHTNESS * PI;
         finalColor.rgb *= gbufferData.albedo.rgb;
 
@@ -358,6 +356,7 @@ void main() {
                     gbufferData.metalness, NdotL, NdotV, n, k
                 );
             vec2 noise = blueNoiseTemporal(texcoord).xy;
+            float viewLength = inversesqrt(dot(viewPos, viewPos));
             #ifdef SCREEN_SPACE_SHADOW
                 shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, gbufferData.materialID);
             #endif
