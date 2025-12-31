@@ -339,7 +339,7 @@ void main() {
             finalColor.rgb +=
                 pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength) * ambientOcclusion *
                 (plantSkyNormal.y * 0.3 + 0.6 + mix(dot(plantSkyNormal, sunDirection), dot(plantSkyNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
-            float NdotV = clamp(dot(worldDir, -gbufferData.normal), 0.0, 1.0);
+            float NdotV = clamp(dot(worldDir, -worldNormal), 0.0, 1.0);
             vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
             finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;
         #endif
