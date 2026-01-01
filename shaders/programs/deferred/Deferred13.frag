@@ -28,18 +28,14 @@ in vec2 texcoord;
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
     GbufferData gbufferData = getGbufferData(texel, texcoord);
+    gbufferData.depth = uintBitsToFloat(texelFetch(colortex6, texel, 0).r);
     vec3 viewPos;
     #ifdef LOD
-        if (gbufferData.depth == 1.0) {
-            gbufferData.depth = getLodDepthSolidDeferred(texcoord);
-            viewPos = screenToViewPosLod(texcoord, gbufferData.depth - 1e-7);
-            gbufferData.depth = -gbufferData.depth;
+        if (gbufferData.depth < 0.0) {
+            viewPos = screenToViewPosLod(texcoord, -gbufferData.depth - 1e-7);
         } else
     #endif
     {
-        if (gbufferData.materialID == MAT_HAND) {
-            gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
-        }
         viewPos = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
     }
 

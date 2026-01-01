@@ -129,9 +129,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
     float gbufferNdotV = clamp(dot(-viewDir, gbufferData.normal), 0.0, 1.0);
     float pdfRatio;
     vec3 rayDir = directionDistribution(noise, gbufferData.normal, viewDir, basicRoughness, gbufferNdotV, pdfRatio);
-    if (dot(rayDir, gbufferData.geoNormal) < 1e-5) {
-        rayDir = reflect(rayDir, gbufferData.geoNormal);
-    }
+    rayDir += gbufferData.geoNormal * 2.0 * clamp(-dot(rayDir, gbufferData.geoNormal), 0.0, 1.0);
 
     vec3 brdfWeight = reflectionWeight(viewDir, rayDir, gbufferData.metalness, gbufferN, gbufferK) * pdfRatio;
     vec3 metalWeight = metalColor(gbufferData.albedo.rgb, gbufferNdotV, gbufferData.metalness, gbufferData.smoothness) * firstWeight;
@@ -171,15 +169,11 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         float minimumThichness = max(0.001 * originProjScale, abs(stepSize.z));
         float minimumThichnessLod = max(0.01 * originProjScale, abs(stepSize.w));
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
-            float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).x;
-            float parallaxData = textureLod(colortex3, sampleCoord.st, 0.0).w;
-            float isHand = clamp(parallaxData - 511.0, 0.0, 1.0);
-            sampleDepth = mix(sampleDepth, sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
-            sampleDepth += (parallaxData - 512.0 * isHand) / 512.0;
+            float sampleDepth = uintBitsToFloat(textureLod(colortex6, sampleCoord.st, 0.0).x);
             bool hitCheck = sampleCoord.z > sampleDepth && sampleDepth < 1.0;
             #ifdef LOD
-                float sampleDepthLod = getLodDepthSolid(sampleCoord.st);
-                hitCheck = hitCheck || (sampleDepth == 1.0 && sampleCoord.w > sampleDepthLod);
+                float sampleDepthLod = -sampleDepth;
+                hitCheck = hitCheck || (sampleDepth < 0.0 && sampleCoord.w > sampleDepthLod);
             #endif
             if (hitCheck) {
                 float stepScale = 0.5;
@@ -188,21 +182,17 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                     float stepDirection = sampleDepth - refinementCoord.z;
                     #ifdef LOD
                         float stepDirectionLod = sampleDepthLod - refinementCoord.w;
-                        stepDirection = mix(stepDirection, stepDirectionLod, float(sampleDepth == 1.0));
-                        sampleDepthLod = getLodDepthSolid(refinementCoord.st);
+                        stepDirection = mix(stepDirection, stepDirectionLod, float(sampleDepth < 0.0));
+                        sampleDepthLod = -sampleDepth;
                     #endif
                     refinementCoord += signMul(stepScale, stepDirection) * stepSize;
-                    sampleDepth = textureLod(depthtex1, refinementCoord.st, 0.0).x;
-                    parallaxData = textureLod(colortex3, refinementCoord.st, 0.0).w;
-                    isHand = clamp(parallaxData - 511.0, 0.0, 1.0);
-                    sampleDepth = mix(sampleDepth, sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
-                    sampleDepth += (parallaxData - 512.0 * isHand) / 512.0;
+                    sampleDepth = uintBitsToFloat(textureLod(colortex6, refinementCoord.st, 0.0).x);
                     stepScale *= 0.5;
                 }
 
                 bool hitTerrain = abs(refinementCoord.z - sampleDepth) < minimumThichness && sampleDepth < 1.0;
                 #ifdef LOD
-                    hitTerrain = hitTerrain || (sampleDepth == 1.0 && abs(refinementCoord.w - sampleDepthLod) < minimumThichnessLod && sampleDepthLod < 1.0);
+                    hitTerrain = hitTerrain || (sampleDepth < 0.0 && abs(refinementCoord.w - sampleDepthLod) < minimumThichnessLod && sampleDepthLod < 1.0);
                 #endif
                 if (hitTerrain && clamp(refinementCoord.st, 0.0, 1.0) == refinementCoord.st) {
                     sampleCoord = refinementCoord;
@@ -323,8 +313,7 @@ void main() {
             vec3 k = vec3(0.0);
             float reflectionStrength = 1.0;
             if (waterDepth < solidDepth) {
-                bool isTargetWater = gbufferData.materialID == MAT_WATER;
-                if (isTargetWater) {
+                if (gbufferData.materialID == MAT_WATER) {
                     n -= 0.166666;
                     n = mix(n, 1.0 / n, float(isEyeInWater == 1));
                 } else {

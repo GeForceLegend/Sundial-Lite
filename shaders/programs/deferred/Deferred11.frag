@@ -19,6 +19,7 @@
 #extension GL_ARB_gpu_shader5 : enable
 
 layout(location = 0) out vec4 texBuffer3;
+layout(location = 1) out uint texBuffer6;
 
 #ifdef SHADOW_AND_SKY
     in vec3 skyColorUp;
@@ -294,11 +295,10 @@ void main() {
         } else
     #endif
     {
-        float depthWithHand = gbufferData.depth;
         if (gbufferData.materialID == MAT_HAND) {
-            depthWithHand = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+            gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
         }
-        depthWithHand -= 1e-7;
+        float depthWithHand = gbufferData.depth - 1e-7;
         vec3 viewDirection = vec3(texcoord * 2.0 - 1.0, gbufferProjectionInverse[3].z);
         #ifdef TAA
             viewDirection.xy -= taaOffset;
@@ -309,6 +309,7 @@ void main() {
         depthWithHand += parallaxData / 512.0 * 2.0;
         viewPos = viewDirection / (gbufferProjectionInverse[2].w * depthWithHand + gbufferProjectionInverse[3].w);
     }
+    texBuffer6 = floatBitsToUint(gbufferData.depth);
     vec3 worldPos = viewToWorldPos(viewPosNoPOM);
     vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
 
@@ -389,4 +390,4 @@ void main() {
     texBuffer3 = finalColor;
 }
 
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:36 */
