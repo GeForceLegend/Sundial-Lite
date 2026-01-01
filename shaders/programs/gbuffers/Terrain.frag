@@ -67,13 +67,15 @@ void main() {
     vec2 textureScale;
     vec3 viewNormal;
     mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, viewNormal, textureScale);
-    vec4 fixedCoordRange = coordRange;
-    if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
-        fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
-    }
 
     vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
     vec2 albedoTexelSize = 1.0 / albedoTexSize;
+    vec4 fixedCoordRange = coordRange;
+    if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
+        fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
+    } else {
+        fixedCoordRange = round(fixedCoordRange * vec4(albedoTexSize, albedoTexSize)) * vec4(albedoTexelSize, albedoTexelSize);
+    }
     int textureResolutionFixed = (floatBitsToInt(max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y)) & 0x7FC00000) >> 22;
     textureResolutionFixed = ((textureResolutionFixed >> 1) + (textureResolutionFixed & 1)) - 0x0000007F;
     textureResolutionFixed = 1 << textureResolutionFixed;
@@ -98,11 +100,10 @@ void main() {
         }
     #endif
 
-    vec4 albedoData;
     #if ANISOTROPIC_FILTERING_QUALITY > 0 && !defined MC_ANISOTROPIC_FILTERING
-        albedoData = anisotropicFilter(texcoord, albedoTexSize, albedoTexelSize, texGradX, texGradY, fixedCoordRange, quadSize);
+        vec4 albedoData = anisotropicFilter(texcoord, albedoTexSize, albedoTexelSize, texGradX, texGradY, fixedCoordRange, quadSize);
     #else
-        albedoData = textureGrad(gtexture, texcoord, texGradX, texGradY);
+        vec4 albedoData = textureGrad(gtexture, texcoord, texGradX, texGradY);
     #endif
     if (albedoData.w < alphaTestRef) discard;
 

@@ -320,16 +320,16 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                 float isHand = float(sampleDepth > 1.0);
                 vec3 sampleViewPos;
                 #ifdef LOD
-                if (sampleDepth < 0.0) {
-                    if (sampleDepth == -1.0) {
+                    if (sampleDepth < 0.0) {
+                        if (sampleDepth == -1.0) {
+                            continue;
+                        }
+                        sampleViewPos = screenToViewPosLod(sampleCoord, -sampleDepth);
+                    }
+                #else
+                    if (sampleDepth == 1.0) {
                         continue;
                     }
-                    sampleViewPos = screenToViewPosLod(sampleCoord, -sampleDepth);
-                }
-                #else
-                if (sampleDepth == 1.0) {
-                    continue;
-                }
                 #endif
                 else {
                     sampleViewPos = screenToViewPos(sampleCoord, sampleDepth - isHand);

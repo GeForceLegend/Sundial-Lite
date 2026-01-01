@@ -146,8 +146,8 @@ void main() {
     vec2 coordToCenter = abs(vertexCoord - mc_midTexCoord.st);
     vec2 albedoTexSize = textureSize(gtexture, 0);
     vec2 albedoTexelSize = 1.0 / albedoTexSize;
-    minCoord = round((mc_midTexCoord.st - coordToCenter) * albedoTexSize) * albedoTexelSize;
-    coordSize = round(coordToCenter * 2.0 * albedoTexSize) * albedoTexelSize;
+    minCoord = mc_midTexCoord.st - coordToCenter;
+    coordSize = coordToCenter * 2.0;
     coordRange = vec4(minCoord, coordSize);
 
 

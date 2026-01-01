@@ -210,13 +210,15 @@ void main() {
                 albedoData = vec4(1.0);
             }
         #endif
-        vec4 fixedCoordRange = coordRange;
-        if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
-            fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
-        }
 
         vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
         vec2 albedoTexelSize = 1.0 / albedoTexSize;
+        vec4 fixedCoordRange = coordRange;
+        if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
+            fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
+        } else {
+            fixedCoordRange = round(fixedCoordRange * vec4(albedoTexSize, albedoTexSize)) * vec4(albedoTexelSize, albedoTexelSize);
+        }
         int textureResolutionFixed = (floatBitsToInt(max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y)) & 0x7FC00000) >> 22;
         textureResolutionFixed = ((textureResolutionFixed >> 1) + (textureResolutionFixed & 1)) - 0x0000007F;
         textureResolutionFixed = 1 << textureResolutionFixed;
