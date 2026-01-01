@@ -328,8 +328,11 @@ void main() {
                     diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
                 #endif
                 reflectionStrength = 1.0 - diffuseWeight;
-                float parallaxData = texelFetch(colortex3, texel, 0).w;
-                gbufferData.depth += (parallaxData - 512.0 * clamp(parallaxData - 511.0, 0.0, 1.0)) / 512.0;
+                gbufferData.depth = uintBitsToFloat(texelFetch(colortex6, texel, 0).x);
+                gbufferData.depth -= float(gbufferData.depth > 1.0);
+                if (gbufferData.depth < 0.0) {
+                    gbufferData.depth = 1.0 - gbufferData.depth;
+                }
             }
             #ifdef LABPBR_F0
                 n = mix(n, vec3(f0ToIor(gbufferData.metalness)), vec3(clamp(gbufferData.metalness * 1e+10, 0.0, 1.0)));
