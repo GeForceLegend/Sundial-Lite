@@ -186,7 +186,7 @@ void main() {
         float isTargetParticle = 1.0 - float(isTargetNotParticle);
         vec3 vanillaLight = pow2(gbufferData.lightmap.y) * (skyColorUp + sunColor * SUNLIGHT_BRIGHTNESS) * (1.0 - gbufferData.metalness);
         #ifdef IS_IRIS
-            float eyeRelatedDistance = length(worldPos + relativeEyePosition);
+            float eyeRelatedDistance = length(waterWorldPos + relativeEyePosition);
             gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
         #endif
         const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
