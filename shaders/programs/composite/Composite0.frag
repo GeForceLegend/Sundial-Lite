@@ -126,13 +126,13 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
 
     float basicRoughness = pow2(1.0 - gbufferData.smoothness);
     vec2 noise = nextVec2(noiseGenerator);
-    float gbufferNdotV = clamp(dot(-viewDir, gbufferData.normal), 0.0, 1.0);
+    float NdotV = clamp(dot(-viewDir, gbufferData.normal), 0.0, 1.0);
     float pdfRatio;
-    vec3 rayDir = directionDistribution(noise, gbufferData.normal, viewDir, basicRoughness, gbufferNdotV, pdfRatio);
+    vec3 rayDir = directionDistribution(noise, gbufferData.normal, viewDir, basicRoughness, NdotV, pdfRatio);
     rayDir += gbufferData.geoNormal * 2.0 * clamp(-dot(rayDir, gbufferData.geoNormal), 0.0, 1.0);
 
     vec3 brdfWeight = reflectionWeight(viewDir, rayDir, gbufferData.metalness, gbufferN, gbufferK) * pdfRatio;
-    vec3 metalWeight = metalColor(gbufferData.albedo.rgb, gbufferNdotV, gbufferData.metalness, gbufferData.smoothness) * firstWeight;
+    vec3 metalWeight = metalColor(gbufferData.albedo.rgb, NdotV, gbufferData.metalness, gbufferData.smoothness) * firstWeight;
 
     vec3 totalWeight = brdfWeight * metalWeight.rgb;
     vec4 reflectionColor = vec4(0.0);

@@ -360,9 +360,9 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                 uint visBits0 = occBits0 & (~occBits);
                 #ifdef VBGI
                     if(visBits0 != 0u) {
-                        float vis0 = float(CountBits(visBits0)) * (1.0/32.0);
+                        float vis0 = float(CountBits(visBits0)) * (1.0 / 32.0);
                         vec4 sampleData = texelFetch(colortex3, sampleTexel, 0);
-                        totalSamples.rgb += sampleData.rgb * vis0 * clamp(2.0 - isOriginNotHand - isHand, 0.0, 1.0);
+                        totalSamples.rgb += sampleData.rgb * vis0 * clamp(1.0 - isOriginNotHand * isHand, 0.0, 1.0);
                     }
                 #endif
                 occBits = occBits | occBits0;

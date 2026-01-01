@@ -76,9 +76,11 @@ void main() {
                                 vec3 sampleNormal = getNormalTexel(sampleTexel);
 
                                 float weight =
-                                    pow(max(dot(gbufferData.normal, sampleNormal), 1e-6), roughnessInv) *
-                                    pow(1.0 - abs(originSmoothness - sampleSmoothness), 100.0) *
-                                    exp(-abs(originReflectionDepth - sampleReflectionDepth) * originSmoothness) *
+                                    exp2(
+                                        roughnessInv * log2(max(dot(gbufferData.normal, sampleNormal), 1e-6)) +
+                                        100.0 * log2(1.0 - abs(originSmoothness - sampleSmoothness)) -
+                                        1.44269502 * abs(originReflectionDepth - sampleReflectionDepth) * originSmoothness
+                                    ) *
                                     step(sampleSmoothness, 0.9975);
                                 weight = clamp(weight, 0.0, 1.0);
 
