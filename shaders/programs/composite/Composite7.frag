@@ -161,7 +161,7 @@ float circleOfConfusionRadius(vec2 coord, float sampleDepth, float focusDepth) {
     float circleRadius = 1.0;
     float materialID = textureLod(colortex0, coord, 0.0).z;
     float viewDepth = screenToViewDepth(sampleDepth);
-    if (materialID > 0.5) {
+    if (abs(materialID * 255.0 - MAT_HAND) < 0.4) {
         #ifdef HAND_DOF
             #ifdef CORRECT_DOF_HAND_DEPTH
                 float handDepth = sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
