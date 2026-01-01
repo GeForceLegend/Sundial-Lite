@@ -307,6 +307,7 @@ void main() {
         if (waterDepth - float(waterDepth > 1.0) < 1.0) {
             GbufferData gbufferData = getGbufferData(texel, texcoord);
             gbufferData.depth = waterDepth;
+            texBuffer0.z = float(gbufferData.materialID == MAT_HAND);
             if (gbufferData.materialID == MAT_HAND) {
                 gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
             }

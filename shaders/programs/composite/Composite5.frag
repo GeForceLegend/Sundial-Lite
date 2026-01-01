@@ -254,7 +254,6 @@ void main() {
         solidColor.rgb += snowFogScattering(skyColorUp, waterViewDepth, eyeBrightnessSmooth.y / 240.0);
     }
 
-    solidColor.w = float(gbufferData.materialID == MAT_HAND);
     texBuffer3 = solidColor;
 }
 

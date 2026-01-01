@@ -159,7 +159,7 @@ float getDepthConfidenceFactor(vec3 coord, vec3 velocity) {
 
 float circleOfConfusionRadius(vec2 coord, float sampleDepth, float focusDepth) {
     float circleRadius = 1.0;
-    float materialID = textureLod(colortex3, coord, 0.0).a;
+    float materialID = textureLod(colortex0, coord, 0.0).z;
     float viewDepth = screenToViewDepth(sampleDepth);
     if (materialID > 0.5) {
         #ifdef HAND_DOF

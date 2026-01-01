@@ -42,11 +42,10 @@ void main() {
 
     vec4 finalColor = vec4(0.0);
     if (abs(gbufferData.depth) < 1.0) {
-        vec3 worldPos = viewToWorldPos(viewPos);
-
         finalColor.rgb += vec3(BASIC_LIGHT);
         finalColor.rgb += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
         #ifdef IS_IRIS
+            vec3 worldPos = viewToWorldPos(viewPos);
             float eyeRelatedDistance = length(worldPos + relativeEyePosition);
             gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
         #endif
@@ -58,8 +57,8 @@ void main() {
         #ifdef VBGI
             finalColor.rgb += visibilityBitmask.rgb;
         #endif
-        float NdotV = clamp(dot(viewPos, -gbufferData.normal) * inversesqrt(dot(viewPos, viewPos)), 0.0, 1.0);
 
+        float NdotV = clamp(dot(viewPos, -gbufferData.normal) * inversesqrt(dot(viewPos, viewPos)), 0.0, 1.0);
         float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
         vec3 n = vec3(1.5);
         vec3 k = vec3(0.0);
@@ -75,7 +74,7 @@ void main() {
         finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;
         finalColor.rgb *= gbufferData.albedo.rgb;
     }
-    finalColor += texelFetch(colortex3, texel, 0);
+    finalColor.rgb += texelFetch(colortex3, texel, 0).rgb;
 
     texBuffer3 = finalColor;
 }
