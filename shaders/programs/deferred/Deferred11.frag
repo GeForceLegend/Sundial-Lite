@@ -339,7 +339,8 @@ void main() {
             finalColor.rgb +=
                 pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength) * ambientOcclusion *
                 (plantSkyNormal.y * 0.3 + 0.6 + mix(dot(plantSkyNormal, sunDirection), dot(plantSkyNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
-            float NdotV = clamp(dot(worldDir, -worldNormal), 0.0, 1.0);
+            float viewLength = inversesqrt(dot(viewPos, viewPos));
+            float NdotV = clamp(dot(viewPos, -gbufferData.normal) * viewLength, 0.0, 1.0);
             vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
             finalColor.rgb *= diffuseAbsorption + diffuseWeight / PI;
         #endif
@@ -356,7 +357,6 @@ void main() {
                     gbufferData.metalness, NdotL, NdotV, n, k
                 );
             vec2 noise = blueNoiseTemporal(texcoord).xy;
-            float viewLength = inversesqrt(dot(viewPos, viewPos));
             #ifdef SCREEN_SPACE_SHADOW
                 shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, gbufferData.materialID);
             #endif
