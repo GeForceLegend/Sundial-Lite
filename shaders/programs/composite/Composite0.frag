@@ -173,8 +173,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
             sampleDepth -= float(sampleDepth > 1.0);
             bool hitCheck = sampleCoord.z > sampleDepth && sampleDepth < 1.0;
             #ifdef LOD
-                float sampleDepthLod = -sampleDepth;
-                hitCheck = hitCheck || (sampleDepth < 0.0 && sampleCoord.w > sampleDepthLod);
+                hitCheck = hitCheck || (sampleDepth < 0.0 && sampleCoord.w > -sampleDepth);
             #endif
             if (hitCheck) {
                 float stepScale = 0.5;
@@ -182,9 +181,8 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                 for (int j = 0; j < SCREEN_SPACE_REFLECTION_REFINEMENTS; j++) {
                     float stepDirection = sampleDepth - refinementCoord.z;
                     #ifdef LOD
-                        float stepDirectionLod = sampleDepthLod - refinementCoord.w;
+                        float stepDirectionLod = -sampleDepth - refinementCoord.w;
                         stepDirection = mix(stepDirection, stepDirectionLod, float(sampleDepth < 0.0));
-                        sampleDepthLod = -sampleDepth;
                     #endif
                     refinementCoord += signMul(stepScale, stepDirection) * stepSize;
                     sampleDepth = uintBitsToFloat(textureLod(colortex6, refinementCoord.st, 0.0).x);
@@ -194,7 +192,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
 
                 bool hitTerrain = abs(refinementCoord.z - sampleDepth) < minimumThichness && sampleDepth < 1.0;
                 #ifdef LOD
-                    hitTerrain = hitTerrain || (sampleDepth < 0.0 && abs(refinementCoord.w - sampleDepthLod) < minimumThichnessLod && sampleDepthLod < 1.0);
+                    hitTerrain = hitTerrain || (abs(sampleDepth + 0.5) < 0.5 && abs(refinementCoord.w + sampleDepth) < minimumThichnessLod);
                 #endif
                 if (hitTerrain && clamp(refinementCoord.st, 0.0, 1.0) == refinementCoord.st) {
                     sampleCoord = refinementCoord;
