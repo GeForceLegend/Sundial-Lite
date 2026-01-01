@@ -240,19 +240,16 @@ vec3 Transform_Vz0Qz0(vec2 v, vec4 q)
 vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 texel) {
     vec3 originViewPos;
     float isOriginNotHand = 1.0;
+    gbufferData.depth = uintBitsToFloat(texelFetch(colortex6, texel, 0).r);
     #ifdef LOD
-        if (gbufferData.depth == 1.0) {
-            gbufferData.depth = getLodDepthSolidDeferred(texcoord);
-            originViewPos = screenToViewPosLod(texcoord, gbufferData.depth - 1e-7);
-            gbufferData.depth = -gbufferData.depth;
+        if (gbufferData.depth < 0.0) {
+            originViewPos = screenToViewPosLod(texcoord, -gbufferData.depth - 1e-7);
         } else
     #endif
     {
-        float parallaxData = texelFetch(colortex3, texel, 0).w;
-        float isHand = clamp(parallaxData - 511.0, 0.0, 1.0);
+        float isHand = float(gbufferData.depth > 1.0);
         isOriginNotHand -= isHand;
-        gbufferData.depth = mix(gbufferData.depth, gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
-        gbufferData.depth += parallaxData / 512.0 - isHand;
+        gbufferData.depth -= isHand;
         originViewPos = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
     }
     originViewPos += gbufferData.geoNormal * 3e-3;
@@ -314,26 +311,28 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
             for (int j = 0; j < VB_STEPS; j++) {
                 vec2 sampleCoord = originCoord + stepDir * stepSize;
                 ivec2 sampleTexel = ivec2(sampleCoord * screenSize);
-                vec4 sampleData = texelFetch(colortex3, sampleTexel, 0);
-                float sampleDepth = texelFetch(depthtex1, sampleTexel, 0).x;
+                float sampleDepth = uintBitsToFloat(texelFetch(colortex6, sampleTexel, 0).r);
                 stepSize *= stepScale;
                 if (any(greaterThan(abs(sampleCoord - 0.5), vec2(0.5)))) {
                     break;
                 }
 
-                float isHand = clamp(sampleData.w - 511.0, 0.0, 1.0);
+                float isHand = float(sampleDepth > 1.0);
                 vec3 sampleViewPos;
+                #ifdef LOD
+                if (sampleDepth < 0.0) {
+                    if (sampleDepth == -1.0) {
+                        continue;
+                    }
+                    sampleViewPos = screenToViewPosLod(sampleCoord, -sampleDepth);
+                }
+                #else
                 if (sampleDepth == 1.0) {
-                    #ifdef LOD
-                        float sampleDepthLod = getLodDepthSolidDeferred(sampleCoord);
-                        sampleViewPos = screenToViewPosLod(sampleCoord, sampleDepthLod);
-                        if (sampleDepthLod == 1.0)
-                    #endif
                     continue;
                 }
+                #endif
                 else {
-                    sampleDepth = mix(sampleDepth, sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5, isHand);
-                    sampleViewPos = screenToViewPos(sampleCoord, sampleDepth + sampleData.w / 512.0 - isHand);
+                    sampleViewPos = screenToViewPos(sampleCoord, sampleDepth - isHand);
                 }
 
                 vec3 deltaPosFront = sampleViewPos - originViewPos;
@@ -362,6 +361,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                 #ifdef VBGI
                     if(visBits0 != 0u) {
                         float vis0 = float(CountBits(visBits0)) * (1.0/32.0);
+                        vec4 sampleData = texelFetch(colortex3, sampleTexel, 0);
                         totalSamples.rgb += sampleData.rgb * vis0 * clamp(2.0 - isOriginNotHand - isHand, 0.0, 1.0);
                     }
                 #endif
@@ -381,7 +381,7 @@ void main() {
     GbufferData gbufferData = getGbufferData(texel, texcoord);
     vec4 currData = screenSpaceVisibiliyBitmask(gbufferData, texcoord, texel);
     vec4 prevData = texelFetch(colortex5, texel, 0);
-    float prevFrames = unpackF8D24(texelFetch(colortex6, texel, 0).x).x - 1.0;
+    float prevFrames = texelFetch(colortex3, texel, 0).w - 1.0;
     float blendWeight = clamp(1.0 / min(VB_MAX_BLEDED_FRAMES, prevFrames), 0.0, 1.0);
     texBuffer5 = mix(prevData, currData, blendWeight);
 }

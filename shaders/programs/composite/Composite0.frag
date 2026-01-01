@@ -170,6 +170,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
         float minimumThichnessLod = max(0.01 * originProjScale, abs(stepSize.w));
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
             float sampleDepth = uintBitsToFloat(textureLod(colortex6, sampleCoord.st, 0.0).x);
+            sampleDepth -= float(sampleDepth > 1.0);
             bool hitCheck = sampleCoord.z > sampleDepth && sampleDepth < 1.0;
             #ifdef LOD
                 float sampleDepthLod = -sampleDepth;
@@ -187,6 +188,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
                     #endif
                     refinementCoord += signMul(stepScale, stepDirection) * stepSize;
                     sampleDepth = uintBitsToFloat(textureLod(colortex6, refinementCoord.st, 0.0).x);
+                    sampleDepth -= float(sampleDepth > 1.0);
                     stepScale *= 0.5;
                 }
 

@@ -309,16 +309,15 @@ void main() {
         depthWithHand += parallaxData / 512.0 * 2.0;
         viewPos = viewDirection / (gbufferProjectionInverse[2].w * depthWithHand + gbufferProjectionInverse[3].w);
     }
-    texBuffer6 = floatBitsToUint(gbufferData.depth);
+    texBuffer6 = floatBitsToUint(gbufferData.depth + float(gbufferData.materialID == MAT_HAND));
     vec3 worldPos = viewToWorldPos(viewPosNoPOM);
     vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
 
-    vec4 finalColor = vec4(0.0);
+    vec4 finalColor = vec4(vec3(0.0), unpackF8D24(texelFetch(colortex6, texel, 0).x).x);
 
     if (abs(gbufferData.depth) < 1.0) {
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
-        finalColor.w = 512.0 * float(gbufferData.materialID == MAT_HAND);
 
         #ifdef SHADOW_AND_SKY
             float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
@@ -385,7 +384,6 @@ void main() {
             finalColor.rgb = renderSun(worldDir, sunDirection, vec3(300.0)) + gbufferData.albedo.rgb * 2.0;
     #endif
     }
-    finalColor.w += parallaxData;
 
     texBuffer3 = finalColor;
 }

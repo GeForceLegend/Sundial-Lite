@@ -36,6 +36,7 @@ void main() {
         } else
     #endif
     {
+        gbufferData.depth -= float(gbufferData.depth > 1.0);
         viewPos = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
     }
 
