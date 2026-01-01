@@ -37,8 +37,7 @@ out vec4 color;
 out vec4 viewPos;
 out vec4 texlmcoord;
 out vec3 mcPos;
-
-flat out vec4 coordRange;
+out vec4 coordRange;
 
 #ifdef ENTITIES
     uniform vec4 entityColor;
