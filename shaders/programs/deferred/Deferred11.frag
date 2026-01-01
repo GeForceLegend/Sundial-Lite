@@ -307,6 +307,7 @@ void main() {
         depthWithHand = depthWithHand * 2.0 - 1.0;
         viewPosNoPOM = viewDirection / (gbufferProjectionInverse[2].w * depthWithHand + gbufferProjectionInverse[3].w);
         depthWithHand += parallaxData / 512.0 * 2.0;
+        gbufferData.depth += parallaxData / 512.0;
         viewPos = viewDirection / (gbufferProjectionInverse[2].w * depthWithHand + gbufferProjectionInverse[3].w);
     }
     texBuffer6 = floatBitsToUint(gbufferData.depth + float(gbufferData.materialID == MAT_HAND));
