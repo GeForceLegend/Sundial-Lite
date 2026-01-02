@@ -36,11 +36,11 @@ flat in int material;
 #include "/libs/Water.glsl"
 #include "/libs/Parallax.glsl"
 
-mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec3 normal, out vec2 textureScale) {
+mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 textureScale) {
     vec3 dPosDX = dFdx(position);
     vec3 dPosDY = dFdy(position);
 
-    normal = normalize(cross(dPosDX, dPosDY));
+    vec3 normal = normalize(cross(dPosDX, dPosDY));
 
     vec3 dPosPerpX = cross(normal, dPosDX);
     vec3 dPosPerpY = cross(dPosDY, normal);
@@ -65,8 +65,7 @@ void main() {
     vec2 texGradX = dFdx(texlmcoord.st);
     vec2 texGradY = dFdy(texlmcoord.st);
     vec2 textureScale;
-    vec3 viewNormal;
-    mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, viewNormal, textureScale);
+    mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, textureScale);
 
     vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
     vec2 albedoTexelSize = 1.0 / albedoTexSize;
@@ -74,9 +73,6 @@ void main() {
     if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
         fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
     }
-    int textureResolutionFixed = (floatBitsToInt(max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y)) & 0x7FC00000) >> 22;
-    textureResolutionFixed = ((textureResolutionFixed >> 1) + (textureResolutionFixed & 1)) - 0x0000007F;
-    textureResolutionFixed = 1 << textureResolutionFixed;
     vec2 pixelScale = albedoTexelSize / textureScale;
     vec2 quadSize = 1.0 / fixedCoordRange.zw;
 
@@ -140,18 +136,22 @@ void main() {
     #endif
 
     #ifdef HARDCODED_EMISSIVE
-        float hardcodedEmissive = clamp(1.0 - rawData.emissive * 1e+3, 0.0, 1.0);
         int commonEmissive = max(0, material) & 0x7000;
-        rawData.emissive += hardcodedEmissive * (
-            float(material == 8195) +
-            float(material == 8198) * clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0) + 
-            float(material == 8200) * clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0) + 
-            float(material == 8197 || material == 8202) * clamp((0.8 * rawData.albedo.r - 1.2 * rawData.albedo.b) * dot(rawData.albedo.rgb, vec3(0.3333)), 0.0, 1.0) + 
-            float(material == 8203) * float(pow2(rawData.albedo.r) > 0.3 * (pow2(rawData.albedo.b) + pow2(rawData.albedo.g)) + 0.3) + 
-            float(material == 8204) * (clamp(2.0 * rawData.albedo.b - 4.5 * rawData.albedo.r, 0.0, 1.0) + clamp(2.0 * rawData.albedo.r - 3.0 * rawData.albedo.b, 0.0, 1.0)) + 
-            float(material == 8205) * clamp(0.5 * rawData.albedo.b - 1.0 * rawData.albedo.r - 0.2, 0.0, 1.0) + 
-            clamp(float(commonEmissive - 16384), 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0)
-        );
+        float hardcodedEmissive = clamp(float(commonEmissive - 16384), 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0) + float(material == 8195);
+        if (material == 8198) {
+            hardcodedEmissive = clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0);
+        } else if (material == 8200) {
+            hardcodedEmissive = clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0);
+        } else if (material == 8197 || material == 8202) {
+            hardcodedEmissive = clamp((0.8 * rawData.albedo.r - 1.2 * rawData.albedo.b) * dot(rawData.albedo.rgb, vec3(0.3333)), 0.0, 1.0);
+        } else if (material == 8203) {
+            hardcodedEmissive = float(pow2(rawData.albedo.r) > 0.3 * (pow2(rawData.albedo.b) + pow2(rawData.albedo.g)) + 0.3);
+        } else if (material == 8204) {
+            hardcodedEmissive = clamp(2.0 * rawData.albedo.b - 4.5 * rawData.albedo.r, 0.0, 1.0) + clamp(2.0 * rawData.albedo.r - 3.0 * rawData.albedo.b, 0.0, 1.0);
+        } else if (material == 8205) {
+            hardcodedEmissive = clamp(0.5 * rawData.albedo.b - 1.0 * rawData.albedo.r - 0.2, 0.0, 1.0);
+        }
+        rawData.emissive += hardcodedEmissive * clamp(1.0 - rawData.emissive * 1e+3, 0.0, 1.0);
     #endif
     bool isCauldronWater = material == 8192;
     rawData.smoothness += float(rawData.smoothness < 1e-3 && isCauldronWater);
@@ -179,7 +179,7 @@ void main() {
     float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
     vec3 viewDir = viewPos * (-viewDepthInv);
     vec3 worldPos = viewToWorldPos(viewPos) + cameraPosition;
-    if (rainyStrength > 0.0 && material != 8195) {
+    if (rainyStrength > 0.0 && material != 8195 && rawData.materialID != MAT_GRASS) {
         float porosity = rawData.porosity * 255.0 / 64.0;
         porosity *= step(porosity, 1.0);
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);

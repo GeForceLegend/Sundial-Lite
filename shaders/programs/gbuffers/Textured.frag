@@ -21,7 +21,6 @@ layout(location = 1) out vec4 gbufferData1;
 layout(location = 2) out vec4 gbufferData2;
 
 #if MC_VERSION < 11300
-    in vec3 viewNormal;
     in mat3 tbnMatrix;
 #endif
 
@@ -107,11 +106,11 @@ vec2 calcTextureScale(vec2 dCoordDX, vec2 dCoordDY, vec3 position) {
     return textureScale;
 }
 
-mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec3 normal, out vec2 textureScale) {
+mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 textureScale) {
     vec3 dPosDX = dFdx(position);
     vec3 dPosDY = dFdy(position);
 
-    normal = normalize(cross(dPosDX, dPosDY));
+    vec3 normal = normalize(cross(dPosDX, dPosDY));
 
     vec3 dPosPerpX = cross(normal, dPosDX);
     vec3 dPosPerpY = cross(dPosDY, normal);
@@ -138,8 +137,7 @@ void main() {
     vec2 texGradY = dFdy(texcoord);
     vec2 textureScale;
     #if MC_VERSION >= 11300
-        vec3 viewNormal;
-        mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, viewNormal, textureScale);
+        mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, textureScale);
     #else
         textureScale = calcTextureScale(texGradX, texGradY, viewPos.xyz);
     #endif
@@ -147,8 +145,8 @@ void main() {
     vec3 viewDir = viewPos.xyz * (-viewDepthInv);
 
     rawData.lightmap = texlmcoord.pq;
-    rawData.geoNormal = viewNormal;
-    rawData.normal = viewNormal;
+    rawData.geoNormal = tbnMatrix[2];
+    rawData.normal = tbnMatrix[2];
     rawData.materialID = MAT_DEFAULT;
     #ifdef HAND
         rawData.materialID = MAT_HAND;

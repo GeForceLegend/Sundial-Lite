@@ -18,7 +18,6 @@
 
 #if MC_VERSION >= 11700
 in vec4 mc_Entity;
-in vec3 vaPosition;
 in vec2 mc_midTexCoord;
 #elif MC_VERSION >= 11500
 layout(location = 11) in vec4 mc_Entity;

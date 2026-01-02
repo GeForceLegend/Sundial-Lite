@@ -27,7 +27,6 @@ layout(location = 11) in vec4 mc_midTexCoord;
 #if MC_VERSION < 11300
     layout(location = 12) in vec4 at_tangent;
 
-    out vec3 viewNormal;
     out mat3 tbnMatrix;
 #endif
 
@@ -103,7 +102,7 @@ void main() {
     #endif
 
     #if MC_VERSION < 11300
-        viewNormal = normalize(gl_NormalMatrix * gl_Normal);
+        vec3 viewNormal = normalize(gl_NormalMatrix * gl_Normal);
         vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
         vec3 bitangent = normalize(cross(tangent, viewNormal) * at_tangent.w);
         tbnMatrix = mat3(tangent, bitangent, viewNormal);
