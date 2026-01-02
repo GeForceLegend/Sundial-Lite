@@ -18,11 +18,11 @@
 
 layout(location = 0) out vec4 shadowColor0;
 
-in vec4 color;
-in vec3 worldPos;
+in vec4 color;              // Will become vec4(worldPos, 0.0) when rendering water
 in vec3 worldNormal;
 in vec2 texcoord;
 in vec2 shadowOffset;
+in float distortFixValue;
 
 // #define SHADOW_DISTORTION_FIX
 
@@ -78,7 +78,6 @@ vec3 shadowCoordToWorldPos(vec3 shadowCoord) {
 void main() {
     #ifdef SHADOW_AND_SKY
         vec4 albedo = textureLod(gtexture, texcoord, 0.0);
-        albedo *= color;
         #ifdef COLORWHEEL
             vec2 lmcoord;
             float ao;
@@ -93,17 +92,16 @@ void main() {
         #ifdef SHADOW_DISTORTION_FIX
             vec3 shadowProjPos = vec3(centerTexelOffset / (realShadowMapResolution * 0.25), gl_FragCoord.z * 10.0 - 5.0);
             vec3 pixelWorldPos = shadowCoordToWorldPos(shadowProjPos);
-            vec3 positionDiff = worldPos - pixelWorldPos;
-            float pixelDistanceToFace = dot(positionDiff, worldNormal);
+            float pixelDistanceToFace = distortFixValue - dot(pixelWorldPos, worldNormal);
             float NdotL = dot(worldNormal, shadowDirection);
             float offsetLength = signMul(pixelDistanceToFace / max(1e-5, abs(NdotL)), NdotL);
             gl_FragDepth = gl_FragCoord.z + offsetLength * shadowProjection[2].z * 0.1;
         #endif
 
-        vec3 mcPos = worldPos + cameraPosition;
-        mcPos.y += 128.0;
-        float floorMcHeight = floor(mcPos.y / 2.0);
         if (shadowOffset.y < -0.5) {
+            vec3 mcPos = color.xyz + cameraPosition;
+            mcPos.y += 128.0;
+            float floorMcHeight = floor(mcPos.y / 2.0);
             float caustic = waterCaustic(mcPos, shadowDirection);
             albedo = vec4(caustic, mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, 1.0);
         }

@@ -29,10 +29,10 @@ layout(location = 11) in vec4 mc_midTexCoord;
 #endif
 
 out vec4 color;
-out vec3 worldPos;
 out vec3 worldNormal;
 out vec2 texcoord;
 out vec2 shadowOffset;
+out float distortFixValue;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -55,7 +55,8 @@ void main() {
         #else
             vec4 viewPos = gl_ModelViewMatrix * gl_Vertex;
         #endif
-        worldPos = mat3(shadowModelViewInverse) * viewPos.xyz + shadowModelViewInverse[3].xyz;
+        vec3 worldPos = mat3(shadowModelViewInverse) * viewPos.xyz + shadowModelViewInverse[3].xyz;
+        distortFixValue = dot(worldPos, worldNormal);
 
         #ifdef PLANT_WAVE
             int material = int(mc_Entity.x);
@@ -94,6 +95,9 @@ void main() {
         shadowOffset = vec2(0.0, 0.0);
         float isWater = float(mc_Entity.x == 8192);
         shadowOffset.y = -isWater;
+        if (mc_Entity.x == 8192) {
+            color.rgb = worldPos;
+        }
         float isTransparent = float(abs(textureLod(gtexture, mc_midTexCoord.st + 1e-6, 0.0).w - 0.5) + 1e-4 < 0.49) * (1.0 - isWater);
         shadowOffset.x = -isTransparent;
 
