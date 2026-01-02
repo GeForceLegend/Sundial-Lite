@@ -16,6 +16,8 @@
 //  Parallax depth offset for less calculation in upcoming shaders; Move previous visibility mask result to current frame position
 //
 
+#define VB_MAX_BLEDED_FRAMES 20 // [4 5 6 7 8 10 12 14 16 20 24 28 32 36 40 48 56 64 72 80 96 112 128]
+
 layout(location = 0) out vec4 texBuffer3;
 layout(location = 1) out vec4 texBuffer5;
 layout(location = 2) out uint texBuffer6;
@@ -60,7 +62,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 currNormal, v
     #endif
     uint prevGeometryData = texelFetch(colortex6, sampleTexel, 0).x;
     vec2 prevFramesDepth = unpackF8D24(prevGeometryData);
-    samplePrevFrames = prevFramesDepth.x;
+    samplePrevFrames = min(prevFramesDepth.x, VB_MAX_BLEDED_FRAMES);
     float prevSampleDepth = prevFramesDepth.y + float(prevFramesDepth.y == 0.0);
 
     vec2 sampleCoord = sampleTexelCoord * texelSize;

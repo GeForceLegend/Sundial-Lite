@@ -22,7 +22,6 @@ in vec2 texcoord;
 
 #define VB_TRACE_COUNT 1 // [1 2 3 4 5 6 7 8]
 #define VB_STEPS 16 // [4 6 8 12 16 20 24 32 40 48 64 80 96 112 128]
-#define VB_MAX_BLEDED_FRAMES 20 // [4 5 6 7 8 10 12 14 16 20 24 28 32 36 40 48 56 64 72 80 96 112 128]
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -382,7 +381,7 @@ void main() {
     vec4 currData = screenSpaceVisibiliyBitmask(gbufferData, texcoord, texel);
     vec4 prevData = texelFetch(colortex5, texel, 0);
     float prevFrames = texelFetch(colortex3, texel, 0).w;
-    float blendWeight = clamp(1.0 / min(VB_MAX_BLEDED_FRAMES, prevFrames), 0.0, 1.0);
+    float blendWeight = clamp(1.0 / prevFrames, 0.0, 1.0);
     texBuffer5 = mix(prevData, currData, blendWeight);
 }
 
