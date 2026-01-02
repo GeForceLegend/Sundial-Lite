@@ -366,7 +366,7 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
                 #endif
                 occBits = occBits | occBits0;
             }
-            float occ0 = float(CountBits(occBits)) * (1.0/32.0);
+            float occ0 = float(CountBits(occBits)) * (1.0 / 32.0);
             totalSamples.a += occ0;
         }
         totalSamples /= VB_TRACE_COUNT;

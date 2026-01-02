@@ -112,7 +112,8 @@ vec3 calculateVelocity(vec3 coord, ivec2 texel, float materialID) {
         view -= view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
         view = viewToProjectionPos(view);
         view = view * 0.5 + 0.5;
-    } else if (coord.z > 0.7) {
+    }
+    else if (coord.z > 0.7) {
         #ifdef LOD
             if (coord.z > 1.0) {
                 view.z -= 1.0;

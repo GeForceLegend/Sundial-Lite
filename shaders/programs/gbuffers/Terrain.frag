@@ -54,7 +54,7 @@ mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 texture
     float tangentLen = inversesqrt(dot(tangent, tangent));
     float bitangentLen = inversesqrt(dot(bitangent, bitangent));
 
-    textureScale = 1.0 / vec2(tangentLen, bitangentLen);
+    textureScale = vec2(tangentLen, bitangentLen);
 
     return mat3(tangent * tangentLen, bitangent * bitangentLen, normal);
 }
@@ -73,7 +73,7 @@ void main() {
     if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
         fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
     }
-    vec2 pixelScale = albedoTexelSize / textureScale;
+    vec2 pixelScale = albedoTexelSize * textureScale;
     vec2 quadSize = 1.0 / fixedCoordRange.zw;
 
     float parallaxOffset = 0.0;
@@ -85,7 +85,7 @@ void main() {
         #endif
         {
             vec3 textureViewer = viewPos * tbnMatrix;
-            textureViewer.xy *= textureScale;
+            textureViewer.xy /= textureScale;
             #ifdef VOXEL_PARALLAX
                 texcoord = perPixelParallax(texlmcoord.st, textureViewer, albedoTexSize, albedoTexelSize, fixedCoordRange, parallaxTexNormal, parallaxOffset);
             #else
@@ -137,18 +137,26 @@ void main() {
 
     #ifdef HARDCODED_EMISSIVE
         int commonEmissive = max(0, material) & 0x7000;
-        float hardcodedEmissive = clamp(float(commonEmissive - 16384), 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0) + float(material == 8195);
-        if (material == 8198) {
+        float hardcodedEmissive = float(material == 8195);
+        if (commonEmissive > 16384) {
+            hardcodedEmissive = clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0);
+        }
+        else if (material == 8198) {
             hardcodedEmissive = clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0);
-        } else if (material == 8200) {
+        }
+        else if (material == 8200) {
             hardcodedEmissive = clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0);
-        } else if (material == 8197 || material == 8202) {
+        }
+        else if (material == 8197 || material == 8202) {
             hardcodedEmissive = clamp((0.8 * rawData.albedo.r - 1.2 * rawData.albedo.b) * dot(rawData.albedo.rgb, vec3(0.3333)), 0.0, 1.0);
-        } else if (material == 8203) {
+        }
+        else if (material == 8203) {
             hardcodedEmissive = float(pow2(rawData.albedo.r) > 0.3 * (pow2(rawData.albedo.b) + pow2(rawData.albedo.g)) + 0.3);
-        } else if (material == 8204) {
+        }
+        else if (material == 8204) {
             hardcodedEmissive = clamp(2.0 * rawData.albedo.b - 4.5 * rawData.albedo.r, 0.0, 1.0) + clamp(2.0 * rawData.albedo.r - 3.0 * rawData.albedo.b, 0.0, 1.0);
-        } else if (material == 8205) {
+        }
+        else if (material == 8205) {
             hardcodedEmissive = clamp(0.5 * rawData.albedo.b - 1.0 * rawData.albedo.r - 0.2, 0.0, 1.0);
         }
         rawData.emissive += hardcodedEmissive * clamp(1.0 - rawData.emissive * 1e+3, 0.0, 1.0);
