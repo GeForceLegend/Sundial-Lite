@@ -130,7 +130,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
             stepDir.z = -stepDir.z;
 
             coord *= albedoTexSize;
-            ivec2 basicTexel = ivec2(floor(coordRange.xy * albedoTexSize));
+            ivec2 basicTexel = ivec2(round(coordRange.xy * albedoTexSize));
             ivec2 sampleTexel = ivec2(floor(coord));
             vec2 stepLength = abs(1.0 / stepDir.xy);
             ivec2 dirSigned = (floatBitsToInt(stepDir.xy) >> 31) * 2 + 1;
