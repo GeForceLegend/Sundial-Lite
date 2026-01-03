@@ -97,7 +97,7 @@ void main() {
         }
     #endif
 
-    texBuffer4 = vec4(reflectionColor, 1.0);
+    texBuffer4 = vec4(reflectionColor, texelFetch(colortex0, texel, 0).w);
 }
 
 /* DRAWBUFFERS:4 */
