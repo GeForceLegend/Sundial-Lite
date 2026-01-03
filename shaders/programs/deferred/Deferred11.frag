@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Lighting that need to be calculated in visibility bitmask
+//  Lighting that need to be calculated in visibility bitmask; Bake depth containing parallax and hand correction for future shader
 //
 
 #extension GL_ARB_gpu_shader5 : enable
@@ -283,7 +283,6 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
     GbufferData gbufferData = getGbufferData(texel, texcoord);
-    float parallaxData = texelFetch(colortex3, texel, 0).w;
     vec3 viewPos;
     vec3 viewPosNoPOM;
     #ifdef LOD
@@ -306,6 +305,7 @@ void main() {
         viewDirection.xy = vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * viewDirection.xy + gbufferProjectionInverse[3].xy;
         depthWithHand = depthWithHand * 2.0 - 1.0;
         viewPosNoPOM = viewDirection / (gbufferProjectionInverse[2].w * depthWithHand + gbufferProjectionInverse[3].w);
+        float parallaxData = texelFetch(colortex3, texel, 0).w;
         depthWithHand += parallaxData / 512.0 * 2.0;
         gbufferData.depth += parallaxData / 512.0;
         viewPos = viewDirection / (gbufferProjectionInverse[2].w * depthWithHand + gbufferProjectionInverse[3].w);

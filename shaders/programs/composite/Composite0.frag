@@ -238,25 +238,23 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
             float rayLength = far;
             reflectionColor = vec4(vec3(0.0), rayLength);
             #ifdef SHADOW_AND_SKY
-                vec3 skylightColor = vec3(0.0);
                 vec3 atmosphere;
-                skylightColor = singleAtmosphereScattering(vec3(0.0), worldPos, rayDir, sunDirection, intersectionData, 30.0, atmosphere);
+                reflectionColor.rgb = singleAtmosphereScattering(vec3(0.0), worldPos, rayDir, sunDirection, intersectionData, 30.0, atmosphere);
                 vec4 planeCloud = vec4(0.0);
                 #ifdef PLANE_CLOUD
                     planeCloud = planeClouds(worldPos, rayDir, sunDirection, skyColorUp, intersectionData.xyz);
-                    skylightColor = mix(skylightColor, planeCloud.rgb, planeCloud.a * float(worldPos.y + cameraPosition.y < PLANE_CLOUD_HEIGHT));
+                    reflectionColor.rgb = mix(reflectionColor.rgb, planeCloud.rgb, planeCloud.a * float(worldPos.y + cameraPosition.y < PLANE_CLOUD_HEIGHT));
                 #endif
                 #ifdef CLOUD_IN_REFLECTION
                     float cloudDepth;
-                    skylightColor = sampleClouds(skylightColor, atmosphere, worldPos, rayDir, shadowDirection, sunDirection, skyColorUp, intersectionData.xyz, 0.0, cloudDepth).rgb;
+                    reflectionColor.rgb = sampleClouds(reflectionColor.rgb, atmosphere, worldPos, rayDir, shadowDirection, sunDirection, skyColorUp, intersectionData.xyz, 0.0, cloudDepth).rgb;
                 #endif
                 if (worldPos.y + cameraPosition.y >= PLANE_CLOUD_HEIGHT) {
-                    skylightColor = mix(skylightColor, planeCloud.rgb, planeCloud.a);
+                    reflectionColor.rgb = mix(reflectionColor.rgb, planeCloud.rgb, planeCloud.a);
                 }
                 #ifdef LIGHT_LEAKING_FIX
-                    skylightColor *= clamp(eyeBrightnessSmooth.y / 16.0, 0.0, 1.0);
+                    reflectionColor.rgb *= clamp(eyeBrightnessSmooth.y / 16.0, 0.0, 1.0);
                 #endif
-                reflectionColor.rgb = skylightColor;
             #endif
         }
         if (isEyeInWater == 0) {

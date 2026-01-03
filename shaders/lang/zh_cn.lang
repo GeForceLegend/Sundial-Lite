@@ -162,6 +162,10 @@ option.VBGI.comment=使用可见性位遮罩计算全局光照
 option.VB_TRACE_COUNT=VB 追踪数
 option.VB_TRACE_COUNT.comment=可见性位遮罩追踪的次数. 可以理解为光线追踪中的光线数量
 option.VB_STEPS=VB 步进次数
+option.VB_GI_LENGTH=VBGI 追踪长度
+option.VB_GI_LENGTH.comment=当 VBGI 开启时的追踪长度. VBAO 也会受此影响. 仅用于参考，不能精确反映实际追踪长度
+option.VB_AO_LENGTH=VBAO 追踪长度
+option.VB_AO_LENGTH.comment=当 VBGI 关闭时的追踪长度. 仅用于参考，不能精确反映实际追踪长度
 option.VB_MAX_BLEDED_FRAMES=VB 最大混合帧数
 
 # Atmosphere

@@ -153,6 +153,10 @@ option.VBGI.comment=Visibility bitmask global illumination
 option.VB_TRACE_COUNT=VB trace count
 option.VB_TRACE_COUNT.comment=Can be considered as ray count in ray tracing
 option.VB_STEPS=VB step count
+option.VB_GI_LENGTH=VBGI trace length
+option.VB_GI_LENGTH.comment=Trace length if VBGI is on. Also affect VBAO. Just as a reference, cannot show exact trace length
+option.VB_AO_LENGTH=VBAO trace length
+option.VB_AO_LENGTH.comment=Trace length if VBGI is off. Just as a reference, cannot show exact trace length
 option.VB_MAX_BLEDED_FRAMES=VB max blended frames
 
 # Atmosphere

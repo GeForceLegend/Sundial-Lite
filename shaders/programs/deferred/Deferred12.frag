@@ -22,6 +22,8 @@ in vec2 texcoord;
 
 #define VB_TRACE_COUNT 1 // [1 2 3 4 5 6 7 8]
 #define VB_STEPS 16 // [4 6 8 12 16 20 24 32 40 48 64 80 96 112 128]
+#define VB_GI_LENGTH 514.0 // [64.0 80.0 96.0 114.0 128.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 514.0 640.0 768.0 896.0 1024.0 1280.0 1536.0 1792.0 2048.0]
+#define VB_AO_LENGTH 128.0 // [64.0 80.0 96.0 114.0 128.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 514.0 640.0 768.0 896.0 1024.0 1280.0 1536.0 1792.0 2048.0]
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -285,7 +287,11 @@ vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 t
             vec2 sampleRange = (targetCoord - originCoord) * screenSize;
             float projTraceLength = inversesqrt(dot(sampleRange, sampleRange));
             vec2 stepDir = sampleRange * projTraceLength * texelSize;
-            float stepScale = log2(max(1.0 / 512.0, clamp(projTraceLength, 0.0, 1.0))) / -float(VB_STEPS);
+            float VB_LENGTH = VB_AO_LENGTH;
+            #ifdef VBGI
+                VB_LENGTH = VB_GI_LENGTH;
+            #endif
+            float stepScale = log2(max(1.0 / VB_LENGTH, clamp(projTraceLength, 0.0, 1.0))) / -float(VB_STEPS);
 
             vec3 sliceN = cross(viewDir, rayDir);
             vec3 projN = gbufferData.normal - sliceN * dot(gbufferData.normal, sliceN);
