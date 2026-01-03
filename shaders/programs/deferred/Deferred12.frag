@@ -13,10 +13,11 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Visibility bitmask things
+//  Visibility bitmask things; Lighting that don't need calculated in visibility bitmask
 //
 
-layout(location = 0) out vec4 texBuffer5;
+layout(location = 0) out vec4 texBuffer3;
+layout(location = 1) out vec4 texBuffer5;
 
 in vec2 texcoord;
 
@@ -238,157 +239,193 @@ vec3 Transform_Vz0Qz0(vec2 v, vec4 q)
     return vec3(v, 0.0) + 2.0 * (b * q.yxw);
 }
 
-vec4 screenSpaceVisibiliyBitmask(GbufferData gbufferData, vec2 texcoord, ivec2 texel) {
-    vec3 originViewPos;
-    float isOriginNotHand = 1.0;
-    gbufferData.depth = uintBitsToFloat(texelFetch(colortex6, texel, 0).r);
-    #ifdef LOD
-        if (gbufferData.depth < 0.0) {
-            originViewPos = screenToViewPosLod(texcoord, -gbufferData.depth - 1e-7);
-        } else
-    #endif
-    {
-        float isHand = float(gbufferData.depth > 1.0);
-        isOriginNotHand -= isHand;
-        gbufferData.depth -= isHand;
-        originViewPos = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
-    }
-    originViewPos += gbufferData.geoNormal * 3e-3;
-    float viewLengthInv = inversesqrt(dot(originViewPos, originViewPos));
+vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord, float viewLengthInv, float isOriginNotHand) {
     vec3 viewDir = -viewLengthInv * originViewPos;
     vec4 Q_toV = GetQuaternion(viewDir);
     vec4 Q_fromV = Q_toV * vec4(vec3(-1.0), 1.0);
-    vec3 normalVVS = Transform_Qz0(gbufferData.normal, Q_fromV);
+    vec3 normalVVS = Transform_Qz0(normal, Q_fromV);
+
+    vec2 noise = vec2(blueNoiseTemporal(texcoord).x, bayer64Temporal(gl_FragCoord.xy));
+    const float r2Double = 0.7548776662;
+    vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * originViewPos + gbufferProjection[3].xyz, -originViewPos.z);
+    #ifdef TAA
+        originProjPos.xy += taaOffset * originProjPos.w;
+    #endif
+    float originProjScale = 0.5 / originProjPos.w;
+    vec2 originCoord = vec2(originProjPos.xy * originProjScale + 0.5);
 
     vec4 totalSamples = vec4(0.0);
-    if (abs(gbufferData.depth) < 1.0) {
-        vec2 noise = vec2(blueNoiseTemporal(texcoord).x, bayer64Temporal(gl_FragCoord.xy));
-        const float r2Double = 0.7548776662;
-        vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * originViewPos + gbufferProjection[3].xyz, -originViewPos.z);
-        #ifdef TAA
-            originProjPos.xy += taaOffset * originProjPos.w;
+    for (int i = 0; i < VB_TRACE_COUNT; i++) {
+        noise = fract(noise + vec2(r2Double, r2Double * r2Double));
+        vec2 screenDir = SamplePartialSliceDir(normalVVS, noise.x);
+        vec3 rayDir = Transform_Vz0Qz0(screenDir, Q_toV);
+
+        vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);
+        projDirection.xy += gbufferProjection[2].xy * rayDir.z;
+        float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
+
+        vec4 targetProjPos = originProjPos + projDirection * traceLength;
+        float targetProjScale = 0.5 / targetProjPos.w;
+        vec2 targetCoord = vec2(targetProjPos.xy * targetProjScale + 0.5);
+
+        vec2 sampleRange = (targetCoord - originCoord) * screenSize;
+        float projTraceLength = inversesqrt(dot(sampleRange, sampleRange));
+        vec2 stepDir = sampleRange * projTraceLength * texelSize;
+        float VB_LENGTH = VB_AO_LENGTH;
+        #ifdef VBGI
+            VB_LENGTH = VB_GI_LENGTH;
         #endif
-        float originProjScale = 0.5 / originProjPos.w;
-        vec2 originCoord = vec2(originProjPos.xy * originProjScale + 0.5);
+        float stepScale = log2(max(1.0 / VB_LENGTH, clamp(projTraceLength, 0.0, 1.0))) / -float(VB_STEPS);
 
-        for (int i = 0; i < VB_TRACE_COUNT; i++) {
-            noise = fract(noise + vec2(r2Double, r2Double * r2Double));
-            vec2 screenDir = SamplePartialSliceDir(normalVVS, noise.x);
-            vec3 rayDir = Transform_Vz0Qz0(screenDir, Q_toV);
+        vec3 sliceN = cross(viewDir, rayDir);
+        vec3 projN = normal - sliceN * dot(normal, sliceN);
+        float projNSqrLen = dot(projN, projN);
+        if (projNSqrLen == 0.0) continue;
+        vec3 T = cross(sliceN, projN);
+        float projNRcpLen = inversesqrt(projNSqrLen);
+        float cosN = dot(projN, viewDir) * projNRcpLen;
+        float angN = signMul(ACos(cosN), dot(viewDir, T));
 
-            vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);
-            projDirection.xy += gbufferProjection[2].xy * rayDir.z;
-            float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
+        float angOff = angN / PI + 0.5;
+        float w0 = clamp((sin(angN) / (cos(angN) + angN * sin(angN))) * (PI/4.0) + 0.5, 0.0, 1.0);
 
-            vec4 targetProjPos = originProjPos + projDirection * traceLength;
-            float targetProjScale = 0.5 / targetProjPos.w;
-            vec2 targetCoord = vec2(targetProjPos.xy * targetProjScale + 0.5);
+        // partial slice re-mapping constants
+        float w0_remap_mul = 1.0 / (1.0 - w0);
+        float w0_remap_add = -w0 * w0_remap_mul;
 
-            vec2 sampleRange = (targetCoord - originCoord) * screenSize;
-            float projTraceLength = inversesqrt(dot(sampleRange, sampleRange));
-            vec2 stepDir = sampleRange * projTraceLength * texelSize;
-            float VB_LENGTH = VB_AO_LENGTH;
-            #ifdef VBGI
-                VB_LENGTH = VB_GI_LENGTH;
-            #endif
-            float stepScale = log2(max(1.0 / VB_LENGTH, clamp(projTraceLength, 0.0, 1.0))) / -float(VB_STEPS);
+        uint occBits = 0u;
+        float stepSize = exp2(stepScale * noise.y);
+        stepScale = exp2(stepScale);
 
-            vec3 sliceN = cross(viewDir, rayDir);
-            vec3 projN = gbufferData.normal - sliceN * dot(gbufferData.normal, sliceN);
-            float projNSqrLen = dot(projN, projN);
-            if (projNSqrLen == 0.0) continue;
-            vec3 T = cross(sliceN, projN);
-            float projNRcpLen = inversesqrt(projNSqrLen);
-            float cosN = dot(projN, viewDir) * projNRcpLen;
-            float angN = signMul(ACos(cosN), dot(viewDir, T));
+        for (int j = 0; j < VB_STEPS; j++) {
+            vec2 sampleCoord = originCoord + stepDir * stepSize;
+            ivec2 sampleTexel = ivec2(sampleCoord * screenSize);
+            float sampleDepth = uintBitsToFloat(texelFetch(colortex6, sampleTexel, 0).r);
+            stepSize *= stepScale;
+            if (any(greaterThan(abs(sampleCoord - 0.5), vec2(0.5)))) {
+                break;
+            }
 
-            float angOff = angN / PI + 0.5;
-            float w0 = clamp((sin(angN) / (cos(angN) + angN * sin(angN))) * (PI/4.0) + 0.5, 0.0, 1.0);
-
-            // partial slice re-mapping constants
-            float w0_remap_mul = 1.0 / (1.0 - w0);
-            float w0_remap_add = -w0 * w0_remap_mul;
-
-            uint occBits = 0u;
-            float stepSize = exp2(stepScale * noise.y);
-            stepScale = exp2(stepScale);
-
-            for (int j = 0; j < VB_STEPS; j++) {
-                vec2 sampleCoord = originCoord + stepDir * stepSize;
-                ivec2 sampleTexel = ivec2(sampleCoord * screenSize);
-                float sampleDepth = uintBitsToFloat(texelFetch(colortex6, sampleTexel, 0).r);
-                stepSize *= stepScale;
-                if (any(greaterThan(abs(sampleCoord - 0.5), vec2(0.5)))) {
-                    break;
-                }
-
-                float isHand = float(sampleDepth > 1.0);
-                vec3 sampleViewPos;
-                #ifdef LOD
-                    if (sampleDepth < 0.0) {
-                        if (sampleDepth == -1.0) {
-                            continue;
-                        }
-                        sampleViewPos = screenToViewPosLod(sampleCoord, -sampleDepth);
-                    }
-                #else
-                    if (sampleDepth == 1.0) {
+            float isHand = float(sampleDepth > 1.0);
+            vec3 sampleViewPos;
+            #ifdef LOD
+                if (sampleDepth < 0.0) {
+                    if (sampleDepth == -1.0) {
                         continue;
                     }
-                #endif
-                else {
-                    sampleViewPos = screenToViewPos(sampleCoord, sampleDepth - isHand);
+                    sampleViewPos = screenToViewPosLod(sampleCoord, -sampleDepth);
                 }
-
-                vec3 deltaPosFront = sampleViewPos - originViewPos;
-                vec3 deltaPosBack = deltaPosFront - viewDir * max(abs(sampleViewPos.z) * 0.1, 0.2);
-
-                vec2 horCos = vec2(dot(deltaPosFront, viewDir) * inversesqrt(dot(deltaPosFront, deltaPosFront)),
-                                   dot(deltaPosBack , viewDir) * inversesqrt(dot(deltaPosBack , deltaPosBack )));
-
-                vec2 horAng = ACos(horCos);
-
-                // shift relative angles from V to N + map to [0,1]
-                vec2 hor01 = clamp(horAng / PI + angOff, 0.0, 1.0);
-
-                // map to slice relative distribution
-                hor01 = SliceRelCDF_Cos(hor01, angN, cosN);
-
-                // partial slice re-mapping
-                hor01 = hor01 * w0_remap_mul + w0_remap_add;
-
-                uvec2 horInt = (floatBitsToUint(hor01 * 32.0 + 64.0) >> 17) & 0x3Fu;
-                uint mX = horInt.x < 32u ? 0xFFFFFFFFu <<        horInt.x  : 0u;
-                uint mY = horInt.y != 0u ? 0xFFFFFFFFu >> (32u - horInt.y) : 0u;
-                uint occBits0 = mX & mY;
-
-                uint visBits0 = occBits0 & (~occBits);
-                #ifdef VBGI
-                    if(visBits0 != 0u) {
-                        float vis0 = float(CountBits(visBits0)) * (1.0 / 32.0);
-                        vec4 sampleData = texelFetch(colortex3, sampleTexel, 0);
-                        totalSamples.rgb += sampleData.rgb * vis0 * clamp(1.0 - isOriginNotHand * isHand, 0.0, 1.0);
-                    }
-                #endif
-                occBits = occBits | occBits0;
+            #else
+                if (sampleDepth == 1.0) {
+                    continue;
+                }
+            #endif
+            else {
+                sampleViewPos = screenToViewPos(sampleCoord, sampleDepth - isHand);
             }
-            float occ0 = float(CountBits(occBits)) * (1.0 / 32.0);
-            totalSamples.a += occ0;
-        }
-        totalSamples /= VB_TRACE_COUNT;
-    }
 
+            vec3 deltaPosFront = sampleViewPos - originViewPos;
+            vec3 deltaPosBack = deltaPosFront - viewDir * max(abs(sampleViewPos.z) * 0.1, 0.2);
+
+            vec2 horCos = vec2(dot(deltaPosFront, viewDir) * inversesqrt(dot(deltaPosFront, deltaPosFront)),
+                                dot(deltaPosBack , viewDir) * inversesqrt(dot(deltaPosBack , deltaPosBack )));
+
+            vec2 horAng = ACos(horCos);
+
+            // shift relative angles from V to N + map to [0,1]
+            vec2 hor01 = clamp(horAng / PI + angOff, 0.0, 1.0);
+
+            // map to slice relative distribution
+            hor01 = SliceRelCDF_Cos(hor01, angN, cosN);
+
+            // partial slice re-mapping
+            hor01 = hor01 * w0_remap_mul + w0_remap_add;
+
+            uvec2 horInt = (floatBitsToUint(hor01 * 32.0 + 64.0) >> 17) & 0x3Fu;
+            uint mX = horInt.x < 32u ? 0xFFFFFFFFu <<        horInt.x  : 0u;
+            uint mY = horInt.y != 0u ? 0xFFFFFFFFu >> (32u - horInt.y) : 0u;
+            uint occBits0 = mX & mY;
+
+            uint visBits0 = occBits0 & (~occBits);
+            #ifdef VBGI
+                if(visBits0 != 0u) {
+                    float vis0 = float(CountBits(visBits0)) * (1.0 / 32.0);
+                    vec4 sampleData = texelFetch(colortex3, sampleTexel, 0);
+                    totalSamples.rgb += sampleData.rgb * vis0 * clamp(1.0 - isOriginNotHand * isHand, 0.0, 1.0);
+                }
+            #endif
+            occBits = occBits | occBits0;
+        }
+        float occ0 = float(CountBits(occBits)) * (1.0 / 32.0);
+        totalSamples.a += occ0;
+    }
+    totalSamples /= VB_TRACE_COUNT;
     return totalSamples;
 }
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
     GbufferData gbufferData = getGbufferData(texel, texcoord);
-    vec4 currData = screenSpaceVisibiliyBitmask(gbufferData, texcoord, texel);
-    vec4 prevData = texelFetch(colortex5, texel, 0);
-    float prevFrames = texelFetch(colortex3, texel, 0).w;
-    float blendWeight = clamp(1.0 / prevFrames, 0.0, 1.0);
-    texBuffer5 = mix(prevData, currData, blendWeight);
+    vec3 viewPos;
+    float isOriginNotHand = 1.0;
+    gbufferData.depth = uintBitsToFloat(texelFetch(colortex6, texel, 0).r);
+    #ifdef LOD
+        if (gbufferData.depth < 0.0) {
+            viewPos = screenToViewPosLod(texcoord, -gbufferData.depth - 1e-7);
+        } else
+    #endif
+    {
+        float isHand = float(gbufferData.depth > 1.0);
+        isOriginNotHand -= isHand;
+        gbufferData.depth -= isHand;
+        viewPos = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
+    }
+    viewPos += gbufferData.geoNormal * 3e-3;
+    vec4 currData = vec4(0.0);
+    vec4 colorData = texelFetch(colortex3, texel, 0);
+    if (abs(gbufferData.depth) < 1.0) {
+        float viewLengthInv = inversesqrt(dot(viewPos, viewPos));
+        // Merge some vec3s into floats to save registers
+        float NdotV = clamp(dot(viewPos, -gbufferData.normal) * viewLengthInv, 0.0, 1.0);
+        #ifdef IS_IRIS
+            vec3 worldPos = viewToWorldPos(viewPos);
+            float eyeRelatedDistance = length(worldPos + relativeEyePosition);
+            gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
+        #endif
+
+        currData = screenSpaceVisibiliyBitmask(viewPos, gbufferData.normal, texcoord, viewLengthInv, isOriginNotHand);
+        vec4 prevData = texelFetch(colortex5, texel, 0);
+        float blendWeight = clamp(1.0 / colorData.w, 0.0, 1.0);
+        currData = mix(prevData, currData, blendWeight);
+
+        vec3 lightColor = vec3(BASIC_LIGHT);
+        lightColor += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
+        const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
+        vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * commonLightColor;
+        lightColor += blockLight;
+        lightColor *= (1.0 - currData.w);
+        #ifdef VBGI
+            lightColor += currData.rgb;
+        #endif
+
+        float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
+        vec3 n = vec3(1.5);
+        vec3 k = vec3(0.0);
+        #ifdef LABPBR_F0
+            n = mix(n, vec3(f0ToIor(gbufferData.metalness)), step(0.001, gbufferData.metalness));
+            hardcodedMetal(gbufferData.metalness, n, k);
+            gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
+        #endif
+        #ifndef FULL_REFLECTION
+            diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
+        #endif
+        vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
+        lightColor *= diffuseAbsorption + diffuseWeight / PI;
+        lightColor *= gbufferData.albedo.rgb;
+        colorData.rgb += lightColor;
+    }
+    texBuffer3 = colorData;
+    texBuffer5 = currData;
 }
 
-/* DRAWBUFFERS:5 */
+/* DRAWBUFFERS:35 */
