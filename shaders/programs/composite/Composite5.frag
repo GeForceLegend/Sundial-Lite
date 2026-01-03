@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Transparent blending and common fog
+//  Transparent blending and common fog; Volumetric light and fog
 //
 
 #extension GL_ARB_gpu_shader5 : enable
