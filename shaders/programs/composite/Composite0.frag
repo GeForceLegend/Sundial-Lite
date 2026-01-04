@@ -296,14 +296,13 @@ void main() {
         waterDepth += float(waterDepth == 1.0) * getLodDepthWater(texcoord);
         solidDepth += float(solidDepth == 1.0) * getLodDepthSolid(texcoord);
     #endif
-    texBuffer0 = vec4(vec3(0.0), texelFetch(colortex4, texel, 0).w);
+    texBuffer0 = vec4(texelFetch(colortex0, texel, 0).rgb, texelFetch(colortex4, texel, 0).w);
 
     vec4 reflectionColor = vec4(0.0);
     #ifdef REFLECTION
         if (waterDepth - float(waterDepth > 1.0) < 1.0) {
             GbufferData gbufferData = getGbufferData(texel, texcoord);
             gbufferData.depth = waterDepth;
-            texBuffer0.z = gbufferData.materialID / 255.0;
             if (gbufferData.materialID == MAT_HAND) {
                 gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
             }

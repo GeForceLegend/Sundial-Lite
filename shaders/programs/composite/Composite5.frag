@@ -18,7 +18,8 @@
 
 #extension GL_ARB_gpu_shader5 : enable
 
-layout(location = 0) out vec4 texBuffer3;
+layout(location = 0) out vec4 texBuffer0;
+layout(location = 1) out vec4 texBuffer3;
 
 in vec2 texcoord;
 
@@ -264,6 +265,7 @@ void main() {
     }
     vec4 reflectionData = texelFetch(colortex4, texel, 0);
     solidColor.rgb += reflectionData.rgb * reflectionWeight;
+    reflectionData.rgb = vec3(0.0, 0.0, gbufferData.materialID / 255.0 + 0.1 / 255.0);
 
     waterDepth -= float(waterDepth > 1.0);
     float waterViewDepth = mix(waterViewDepthNoLimit, 114514.0, step(0.999999, waterDepth));
@@ -427,7 +429,8 @@ void main() {
         }
     #endif
 
+    texBuffer0 = reflectionData;
     texBuffer3 = solidColor;
 }
 
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:03 */
