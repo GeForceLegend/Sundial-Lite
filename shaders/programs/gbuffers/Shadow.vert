@@ -113,7 +113,6 @@ void main() {
         color = vec4(1.0);
         worldNormal = vec3(0.0);
         texcoord = vec2(0.0);
-        worldPos = vec3(0.0);
         shadowOffset = vec2(0.0);
         gl_Position = vec4(1.1, 1.1, 1.1, 1.0);
     #endif
