@@ -106,9 +106,7 @@ vec3 FidelityFX_RCAS(sampler2D colortex, vec2 coord, vec2 pixelSize) {
     #ifdef SHARPENING_DENOISE
         lobe *= nz;
     #endif
-    float rcpL = 1.0 / (4.0 * lobe + 1.0);
-    // float rcpL = ffxApproximateReciprocalMedium(float(4.0) * lobe + float(1.0));
-    return (lobe * (colorB + colorD + colorF + colorH) + colorE) * rcpL;
+    return (lobe * (colorB + colorD + colorF + colorH) + colorE) / (4.0 * lobe + 1.0);
 }
 
 void main() {
