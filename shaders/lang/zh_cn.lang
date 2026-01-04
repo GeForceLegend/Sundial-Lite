@@ -37,6 +37,7 @@ screen.AgX=AgX设置
 screen.Exposure=曝光
 screen.DepthOfField=景深
 screen.ChromaticDispersion=色散
+screen.Sharpening=锐化
 screen.Weather=天气
 screen.ModSupport=Mod支持
 screen.ModSupport.comment=自动检测Mod方块的属性
@@ -370,6 +371,13 @@ option.CHROMATIC_DISPERSION_G=绿色色散强度
 option.CHROMATIC_DISPERSION_G.comment=较大的值会让绿色向外偏
 option.CHROMATIC_DISPERSION_B=蓝色色散强度
 option.CHROMATIC_DISPERSION_B.comment=较大的值会让蓝色向外偏
+# Shapening
+option.FINAL_SHARPENING=最终锐化
+option.SHARPENING_DENOISE=锐化去噪
+option.SHARPENING_DENOISE.comment=降低锐化过程中产生的噪声
+option.SHARPENING_SRENGTH=锐化强度
+option.SHARPENING_LIMIT=锐化限制
+option.SHARPENING_LIMIT.comment=锐化前后的变化限制，以避免产生不自然的结果
 
 # Weather
 option.RAIN_PUDDLE=雨天地面积水

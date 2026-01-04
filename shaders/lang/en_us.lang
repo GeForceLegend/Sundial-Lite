@@ -32,6 +32,7 @@ screen.AgX=AgX settings
 screen.Exposure=Exposure
 screen.DepthOfField=Depth of field
 screen.ChromaticDispersion=Chromatic dispersion
+screen.Sharpening=Sharpening
 screen.Weather=Weather
 screen.ModSupport=Mod support
 screen.Experimental=Experimental effect
@@ -341,6 +342,13 @@ option.CHROMATIC_DISPERSION_G=Green chromatic dispersion
 option.CHROMATIC_DISPERSION_G.comment=Higher value will move green to the outside of screen
 option.CHROMATIC_DISPERSION_B=Blue chromatic dispersion
 option.CHROMATIC_DISPERSION_B.comment=Higher value will move blue to the outside of screen
+# Shapening
+option.FINAL_SHARPENING=Final sharpening
+option.SHARPENING_DENOISE=Sharpening denoise
+option.SHARPENING_DENOISE.comment=Decrease the noise caused by sharpening
+option.SHARPENING_SRENGTH=Sharpening strength
+option.SHARPENING_LIMIT=Sharpening limit
+option.SHARPENING_LIMIT.comment=Limit of change in sharpening, to avoid unnatural result
 
 # Weather
 option.RAIN_PUDDLE=Rain puddle
