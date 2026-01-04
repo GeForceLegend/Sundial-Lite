@@ -103,7 +103,7 @@ vec3 FidelityFX_RCAS(sampler2D colortex, vec2 coord, vec2 pixelSize) {
     float lobeB   = max(-hitMinB, hitMaxB);
     float lobe    = max(-SHARPENING_LIMIT, min(max3(lobeR, lobeG, lobeB), 0.0)) * SHARPENING_SRENGTH;
     // Apply noise removal.
-    #ifdef FSR_RCAS_DENOISE
+    #ifdef SHARPENING_DENOISE
         lobe *= nz;
     #endif
     float rcpL = 1.0 / (4.0 * lobe + 1.0);
