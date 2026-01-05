@@ -158,24 +158,16 @@ float getDepthConfidenceFactor(vec3 coord, vec3 velocity) {
     return depthDiffFactor;
 }
 
-float circleOfConfusionRadius(vec2 coord, float sampleDepth, float focusDepth) {
+float circleOfConfusionRadius(float sampleDepth, float focusDepth) {
     float circleRadius = 1.0;
-    float materialID = textureLod(colortex0, coord, 0.0).z;
-    float viewDepth = screenToViewDepth(sampleDepth);
-    if (abs(materialID * 255.0 - MAT_HAND) < 0.4) {
+    if (sampleDepth < 0.0) {
         #ifdef HAND_DOF
-            #ifdef CORRECT_DOF_HAND_DEPTH
-                float handDepth = sampleDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
-                if (abs(handDepth - 0.5) < 0.5) {
-                    viewDepth = screenToViewDepth(handDepth);
-                }
-            #endif
-            viewDepth = min(focusDepth, viewDepth);
+            sampleDepth = min(focusDepth, sampleDepth);
         #else
             circleRadius = 0.0;
         #endif
     }
-    circleRadius *= (viewDepth - focusDepth) / (viewDepth * (focusDepth - FOCAL_LENGTH)) * APERTURE_DIAMETER_SCALE / MAX_BLUR_RADIUS;
+    circleRadius *= (abs(sampleDepth) - focusDepth) / (abs(sampleDepth) * (focusDepth - FOCAL_LENGTH)) * APERTURE_DIAMETER_SCALE / MAX_BLUR_RADIUS;
     return circleRadius;
 }
 
@@ -190,8 +182,8 @@ void main() {
 
     ivec2 texel = ivec2(gl_FragCoord.st);
     vec4 centerData = texelFetch(colortex3, texel, 0);
-    float centerDepth = textureLod(DOF_DEPTH_TEXTURE, texcoord, 0.0).x;
-    float centerCoC = circleOfConfusionRadius(texcoord, centerDepth, focusDepth);
+    float centerDepth = uintBitsToFloat(textureLod(colortex6, texcoord, 0.0).x);
+    float centerCoC = circleOfConfusionRadius(centerDepth, focusDepth);
     float sampleRadius = clamp(abs(centerCoC), 0.0, 1.0);
 
     #ifdef DEPTH_OF_FIELD
@@ -207,10 +199,10 @@ void main() {
         for (int i = 0; i < COC_SPREAD_SAMPLES; i++) {
             float radius = radius2 * inversesqrt(radius2);
             vec2 sampleCoord = texcoord + texelSize * radius * angle;
-            float sampleDepth = textureLod(DOF_DEPTH_TEXTURE, sampleCoord, 0.0).x;
+            float sampleDepth = uintBitsToFloat(textureLod(colortex6, sampleCoord, 0.0).x);
             angle = goldenRotate * angle;
             radius2 += 1.0 / COC_SPREAD_SAMPLES;
-            float sampleCoC = clamp(abs(circleOfConfusionRadius(sampleCoord, sampleDepth, focusDepth)), 0.0, 1.0);
+            float sampleCoC = clamp(abs(circleOfConfusionRadius(sampleDepth, focusDepth)), 0.0, 1.0);
             if (sampleCoC > radius && sampleDepth <= centerDepth) {
                 sampleRadius = max(sampleRadius, sampleCoC);
                 if (abs(centerCoC) < sampleCoC - radius) {

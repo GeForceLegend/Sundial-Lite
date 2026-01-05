@@ -430,7 +430,7 @@ void main() {
     #endif
 
     texBuffer0 = reflectionData;
-    texBuffer3 = solidColor;
+    texBuffer3 = vec4(solidColor.rgb, 1.0);
 }
 
 /* DRAWBUFFERS:03 */
