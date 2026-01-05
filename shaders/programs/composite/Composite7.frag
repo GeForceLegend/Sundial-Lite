@@ -97,19 +97,17 @@ float getClosestDepth(vec2 coord) {
     return closest;
 }
 
-vec3 calculateVelocity(vec3 coord, ivec2 texel, float materialID) {
+vec3 calculateVelocity(vec3 coord, ivec2 texel, float materialID, float parallaxOffset) {
     vec3 view = coord;
-    float parallaxOffset = texelFetch(colortex2, texel, 0).w * PARALLAX_DEPTH * 0.2;
     vec3 geoNormal = decodeNormal(texelFetch(colortex1, texel, 0).zw);
     if (materialID == MAT_HAND) {
         view = projectionToViewPos(view * 2.0 - 1.0);
-        view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
         #ifndef TEMPORAL_IGNORE_HAND_ANIMATION
+            view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
             view -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
             view += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
+            view -= view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
         #endif
-
-        view -= view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
         view = viewToProjectionPos(view);
         view = view * 0.5 + 0.5;
     }
@@ -221,7 +219,7 @@ void main() {
     vec3 closest = vec3(texcoord, closestDepth);
 
     float materialID = round(texelFetch(colortex0, texel, 0).b * 255.0);
-    vec3 velocity = calculateVelocity(closest, texel, materialID);
+    vec3 velocity = calculateVelocity(closest, texel, materialID, centerData.w * PARALLAX_DEPTH * 0.2);
     velocity = velocity * clamp(0.5 * inversesqrt(dot(velocity.st, velocity.st) + 1e-7), 0.0, 1.0);
 
     float blendWeight = 1.0;
