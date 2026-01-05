@@ -20,6 +20,7 @@ layout(location = 0) out uint texBuffer6;
 
 in vec2 texcoord;
 
+// #define PARALLAX_DOF
 #define DOF_DEPTH_TEXTURE depthtex1 // [depthtex0 depthtex1]
 
 #include "/settings/GlobalSettings.glsl"
@@ -37,13 +38,21 @@ void main() {
             screenDepth = handDepth;
         }
     #endif
-    float viewDepth = screenToViewDepth(screenDepth) * (1.0 - 2.0 * float(isHand));
+    vec3 viewPos;
     #ifdef LOD
         if (screenDepth == 1.0) {
-            viewDepth = screenToViewDepthLod(getLodDepthWater(texcoord));
-        }
+            viewPos = screenToViewPosLod(texcoord, getLodDepthWater(texcoord));
+        } else
     #endif
-    texBuffer6 = floatBitsToUint(viewDepth);
+    {
+        viewPos = screenToViewPos(texcoord, screenDepth) * (1.0 - 2.0 * float(isHand));
+        #ifdef PARALLAX_DOF
+            float parallaxOffset = texelFetch(colortex3, texel, 0).w * 0.2 * PARALLAX_DEPTH;
+            vec3 normal = getGeoNormalTexel(texel);
+            viewPos += viewPos * parallaxOffset / max(1e-5, -dot(viewPos, normal));
+        #endif
+    }
+    texBuffer6 = floatBitsToUint(-viewPos.z);
 }
 
 /* DRAWBUFFERS:6 */

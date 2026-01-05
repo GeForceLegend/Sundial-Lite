@@ -255,6 +255,11 @@ vec3 getNormalTexel(ivec2 texel) {
     return decodeNormal(rawData);
 }
 
+vec3 getGeoNormalTexel(ivec2 texel) {
+    vec2 rawData = texelFetch(colortex1, texel, 0).zw;
+    return decodeNormal(rawData);
+}
+
 void getBothNormalsTexel(ivec2 texel, out vec3 normal, out vec3 geoNormal) {
     vec4 rawData = texelFetch(colortex1, texel, 0);
     normal = decodeNormal(rawData.xy);

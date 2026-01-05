@@ -330,13 +330,13 @@ void main() {
                     gbufferData.depth = 1.0 - gbufferData.depth;
                 }
             }
-            #ifdef LABPBR_F0
-                n = mix(n, vec3(f0ToIor(gbufferData.metalness)), vec3(clamp(gbufferData.metalness * 1e+10, 0.0, 1.0)));
-                hardcodedMetal(gbufferData.metalness, n, k);
-                gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
-            #endif
 
             if (reflectionStrength > 1e-5) {
+                #ifdef LABPBR_F0
+                    n = mix(n, vec3(f0ToIor(gbufferData.metalness)), vec3(clamp(gbufferData.metalness * 1e+10, 0.0, 1.0)));
+                    hardcodedMetal(gbufferData.metalness, n, k);
+                    gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
+                #endif
                 reflectionColor = reflection(gbufferData, n, k, reflectionStrength);
             }
         }
