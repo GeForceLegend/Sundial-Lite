@@ -40,23 +40,20 @@ mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 texture
     vec3 dPosDX = dFdx(position);
     vec3 dPosDY = dFdy(position);
 
-    vec3 normal = normalize(cross(dPosDX, dPosDY));
+    vec3 normal = cross(dPosDX, dPosDY);
 
-    vec3 dPosPerpX = cross(normal, dPosDX);
-    vec3 dPosPerpY = cross(dPosDY, normal);
+    vec3 tangentHelper = dPosDY * dCoordDX.x - dPosDX * dCoordDY.x;
+    vec3 tangent = cross(tangentHelper, normal) / dot(tangentHelper, tangentHelper);
 
-    dPosPerpX /= dot(dPosDY, dPosPerpX);
-    dPosPerpY /= dot(dPosDX, dPosPerpY);
-
-    vec3 tangent = dPosPerpY * dCoordDX.x + dPosPerpX * dCoordDY.x;
-    vec3 bitangent = dPosPerpY * dCoordDX.y + dPosPerpX * dCoordDY.y;
+    vec3 bitangentHelper = dPosDY * dCoordDX.y - dPosDX * dCoordDY.y;
+    vec3 bitangent = cross(bitangentHelper, normal) / dot(bitangentHelper, bitangentHelper);
 
     float tangentLen = inversesqrt(dot(tangent, tangent));
     float bitangentLen = inversesqrt(dot(bitangent, bitangent));
 
     textureScale = vec2(tangentLen, bitangentLen);
 
-    return mat3(tangent * tangentLen, bitangent * bitangentLen, normal);
+    return mat3(tangent * tangentLen, bitangent * bitangentLen, normalize(normal));
 }
 
 void main() {
@@ -73,7 +70,7 @@ void main() {
     if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
         fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
     }
-    vec2 pixelScale = albedoTexelSize * textureScale;
+    vec2 pixelScale = albedoTexelSize / textureScale;
     vec2 quadSize = 1.0 / fixedCoordRange.zw;
 
     float parallaxOffset = 0.0;
@@ -85,7 +82,7 @@ void main() {
         #endif
         {
             vec3 textureViewer = viewPos * tbnMatrix;
-            textureViewer.xy /= textureScale;
+            textureViewer.xy *= textureScale;
             #ifdef VOXEL_PARALLAX
                 texcoord = perPixelParallax(texlmcoord.st, textureViewer, albedoTexSize, albedoTexelSize, fixedCoordRange, parallaxTexNormal, parallaxOffset);
             #else
