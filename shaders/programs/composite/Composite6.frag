@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  DoF stage 1: CoC spread; TAA stage 1: velocity and blend weight
+//  DoF stage 1: Prepare depth texture for DOF
 //
 
 layout(location = 0) out uint texBuffer6;
@@ -33,7 +33,7 @@ void main() {
     bool isHand = abs(materialID * 255.0 - MAT_HAND) < 0.4;
     #ifdef CORRECT_DOF_HAND_DEPTH
         float handDepth = centerDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
-        if (isHand) {
+        if (isHand && abs(handDepth - 0.5) < 0.5) {
             centerDepth = handDepth;
         }
     #endif

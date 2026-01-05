@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  DoF stage 1: CoC spread; TAA stage 1: velocity and blend weight
+//  DoF stage 2: CoC spread; TAA stage 1: velocity and blend weight
 //
 
 #extension GL_ARB_gpu_shader5 : enable

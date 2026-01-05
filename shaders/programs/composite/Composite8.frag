@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  DoF stage 2: sample
+//  DoF stage 3: sample
 //
 
 layout(location = 0) out vec4 texBuffer3;
