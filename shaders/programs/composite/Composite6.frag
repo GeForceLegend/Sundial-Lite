@@ -28,16 +28,22 @@ in vec2 texcoord;
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
-    float centerDepth = textureLod(DOF_DEPTH_TEXTURE, texcoord, 0.0).x;
+    float screenDepth = textureLod(DOF_DEPTH_TEXTURE, texcoord, 0.0).x;
     float materialID = texelFetch(colortex0, texel, 0).z;
     bool isHand = abs(materialID * 255.0 - MAT_HAND) < 0.4;
     #ifdef CORRECT_DOF_HAND_DEPTH
-        float handDepth = centerDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+        float handDepth = screenDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
         if (isHand && abs(handDepth - 0.5) < 0.5) {
-            centerDepth = handDepth;
+            screenDepth = handDepth;
         }
     #endif
-    texBuffer6 = floatBitsToUint(screenToViewDepth(centerDepth) * (1.0 - 2.0 * float(isHand)));
+    float viewDepth = screenToViewDepth(screenDepth) * (1.0 - 2.0 * float(isHand));
+    #ifdef LOD
+        if (screenDepth == 1.0) {
+            viewDepth = screenToViewDepthLod(getLodDepthWater(texcoord));
+        }
+    #endif
+    texBuffer6 = floatBitsToUint(viewDepth);
 }
 
 /* DRAWBUFFERS:6 */
