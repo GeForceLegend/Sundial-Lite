@@ -430,7 +430,7 @@ void main() {
         lightColor *= gbufferData.albedo.rgb;
         colorData.rgb += lightColor;
     }
-    texBuffer3 = colorData;
+    texBuffer3 = vec4(colorData.rgb, 1.0);
     texBuffer5 = currData;
 }
 

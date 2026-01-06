@@ -21,13 +21,13 @@
 layout(location = 0) out vec4 texBuffer3;
 layout(location = 1) out uint texBuffer6;
 
+in vec2 texcoord;
+
 #ifdef SHADOW_AND_SKY
     in vec3 skyColorUp;
 #else
     const vec3 skyColorUp = vec3(0.0);
 #endif
-
-in vec2 texcoord;
 
 uniform vec3 viewShadowDirection;
 
