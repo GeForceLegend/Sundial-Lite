@@ -28,14 +28,10 @@ layout(location = 12) in vec4 at_tangent;
 #endif
 
 out vec4 color;
-out vec4 viewPos;
 out vec4 texlmcoord;
-out vec3 mcPos;
-out vec3 worldNormal;
-out mat3 tbnMatrix;
+out vec3 viewPos;
 
-flat out float isEmissive;
-flat out float materialID;
+flat out int materialID;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -52,13 +48,12 @@ void main() {
         physics_localWaviness = texelFetch(physics_waviness, ivec2(gl_Vertex.xz) - physics_textureOffset, 0).r;
         physics_localPosition = gl_Vertex.xyz + vec3(0.0, physics_waveHeight(gl_Vertex.xz, PHYSICS_ITERATIONS_OFFSET, physics_localWaviness, physics_gameTime), 0.0);
 
-        viewPos = gl_ModelViewMatrix * vec4(physics_localPosition, 1.0);
+        viewPos = (gl_ModelViewMatrix * vec4(physics_localPosition, 1.0)).xyz;
     #else
-        viewPos = gl_ModelViewMatrix * gl_Vertex;
+        viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
     #endif
-    mcPos = (gbufferModelViewInverse * viewPos).xyz + cameraPosition;
 
-    gl_Position = gl_ProjectionMatrix * viewPos;
+    gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
 
     color = gl_Color;
     texlmcoord.st = gl_MultiTexCoord0.st;
@@ -67,30 +62,14 @@ void main() {
         texlmcoord.pq = clamp(gl_MultiTexCoord1.st / 232.0 - 8.0 / 232.0, 0.0, 1.0);
     #endif
 
-    isEmissive = clamp(float(max(0, int(mc_Entity.x)) & 0x7000) - 16384.0, 0.0, 1.0);
-    materialID = MAT_DEFAULT;
-
-    if (mc_Entity.x < -0.5) {
-        // Used for MOD_LIGHT_DETECTION
-        materialID = -1.0;
-    }
-    if (mc_Entity.x == 8192) {
-        materialID = MAT_WATER;
-    }
-
+    materialID = int(mc_Entity.x);
     #ifdef MOD_WATER_DETECTION
         if (dot(gl_Color.rgb, vec3(1.0)) < 2.999 && mc_Entity.x < -0.5) {
-            materialID = MAT_WATER;
+            materialID = 8192;
         }
     #endif
 
     #ifdef TAA
         gl_Position.xy += taaOffset * gl_Position.w;
     #endif
-
-    worldNormal = gl_Normal;
-    vec3 normal = normalize(gl_NormalMatrix * gl_Normal);
-    vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
-    vec3 bitangent = normalize(cross(tangent, normal) * at_tangent.w);
-    tbnMatrix = mat3(tangent, bitangent, normal);
 }

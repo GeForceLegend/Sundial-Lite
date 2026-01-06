@@ -23,14 +23,10 @@ layout(location = 1) out vec4 gbufferData1;
 layout(location = 2) out vec4 gbufferData2;
 
 in vec4 color;
-in vec4 viewPos;
 in vec4 texlmcoord;
-in vec3 mcPos;
-in vec3 worldNormal;
-in mat3 tbnMatrix;
+in vec3 viewPos;
 
-flat in float isEmissive;
-flat in float materialID;
+flat in int materialID;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -45,6 +41,26 @@ flat in float materialID;
     in float physics_localWaviness;
 #endif
 
+mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 textureScale) {
+    vec3 dPosDX = dFdx(position);
+    vec3 dPosDY = dFdy(position);
+
+    vec3 normal = cross(dPosDX, dPosDY);
+
+    vec3 tangentHelper = dPosDY * dCoordDX.x - dPosDX * dCoordDY.x;
+    vec3 tangent = cross(tangentHelper, normal) / dot(tangentHelper, tangentHelper);
+
+    vec3 bitangentHelper = dPosDY * dCoordDX.y - dPosDX * dCoordDY.y;
+    vec3 bitangent = cross(bitangentHelper, normal) / dot(bitangentHelper, bitangentHelper);
+
+    float tangentLen = inversesqrt(dot(tangent, tangent));
+    float bitangentLen = inversesqrt(dot(bitangent, bitangent));
+
+    textureScale = vec2(tangentLen, bitangentLen);
+
+    return mat3(tangent * tangentLen, bitangent * bitangentLen, normalize(normal));
+}
+
 void main() {
     #ifdef PHYSICS_OCEAN
         WavePixelData physics_waveData = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
@@ -52,6 +68,11 @@ void main() {
     GbufferData rawData;
     vec2 texcoord = texlmcoord.st;
     vec4 albedoData = texture(gtexture, texcoord);
+
+    vec2 texGradX = dFdx(texlmcoord.st);
+    vec2 texGradY = dFdy(texlmcoord.st);
+    vec2 textureScale;
+    mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, textureScale);
 
     rawData.albedo = albedoData * color;
     rawData.lightmap = texlmcoord.pq;
@@ -61,7 +82,7 @@ void main() {
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;
     rawData.emissive = 0.0;
-    rawData.materialID = materialID;
+    rawData.materialID = MAT_DEFAULT + MAT_WATER * float(materialID == 8192);
     rawData.parallaxOffset = 0.0;
     rawData.depth = 0.0;
 
@@ -70,6 +91,7 @@ void main() {
         SPECULAR_FORMAT(rawData, specularData);
     #endif
 
+    float isEmissive = clamp(float(max(0, materialID) & 0x7000) - 16384.0, 0.0, 1.0);
     rawData.smoothness += step(rawData.smoothness, 1e-3) * (1.0 - isEmissive);
 
     #ifndef SPECULAR_EMISSIVE
@@ -82,7 +104,7 @@ void main() {
 
     #ifdef MOD_LIGHT_DETECTION
         if (texlmcoord.p > 0.99999) {
-            rawData.emissive += step(rawData.emissive, 1e-3) * step(rawData.materialID, -0.5);
+            rawData.emissive += step(rawData.emissive, 1e-3) * step(materialID, -0.5);
         }
     #endif
 
@@ -92,6 +114,7 @@ void main() {
 
     float wetStrength = 0.0;
     if (rainyStrength > 0.0) {
+        vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
         if (rawData.materialID == MAT_WATER) {
             wetStrength = outdoor * clamp(abs(worldNormal.y) * 10.0 - 0.1, 0.0, 1.0);
@@ -121,10 +144,11 @@ void main() {
         #else
             vec4 normalData = vec4(0.5, 0.5, 1.0, 1.0);
         #endif
+        vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
         #if WATER_TYPE == 0
             if (rawData.materialID == MAT_WATER) {
                 rawData.albedo.rgb = color.rgb;
-                vec3 tangentDir = transpose(tbnMatrix) * viewPos.xyz;
+                vec3 tangentDir = viewPos.xyz * tbnMatrix;
                 rawData.normal = waterWave(mcPos / 32.0, tangentDir);
                 rawData.smoothness = 1.0;
                 rawData.metalness = 0.0;

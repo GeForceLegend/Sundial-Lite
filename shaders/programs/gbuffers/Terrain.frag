@@ -182,7 +182,6 @@ void main() {
     float wetStrength = 0.0;
     vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
     float viewDepthInv = inversesqrt(dot(viewPos, viewPos));
-    vec3 viewDir = viewPos * (-viewDepthInv);
     vec3 worldPos = viewToWorldPos(viewPos) + cameraPosition;
     if (rainyStrength > 0.0 && material != 8195 && rawData.materialID != MAT_GRASS) {
         float porosity = rawData.porosity * 255.0 / 64.0;
@@ -268,6 +267,7 @@ void main() {
         }
         rawData.normal = normalize(tbnMatrix * rawData.normal);
 
+        vec3 viewDir = viewPos * (-viewDepthInv);
         float NdotV = dot(rawData.normal, viewDir);
         vec3 edgeNormal = rawData.normal - viewDir * NdotV;
         float curveStart = dot(viewDir, tbnMatrix[2]);

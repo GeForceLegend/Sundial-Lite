@@ -228,7 +228,7 @@ void main() {
         float depthDiffFactor = getDepthConfidenceFactor(closest, velocity);
 
         blendWeight *= 0.95 - min(0.7, 4.0 * pow(dot(velocity.xy, velocity.xy), 0.25)) * step(closest.z, 0.999999);
-        blendWeight *= step(abs(floor(reprojectCoord.x)) + abs(floor(reprojectCoord.y)), 0.5);
+        blendWeight *= float(all(lessThan(abs(closest.st - vec2(0.5)), vec2(0.5))));
         blendWeight *= depthDiffFactor;
     #endif
 
