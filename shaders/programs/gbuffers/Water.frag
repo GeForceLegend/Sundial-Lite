@@ -113,6 +113,7 @@ void main() {
     #endif
 
     float wetStrength = 0.0;
+    vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
     if (rainyStrength > 0.0) {
         vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
@@ -144,7 +145,6 @@ void main() {
         #else
             vec4 normalData = vec4(0.5, 0.5, 1.0, 1.0);
         #endif
-        vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
         #if WATER_TYPE == 0
             if (rawData.materialID == MAT_WATER) {
                 rawData.albedo.rgb = color.rgb;
