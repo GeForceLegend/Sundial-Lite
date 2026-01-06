@@ -302,18 +302,23 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
             ivec2 sampleTexel = ivec2(sampleCoord * screenSize);
             float sampleDepth = uintBitsToFloat(texelFetch(colortex6, sampleTexel, 0).r);
             stepSize *= stepScale;
+            vec3 sampleViewPos = vec3(sampleCoord * 2.0 - 1.0, 1.0);
+            #ifdef TAA
+                sampleViewPos.xy -= taaOffset;
+            #endif
+            sampleViewPos.xy = vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * sampleViewPos.xy + gbufferProjectionInverse[3].xy;
+
             if (any(greaterThan(abs(sampleCoord - 0.5), vec2(0.5)))) {
                 break;
             }
-
             float isHand = float(sampleDepth > 1.0);
-            vec3 sampleViewPos;
             #ifdef LOD
                 if (sampleDepth < 0.0) {
                     if (sampleDepth == -1.0) {
                         continue;
                     }
-                    sampleViewPos = screenToViewPosLod(sampleCoord, -sampleDepth);
+                    sampleViewPos.z = projInvLod()[3].z;
+                    sampleViewPos /= projInvLod()[2].w * (-sampleDepth * 2.0 - 1.0) + projInvLod()[3].w;
                 }
             #else
                 if (sampleDepth == 1.0) {
@@ -321,14 +326,15 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
                 }
             #endif
             else {
-                sampleViewPos = screenToViewPos(sampleCoord, sampleDepth - isHand);
+                sampleViewPos.z = gbufferProjectionInverse[3].z;
+                sampleViewPos /= gbufferProjectionInverse[2].w * ((sampleDepth - isHand) * 2.0 - 1.0) + gbufferProjectionInverse[3].w;
             }
 
             vec3 deltaPosFront = sampleViewPos - originViewPos;
             vec3 deltaPosBack = deltaPosFront - viewDir * max(abs(sampleViewPos.z) * 0.1, 0.2);
 
             vec2 horCos = vec2(dot(deltaPosFront, viewDir) * inversesqrt(dot(deltaPosFront, deltaPosFront)),
-                                dot(deltaPosBack , viewDir) * inversesqrt(dot(deltaPosBack , deltaPosBack )));
+                               dot(deltaPosBack , viewDir) * inversesqrt(dot(deltaPosBack , deltaPosBack )));
 
             vec2 horAng = ACos(horCos);
 
