@@ -308,22 +308,6 @@ void main() {
         vec3 volumetricLight = vec3(0.0);
         #ifdef VOLUMETRIC_LIGHT
             if (isEyeInWater < 2) {
-                float waterDepth = textureLod(depthtex0, texcoord, 0.0).r;
-                vec3 waterViewPos;
-                #ifdef LOD
-                    if (waterDepth == 1.0) {
-                        waterDepth = getLodDepthWater(texcoord);
-                        waterViewPos = screenToViewPosLod(texcoord, waterDepth);
-                    } else
-                #endif
-                {
-                    waterViewPos = screenToViewPos(texcoord, waterDepth);
-                }
-                float waterViewDepth = length(waterViewPos);
-                vec3 waterWorldPos = mat3(gbufferModelViewInverse) * waterViewPos;
-                float waterWorldDistanceInv = inversesqrt(dot(waterViewPos, waterViewPos));
-                vec3 waterWorldDir = waterWorldDistanceInv * waterWorldPos;
-
                 float basicWeight = 1.0;
                 vec3 absorptionBeta = vec3(blindnessFactor + 0.003);
                 float LdotV = dot(waterWorldDir, shadowDirection);
@@ -352,10 +336,10 @@ void main() {
                 maxAllowedDistance = (maxAllowedDistance + 32.0) * inversesqrt(max(waterWorldDir.y * waterWorldDir.y, 0.5));
                 maxAllowedDistance = min(maxAllowedDistance, 5000.0 * exp(-6.0 * length(absorptionBeta)));
 
-                vec3 target = waterWorldPos * clamp(maxAllowedDistance * waterWorldDistanceInv, 0.0, 1.0);
-                vec3 stepSize = target / VL_SAMPLES;
+                float targetLength = min(maxAllowedDistance, waterViewDepthNoLimit);
+                float stepLength = targetLength / VL_SAMPLES;
+                vec3 stepSize = waterWorldDir * stepLength;
                 vec3 samplePos = gbufferModelViewInverse[3].xyz + stepSize * noise;
-                float stepLength = length(stepSize);
 
                 basicWeight *= stepLength;
                 absorptionBeta *= stepLength * 1.44269502;
