@@ -25,10 +25,9 @@ layout(location = 2) out vec4 gbufferData2;
 #endif
 
 in vec4 color;
-in vec4 viewPos;
 in vec4 texlmcoord;
-in vec3 mcPos;
 in vec4 coordRange;
+in vec3 viewPos;
 
 #define ENTITY_TEXTURE_RESOLUTION 16 // [4 8 16 32 64 128 256 512 1024 2048 4096 8192]
 
@@ -310,6 +309,7 @@ void main() {
                 rawData.albedo.rgb = pow(rawData.albedo.rgb, vec3(1.0 + porosityDarkness)) * (1.0 - 0.2 * porosityDarkness);
 
                 vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
+                vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
                 #if RAIN_PUDDLE == 0 || !defined USE_RAIN_PUDDLE
                 #elif RAIN_PUDDLE == 1
                     wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);

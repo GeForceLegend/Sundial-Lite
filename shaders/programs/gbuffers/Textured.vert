@@ -33,10 +33,9 @@ layout(location = 11) in vec4 mc_midTexCoord;
 // #define GLOWING_OVERLAY
 
 out vec4 color;
-out vec4 viewPos;
 out vec4 texlmcoord;
-out vec3 mcPos;
 out vec4 coordRange;
+out vec3 viewPos;
 
 #ifdef ENTITIES
     uniform vec4 entityColor;
@@ -50,13 +49,12 @@ uniform sampler2D gaux1;
 #include "/libs/Common.glsl"
 
 void main() {
-    viewPos = gl_ModelViewMatrix * gl_Vertex;
+    viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
     #ifdef HAND
-        viewPos.xyz *= 0.8;
+        viewPos *= 0.8;
     #endif
-    mcPos = (gbufferModelViewInverse * viewPos).xyz + cameraPosition;
 
-    gl_Position = gl_ProjectionMatrix * viewPos;
+    gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
     color = gl_Color;
     texlmcoord.st = vec2(gl_TextureMatrix[0] * gl_MultiTexCoord0);
     texlmcoord.pq = gl_MultiTexCoord1.st / 240.0;

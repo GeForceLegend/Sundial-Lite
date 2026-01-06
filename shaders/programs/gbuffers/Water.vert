@@ -18,13 +18,10 @@
 
 #if MC_VERSION >= 11700
 in vec4 mc_Entity;
-in vec4 at_tangent;
 #elif MC_VERSION >= 11500
 layout(location = 11) in vec4 mc_Entity;
-layout(location = 13) in vec4 at_tangent;
 #else
 layout(location = 10) in vec4 mc_Entity;
-layout(location = 12) in vec4 at_tangent;
 #endif
 
 out vec4 color;
