@@ -70,7 +70,7 @@ void main() {
     if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
         fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
     }
-    vec2 pixelScale = albedoTexelSize / textureScale;
+    vec2 pixelScale = albedoTexSize * textureScale;
     vec2 quadSize = 1.0 / fixedCoordRange.zw;
 
     float parallaxOffset = 0.0;

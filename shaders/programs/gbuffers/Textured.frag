@@ -208,11 +208,8 @@ void main() {
         if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
             fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
         }
-        int textureResolutionFixed = (floatBitsToInt(max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y)) & 0x7FC00000) >> 22;
-        textureResolutionFixed = ((textureResolutionFixed >> 1) + (textureResolutionFixed & 1)) - 0x0000007F;
-        textureResolutionFixed = 1 << textureResolutionFixed;
-        float parallaxScale = float(textureResolutionFixed) / ENTITY_TEXTURE_RESOLUTION;
-        vec2 pixelScale = albedoTexelSize * parallaxScale / textureScale;
+        float parallaxScale = ENTITY_TEXTURE_RESOLUTION / max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y);
+        vec2 pixelScale = albedoTexSize * textureScale * parallaxScale;
         vec2 quadSize = 1.0 / fixedCoordRange.zw;
         #if (defined ENTITY_PARALLAX && defined PARALLAX) || ANISOTROPIC_FILTERING_QUALITY > 0
             #ifdef ENTITY_PARALLAX
@@ -220,7 +217,7 @@ void main() {
                     float parallaxOffset = 0.0;
                     vec3 parallaxTexNormal = vec3(0.0, 0.0, 1.0);
                     vec3 textureViewer = -viewDir * tbnMatrix;
-                    textureViewer.xy *= textureScale / parallaxScale;
+                    textureViewer.xy *= textureScale * parallaxScale;
                     #ifdef VOXEL_PARALLAX
                         texcoord = perPixelParallax(
                             texcoord, textureViewer, albedoTexSize, albedoTexelSize, fixedCoordRange, parallaxTexNormal, parallaxOffset
@@ -228,7 +225,7 @@ void main() {
                     #else
                         texcoord = calculateParallax(texcoord, textureViewer, fixedCoordRange, quadSize, albedoTexSize, albedoTexelSize, parallaxOffset);
                     #endif
-                    rawData.parallaxOffset = clamp(parallaxOffset / parallaxScale, 0.0, 1.0);
+                    rawData.parallaxOffset = clamp(parallaxOffset * parallaxScale, 0.0, 1.0);
                 #endif
             #endif
         #endif

@@ -46,7 +46,7 @@ vec2 clampCoordRange(vec2 coord, vec4 coordRange) {
             sh.y * fpc.yx + (sh.w - sh.zx),
             (5.0 / PARALLAX_DEPTH)
         );
-        normal.xy /= pixelScale;
+        normal.xy *= pixelScale;
 
         return normal;
     }
