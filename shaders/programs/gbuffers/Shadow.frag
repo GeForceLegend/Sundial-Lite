@@ -86,6 +86,14 @@ void main() {
 	        albedo.rgb = mix(albedo.rgb, overlayColor.rgb, overlayColor.a);
         #endif
 
+        if (shadowOffset.y < -0.5) {
+            vec3 mcPos = color.xyz + cameraPosition;
+            mcPos.y += 128.0;
+            float floorMcHeight = floor(mcPos.y / 2.0);
+            float caustic = waterCaustic(mcPos, shadowDirection);
+            albedo = vec4(caustic, mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, 1.0);
+        }
+
         vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
         if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || fwidth(shadowOffset.x) > 0.0 || albedo.w < alphaTestRef) discard;
 
@@ -97,14 +105,6 @@ void main() {
             float offsetLength = signMul(pixelDistanceToFace / max(1e-5, abs(NdotL)), NdotL);
             gl_FragDepth = gl_FragCoord.z + offsetLength * shadowProjection[2].z * 0.1;
         #endif
-
-        if (shadowOffset.y < -0.5) {
-            vec3 mcPos = color.xyz + cameraPosition;
-            mcPos.y += 128.0;
-            float floorMcHeight = floor(mcPos.y / 2.0);
-            float caustic = waterCaustic(mcPos, shadowDirection);
-            albedo = vec4(caustic, mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, 1.0);
-        }
         shadowColor0 = albedo;
     #else
         discard;
