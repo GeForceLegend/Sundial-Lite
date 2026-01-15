@@ -243,7 +243,9 @@ void main() {
     {
         viewDepth = screenToViewDepth(screenDepth);
     }
-    finalColor = mix(bloomColor, finalColor, exp2(-weatherStrength * weatherStrength * (eyeBrightnessSmooth.y / 240.0) * RAIN_BLOOM_FOG_DENSITY * 0.03 * viewDepth));
+    #ifdef SHADOW_AND_SKY
+        finalColor = mix(bloomColor, finalColor, exp2(-weatherStrength * weatherStrength * (eyeBrightnessSmooth.y / 240.0) * RAIN_BLOOM_FOG_DENSITY * 0.03 * viewDepth));
+    #endif
     float weatherData = textureLod(colortex0, sampleCoord, 0.0).w * 2.5 - 1.5;
     float bloomAmount = 0.2 * BLOOM_INTENSITY + 1.0 * step(weatherData, -0.3) + 0.6 * step(0.5, float(isEyeInWater)) + step(1.5, float(isEyeInWater));
     finalColor = (finalColor + bloomColor * bloomAmount) / (1.0 + bloomAmount * 0.5);
