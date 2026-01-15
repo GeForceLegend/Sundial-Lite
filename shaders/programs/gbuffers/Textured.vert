@@ -50,9 +50,6 @@ uniform sampler2D gaux1;
 
 void main() {
     viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
-    #ifdef HAND
-        viewPos *= 0.8;
-    #endif
 
     gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
     color = gl_Color;
