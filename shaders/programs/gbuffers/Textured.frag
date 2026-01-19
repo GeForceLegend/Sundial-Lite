@@ -249,7 +249,7 @@ void main() {
             albedoData.rgb = mix(albedoData.rgb, overlayColor.rgb, overlayColor.a);
         #endif
 
-        if (albedoData.w < alphaTestRef) discard;
+        if (albedoData.w < max(0.001, alphaTestRef)) discard;
 
         rawData.albedo = albedoData;
         rawData.smoothness = 0.0;
