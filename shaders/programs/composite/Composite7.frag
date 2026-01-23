@@ -220,6 +220,7 @@ void main() {
 
     float materialID = round(texelFetch(colortex0, texel, 0).b * 255.0);
     vec3 velocity = calculateVelocity(closest, texel, materialID, centerData.w * PARALLAX_DEPTH * 0.2);
+    velocity = velocity * clamp(inversesqrt(dot(velocity.st, velocity.st)), 0.0, 1.0);
 
     float blendWeight = 1.0;
     #ifdef TAA
