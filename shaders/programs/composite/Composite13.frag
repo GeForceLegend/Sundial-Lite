@@ -23,7 +23,7 @@ layout(location = 0) out vec4 texBuffer4;
 
 /*
 const int colortex0Format = RGBA8;
-const int colortex1Format = RGBA16;
+const int colortex1Format = RGBA16_SNORM;
 const int colortex2Format = RGBA16;
 const int colortex3Format = RGBA16F;
 const int colortex4Format = RGBA16F;

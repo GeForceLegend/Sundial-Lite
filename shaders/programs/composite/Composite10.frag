@@ -103,7 +103,7 @@ void main() {
     texBuffer4 = vec4(calculateBloomBase(texcoord) * 6.0, 1.0);
     texBuffer3 = vec4(currColor, 1.0);
     #ifdef MOTION_BLUR
-        vec2 velocity = textureLod(colortex1, texcoord, 0.0).xy * 2.0 - 1.0;
+        vec2 velocity = textureLod(colortex1, texcoord, 0.0).xy;
         vec3 motionBlurColor = motionBlur(texcoord, velocity);
         texBuffer3.rgb = mix(currColor, motionBlurColor, vec3(clamp(length(velocity * screenSize) * 0.3, 0.0, 1.0)));
     #endif

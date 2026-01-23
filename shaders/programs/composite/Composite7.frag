@@ -232,7 +232,7 @@ void main() {
         blendWeight *= depthDiffFactor;
     #endif
 
-    texBuffer1 = vec4(velocity.st * 0.5 + 0.5, 0.0, blendWeight);
+    texBuffer1 = vec4(velocity.st, 0.0, blendWeight);
 }
 
 /* DRAWBUFFERS:134 */

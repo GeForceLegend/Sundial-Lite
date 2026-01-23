@@ -152,7 +152,7 @@ void main() {
     vec3 solidColor = texelFetch(colortex3, texel, 0).rgb;
 
     #ifdef TAA
-        solidColor = temporalAntiAliasing(texcoord, velocity.st * 2.0 - 1.0, solidColor, velocity.w);
+        solidColor = temporalAntiAliasing(texcoord, velocity.st, solidColor, velocity.w);
     #endif
     texBuffer3 = vec4(pow(clamp(solidColor * 0.1, 0.0, 1.0), vec3(2.2)) * 100.0, 1.0);
 }

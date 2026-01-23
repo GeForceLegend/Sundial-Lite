@@ -138,11 +138,10 @@ vec2 encodeNormal(vec3 normal) {
     float useInv = clamp(normal.z * -1e+10, 0.0, 1.0);
     vec2 normalInv = uintBitsToFloat(floatBitsToUint(vec2(1.0) - abs(normal.yx)) ^ (floatBitsToUint(normal.xy) & 0x80000000u));
     normal.xy = mix(normal.xy, normalInv, vec2(useInv));
-    return normal.xy * 0.5 + 0.5;
+    return normal.xy;
 }
 
 vec3 decodeNormal(vec2 data) {
-    data = data * 2.0 - 1.0;
     vec3 normal = vec3(data, 1.0 - abs(data.x) - abs(data.y));
     float useInv = clamp(normal.z * -1e+10, 0.0, 1.0);
     vec2 normalInv = uintBitsToFloat(floatBitsToUint(vec2(1.0) - abs(normal.yx)) ^ (floatBitsToUint(normal.xy) & 0x80000000u));
@@ -151,7 +150,6 @@ vec3 decodeNormal(vec2 data) {
 }
 
 void decodeNormals(vec4 rawData, inout vec3 normal, inout vec3 geoNormal) {
-    rawData = rawData * 2.0 - 1.0;
     vec2 normalZ = vec2(1.0) - abs(rawData.xz) - abs(rawData.yw);
     vec2 useInv = clamp(normalZ * -1e+10, vec2(0.0), vec2(1.0));
     vec4 normalInv = uintBitsToFloat(floatBitsToUint(vec4(1.0) - abs(rawData.yxwz)) ^ (floatBitsToUint(rawData) & 0x80000000u));
