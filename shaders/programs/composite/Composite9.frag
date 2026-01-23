@@ -148,7 +148,7 @@ vec3 temporalAntiAliasing(vec2 coord, vec2 velocity, vec3 currentColor, float bl
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
-    vec4 velocity = texelFetch(colortex1, texel, 0);
+    vec4 velocity = texelFetch(colortex5, texel, 0);
     vec3 solidColor = texelFetch(colortex3, texel, 0).rgb;
 
     #ifdef TAA

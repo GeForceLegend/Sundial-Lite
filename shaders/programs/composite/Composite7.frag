@@ -18,9 +18,9 @@
 
 #extension GL_ARB_gpu_shader5 : enable
 
-layout(location = 0) out vec4 texBuffer1;
-layout(location = 1) out vec4 texBuffer3;
-layout(location = 2) out vec4 texBuffer4;
+layout(location = 0) out vec4 texBuffer3;
+layout(location = 1) out vec4 texBuffer4;
+layout(location = 2) out vec4 texBuffer5;
 
 in float smoothCenterDepth;
 in vec2 texcoord;
@@ -220,7 +220,6 @@ void main() {
 
     float materialID = round(texelFetch(colortex0, texel, 0).b * 255.0);
     vec3 velocity = calculateVelocity(closest, texel, materialID, centerData.w * PARALLAX_DEPTH * 0.2);
-    velocity = velocity * clamp(0.5 * inversesqrt(dot(velocity.st, velocity.st) + 1e-7), 0.0, 1.0);
 
     float blendWeight = 1.0;
     #ifdef TAA
@@ -232,7 +231,7 @@ void main() {
         blendWeight *= depthDiffFactor;
     #endif
 
-    texBuffer1 = vec4(velocity.st, 0.0, blendWeight);
+    texBuffer5 = vec4(velocity.st * clamp(inversesqrt(dot(velocity.xy, velocity.xy)), 0.0, 1.0), 0.0, blendWeight);
 }
 
-/* DRAWBUFFERS:134 */
+/* DRAWBUFFERS:345 */
