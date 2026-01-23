@@ -232,7 +232,7 @@ void main() {
         blendWeight *= depthDiffFactor;
     #endif
 
-    texBuffer5 = vec4(velocity.st * clamp(inversesqrt(dot(velocity.xy, velocity.xy)), 0.0, 1.0), 0.0, blendWeight);
+    texBuffer5 = vec4(velocity.st, 0.0, blendWeight);
 }
 
 /* DRAWBUFFERS:345 */
