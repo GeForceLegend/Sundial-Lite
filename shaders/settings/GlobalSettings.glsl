@@ -18,7 +18,6 @@
         #define LABPBR_F0
         #define HARDCODED_METAL
         // #define LABPBR_TEXTURE_AO
-        
     // Normal and Parallax
     #ifdef MC_NORMAL_MAP
         // Normal
