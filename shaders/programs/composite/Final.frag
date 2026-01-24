@@ -109,11 +109,24 @@ vec3 FidelityFX_RCAS(sampler2D colortex, vec2 coord, vec2 pixelSize) {
     return (lobe * (colorB + colorD + colorF + colorH) + colorE) / (4.0 * lobe + 1.0);
 }
 
+#define ScreenOverlay 0 //[0 1]
+
 void main() {
     vec3 color = textureLod(colortex0, texcoord, 0.0).rgb;
     #ifdef FINAL_SHARPENING
         vec2 pixelSize = 1.0 / vec2(textureSize(colortex0, 0));
         color = FidelityFX_RCAS(colortex0, texcoord, pixelSize);
     #endif
+    
+    #if ScreenOverlay == 1
+    // 电影挡条 - 上下黑边效果
+    // 可以调整 LETTERBOX_RATIO 来改变黑边高度 (0.1 = 10%)
+    #define LETTERBOX_RATIO 0.2 // [0.05 0.1 0.15 0.2]
+    float letterboxSize = LETTERBOX_RATIO * 0.5;
+    if (texcoord.y < letterboxSize || texcoord.y > 1.0 - letterboxSize) {
+        color = vec3(0.0, 0.0, 0.0);
+    }
+    #endif
+    
     fragColor = vec4(color, 1.0);
 }

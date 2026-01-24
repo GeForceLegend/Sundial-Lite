@@ -44,8 +44,14 @@ screen.ModSupport=Mod支持
 screen.ModSupport.comment=自动检测Mod方块的属性
 screen.Experimental=实验性效果
 
+profile.MOVIEMODE=§a电影模式
+profile.offMOVIEMODE=§b默认
 option.EDIT=修改
 screen.Watersetting_new=水体
+option.ScreenOverlay=电影挡条
+value.ScreenOverlay.0=关
+value.ScreenOverlay.1=开
+option.LETTERBOX_RATIO=电影挡条比例
 
 # Texture
 option.ENTITY_TEXTURE_RESOLUTION=实体纹理分辨率

@@ -6,6 +6,8 @@
     #define WATER_WAVE_HEIGHT 0.9 // [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
     #define OCEAN_DRAG_MULT 0.22 // [0.1 0.2 0.3 0.4] 波浪拖拽系数
     #define OCEAN_WAVE_ITERATIONS 20 // [8 10 12 14 16 18 20] 八度叠加次数 
+    #define ScreenOverlay 0 // [0 1]
+    #define LETTERBOX_RATIO 0.2 // [0.05 0.1 0.15 0.2] 
 
 #define SETTINGS
 // Texture Settings
