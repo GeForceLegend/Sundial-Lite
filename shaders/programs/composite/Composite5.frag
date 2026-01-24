@@ -238,7 +238,8 @@ void main() {
         #endif
         const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
         vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * commonLightColor;
-        vanillaLight += blockLight;
+        vanillaLight += blockLight + BASIC_LIGHT;
+        vanillaLight += pow(texelFetch(colortex5, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
         solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * (gbufferData.emissive * PBR_BRIGHTNESS * PI + vanillaLight * isTargetParticle);
         #ifdef SHADOW_AND_SKY
             float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);
