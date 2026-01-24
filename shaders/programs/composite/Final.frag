@@ -22,13 +22,13 @@ in vec2 texcoord;
 
 #define FINAL_SHARPENING
 // #define SHARPENING_DENOISE
-#define SHARPENING_SRENGTH 0.5 // [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
+#define SHARPENING_SRENGTH 0.5 // [0.0, 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
 #define SHARPENING_LIMIT 0.18 // [0.0 0.02 0.04 0.06 0.08 0.1 0.12 0.14 0.16 0.18 0.2 0.22 0.24 0.26 0.28 0.3 0.32 0.34 0.36 0.38 0.4]
 
 #include "/libs/Uniform.glsl"
 
 // Copyright (C) 2025 Advanced Micro Devices, Inc.
-//
+// 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
 // in the Software without restriction, including without limitation the rights

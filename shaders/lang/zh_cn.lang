@@ -1,5 +1,6 @@
 # Sundial Language File : Simplified Chinese
 
+screen.MORESUPPORT=杂项
 screen.Texture=纹理
 screen.Texture.comment=纹理分辨率与PBR、法线、视差等
 screen.PlantWave=植物晃动
@@ -43,6 +44,9 @@ screen.ModSupport=Mod支持
 screen.ModSupport.comment=自动检测Mod方块的属性
 screen.Experimental=实验性效果
 
+option.EDIT=修改
+screen.Watersetting_new=水体
+
 # Texture
 option.ENTITY_TEXTURE_RESOLUTION=实体纹理分辨率
 option.ENTITY_TEXTURE_RESOLUTION.comment=将此选项调整为当前资源包的分辨率. 无法自动检测实体的纹理分辨率. 影响实体视差
@@ -64,14 +68,17 @@ option.PLANT_WAVE_STRENGTH=晃动强度
 option.PLANT_WAVE_SPEED=晃动速度
 option.PLANT_WAVE_RAIN_EXTRA_STRENGTH=雨天额外晃动强度
 # Water
+
 option.WATER_TYPE=水面样式
 value.WATER_TYPE.0=默认
 value.WATER_TYPE.1=原版
 option.CAULDRON_WAVE=炼药锅水波
 option.CAULDRON_WAVE.comment=在炼药锅内的水面上渲染水波. 需要将水面样式设为默认
-option.WATER_WAVE_SCALE=水波缩放
-option.WATER_WAVE_HEIGHT=水波高度
+option.WATER_WAVE_SCALE=水波缩放系数
+option.WATER_WAVE_HEIGHT=水波高度系数
 option.WATER_WAVE_SPEED=水波速度
+option.OCEAN_DRAG_MULT=波浪拖拽系数
+option.OCEAN_WAVE_ITERATIONS=波浪叠加系数
 # Normal
 option.NORMAL_STRENGTH=法线强度
 option.NORMAL_FORMAT=法线格式
@@ -407,7 +414,7 @@ option.TEMPORAL_IGNORE_HAND_ANIMATION=时间性累积忽略手部动画
 option.TEMPORAL_IGNORE_HAND_ANIMATION.comment=在时间性累积中忽略原版视角晃动的手部动画. 可能会提升有自定义手部动画的模组手持物品上的表现
 
 # Experimental
-option.AUTHOR=作者
+option.AUTHOR=原作者
 option.GLOWING_OVERLAY=发光实体遮罩
 option.GLOWING_OVERLAY.comment=让拥有发光效果的实体透过其他物体渲染. 会严重影响景深（DoF）
 option.UNDERGROUND_MODE=地底模式

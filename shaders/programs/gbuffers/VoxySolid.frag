@@ -65,12 +65,12 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     int commonEmissive = max(0, blockId) & 0x7000;
     float emissive = (
         float(blockId == 8195) +
-        float(blockId == 8198) * clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0) +
-        float(blockId == 8200) * clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0) +
-        float(blockId == 8197 || blockId == 8202) * clamp((0.8 * rawData.albedo.r - 1.2 * rawData.albedo.b) * dot(rawData.albedo.rgb, vec3(0.3333)), 0.0, 1.0) +
-        float(blockId == 8203) * float(pow2(rawData.albedo.r) > 0.3 * (pow2(rawData.albedo.b) + pow2(rawData.albedo.g)) + 0.3) +
-        float(blockId == 8204) * (clamp(2.0 * rawData.albedo.b - 4.5 * rawData.albedo.r, 0.0, 1.0) + clamp(2.0 * rawData.albedo.r - 3.0 * rawData.albedo.b, 0.0, 1.0)) +
-        float(blockId == 8205) * clamp(0.5 * rawData.albedo.b - 1.0 * rawData.albedo.r - 0.2, 0.0, 1.0) +
+        float(blockId == 8198) * clamp(2.0 * rawData.albedo.r - 1.5 * rawData.albedo.g, 0.0, 1.0) + 
+        float(blockId == 8200) * clamp(2.0 * rawData.albedo.b - 1.0 * rawData.albedo.r, 0.0, 1.0) + 
+        float(blockId == 8197 || blockId == 8202) * clamp((0.8 * rawData.albedo.r - 1.2 * rawData.albedo.b) * dot(rawData.albedo.rgb, vec3(0.3333)), 0.0, 1.0) + 
+        float(blockId == 8203) * float(pow2(rawData.albedo.r) > 0.3 * (pow2(rawData.albedo.b) + pow2(rawData.albedo.g)) + 0.3) + 
+        float(blockId == 8204) * (clamp(2.0 * rawData.albedo.b - 4.5 * rawData.albedo.r, 0.0, 1.0) + clamp(2.0 * rawData.albedo.r - 3.0 * rawData.albedo.b, 0.0, 1.0)) + 
+        float(blockId == 8205) * clamp(0.5 * rawData.albedo.b - 1.0 * rawData.albedo.r - 0.2, 0.0, 1.0) + 
         clamp(float(commonEmissive - 16384), 0.0, 1.0) * clamp(0.57 * length(rawData.albedo.rgb) + float(commonEmissive == 0x5000), 0.0, 1.0)
     );
     if (blockId == 8194) {
