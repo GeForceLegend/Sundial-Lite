@@ -1,3 +1,6 @@
+#Violet Shader (Sundial-Lite Edit)
+![Uploading violet.png…]()
+
 # Sundial Lite
 
 Sundial Lite is the free and open source version of Sundial. It's using [GNU General Public Licence 3.0](./LICENSE). For the full and paid version, visit [Aifadian](https://afdian.com/a/geforcelegend). For legit issues, I'll try avoid using platforms blocked by GFW like Patreon, so sorry for some users having issue signing in this site.
