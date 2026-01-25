@@ -235,7 +235,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
             reflectionColor = vec4(sampleLight, rayLength);
         }
         else {
-            float rayLength = far;
+            float rayLength = 114514.0;
             reflectionColor = vec4(vec3(0.0), rayLength);
             #ifdef SHADOW_AND_SKY
                 vec3 atmosphere;
