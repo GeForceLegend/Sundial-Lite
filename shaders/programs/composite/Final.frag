@@ -111,6 +111,32 @@ vec3 FidelityFX_RCAS(sampler2D colortex, vec2 coord, vec2 pixelSize) {
 
 #define ScreenOverlay 0 //[0 1]
 
+// 在屏幕中央绘制文字纹理
+vec4 drawTextFromTexture(vec2 uv, vec2 screenSize, int frameCounter) {
+    // 只在加载的前几帧显示 (前180帧，约3秒)
+    if (frameCounter > 180) return vec4(0.0);
+    
+    // 计算文字位置（屏幕偏左）- 固定大小，不随屏幕比例拉伸
+    vec2 textSize = vec2(0.5, 0.23); // 固定大小：宽度40%，高度13%
+    vec2 startPos = vec2(0.5, 0.5) - textSize * 0.5; // 往左移动（X从0.5改为0.35）
+    
+    // 检查当前像素是否在文字区域内
+    vec2 p = (uv - startPos) / textSize;
+    if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0) {
+        return vec4(0.0);
+    }
+    
+    // 从colortex9采样文字（在shaders.properties中定义为texture.composite.colortex9）
+    // 使用textureLod避免mipmap问题，并翻转Y轴修正上下颠倒
+    vec4 textColor = textureLod(colortex9, vec2(p.x, 1.0 - p.y), 0.0);
+    
+    // 修复透明度：确保文字在180帧后完全消失
+    float fade = 1.0 - smoothstep(0.0, 180.0, float(frameCounter));
+    
+    // 确保alpha不会累积残留，透明部分不显示
+    return vec4(textColor.rgb, textColor.a * fade);
+}
+
 void main() {
     vec3 color = textureLod(colortex0, texcoord, 0.0).rgb;
     #ifdef FINAL_SHARPENING
@@ -127,6 +153,10 @@ void main() {
         color = vec3(0.0, 0.0, 0.0);
     }
     #endif
+    
+    // 绘制Violet文字纹理
+    vec4 textOverlay = drawTextFromTexture(texcoord, screenSize, frameCounter);
+    color = mix(color, textOverlay.rgb, textOverlay.a);
     
     fragColor = vec4(color, 1.0);
 }
