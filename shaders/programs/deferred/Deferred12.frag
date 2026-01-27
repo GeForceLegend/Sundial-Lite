@@ -399,6 +399,12 @@ void main() {
         float viewLengthInv = inversesqrt(dot(viewPos, viewPos));
         // Merge some vec3s into floats to save registers
         float NdotV = clamp(dot(viewPos, -gbufferData.normal) * viewLengthInv, 0.0, 1.0);
+        vec3 plantSkyNormal = mat3(gbufferModelViewInverse) * gbufferData.normal;
+        if (gbufferData.materialID == MAT_GRASS) {
+            plantSkyNormal = vec3(0.0, 1.0, 0.0);
+        }
+        float skyLightStrength = pow(gbufferData.lightmap.y, 2.2) *
+            (plantSkyNormal.y * 0.3 + 0.6 + mix(dot(plantSkyNormal, sunDirection), dot(plantSkyNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
         #ifdef IS_IRIS
             vec3 worldPos = viewToWorldPos(viewPos);
             float eyeRelatedDistance = length(worldPos + relativeEyePosition);
@@ -415,13 +421,7 @@ void main() {
         const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
         vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * commonLightColor;
         lightColor += blockLight;
-        vec3 plantSkyNormal = mat3(gbufferModelViewInverse) * gbufferData.normal;
-        if (gbufferData.materialID == MAT_GRASS) {
-            plantSkyNormal = vec3(0.0, 1.0, 0.0);
-        }
-        lightColor +=
-            pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength) *
-            (plantSkyNormal.y * 0.3 + 0.6 + mix(dot(plantSkyNormal, sunDirection), dot(plantSkyNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
+        lightColor += skyLightStrength * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength);
         lightColor *= (1.0 - currData.w);
         #ifdef VBGI
             lightColor += currData.rgb;

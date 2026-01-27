@@ -329,8 +329,7 @@ void main() {
             #ifndef FULL_REFLECTION
                 diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
             #endif
-            float viewLength = inversesqrt(dot(viewPos, viewPos));
-            float NdotV = clamp(dot(viewPos, -gbufferData.normal) * viewLength, 0.0, 1.0);
+            float NdotV = clamp(dot(worldDir, -worldNormal), 0.0, 1.0);
             vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
 
             vec3 shadow = sunColor;
@@ -342,6 +341,7 @@ void main() {
                     gbufferData.metalness, NdotL, NdotV, n, k
                 );
             vec2 noise = blueNoiseTemporal(texcoord).xy;
+            float viewLength = inversesqrt(dot(viewPos, viewPos));
             #ifdef SCREEN_SPACE_SHADOW
                 shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, gbufferData.materialID);
             #endif
