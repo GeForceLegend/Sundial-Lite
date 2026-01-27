@@ -21,6 +21,7 @@ layout(location = 1) out vec4 gbufferData1;
 layout(location = 2) out vec4 gbufferData2;
 
 flat in vec4 color;
+in vec2 lmcoord;
 
 #include "/libs/Uniform.glsl"
 #include "/libs/GbufferData.glsl"
@@ -33,7 +34,7 @@ void main() {
     rawData.albedo = vec4(color.rgb, 1.0);
     rawData.normal = vec3(0.0, 0.0, 1.0);
     rawData.geoNormal = vec3(0.0, 0.0, 1.0);
-    rawData.lightmap = vec2(0.0);
+    rawData.lightmap = lmcoord;
     rawData.smoothness = 0.0;
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;

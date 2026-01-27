@@ -17,12 +17,14 @@
 //
 
 flat out vec4 color;
+out vec2 lmcoord;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 
 void main() {
     color = gl_Color;
+    lmcoord = gl_MultiTexCoord1.st / 240.0;
     gl_Position = ftransform();
 
     #ifdef TAA

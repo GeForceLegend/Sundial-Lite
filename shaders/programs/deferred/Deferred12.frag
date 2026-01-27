@@ -21,6 +21,12 @@ layout(location = 1) out vec4 texBuffer5;
 
 in vec2 texcoord;
 
+#ifdef SHADOW_AND_SKY
+    in vec3 skyColorUp;
+#else
+    const vec3 skyColorUp = vec3(0.0);
+#endif
+
 #define VB_TRACE_COUNT 1 // [1 2 3 4 5 6 7 8]
 #define VB_STEPS 16 // [4 6 8 12 16 20 24 32 40 48 64 80 96 112 128]
 #define VB_GI_LENGTH 514.0 // [64.0 80.0 96.0 114.0 128.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 514.0 640.0 768.0 896.0 1024.0 1280.0 1536.0 1792.0 2048.0]
@@ -409,6 +415,13 @@ void main() {
         const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
         vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * commonLightColor;
         lightColor += blockLight;
+        vec3 plantSkyNormal = mat3(gbufferModelViewInverse) * gbufferData.normal;
+        if (gbufferData.materialID == MAT_GRASS) {
+            plantSkyNormal = vec3(0.0, 1.0, 0.0);
+        }
+        lightColor +=
+            pow(gbufferData.lightmap.y, 2.2) * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength) *
+            (plantSkyNormal.y * 0.3 + 0.6 + mix(dot(plantSkyNormal, sunDirection), dot(plantSkyNormal, shadowDirection), clamp(-sunDirection.y * 10.0, 0.0, 1.0)) * 0.2);
         lightColor *= (1.0 - currData.w);
         #ifdef VBGI
             lightColor += currData.rgb;
