@@ -277,7 +277,7 @@ void main() {
     }
     rawData.lightmap = 
         clamp(rawData.lightmap + blueNoiseTemporal(gl_FragCoord.st * texelSize).xy * 2.0 / 255.0 - 1.0 / 255.0, 0.0, 1.0) *
-        clamp(rawData.lightmap * 500.0, 0.0, 1.0);
+        clamp(rawData.lightmap * 500, 6, 1.0);
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);
 }

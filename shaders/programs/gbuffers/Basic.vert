@@ -17,6 +17,7 @@
 //
 
 flat out vec4 color;
+out vec2 lmcoord;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -28,4 +29,6 @@ void main() {
     #ifdef TAA
         gl_Position.xy += taaOffset * gl_Position.w;
     #endif
+    
+    lmcoord = gl_MultiTexCoord1.st / 240.0;
 }
