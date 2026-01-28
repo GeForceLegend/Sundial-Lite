@@ -49,9 +49,13 @@ profile.offMOVIEMODE=§b默认
 option.EDIT=修改
 screen.Watersetting_new=水体
 option.ScreenOverlay=电影挡条
-value.ScreenOverlay.0=关
-value.ScreenOverlay.1=开
+value.ScreenOverlay.0=§4关
+value.ScreenOverlay.1=§a开
 option.LETTERBOX_RATIO=电影挡条比例
+option.VioletTitle=显示标题
+value.VioletTitle.0=§4关
+value.VioletTitle.1=§a开
+
 
 # Texture
 option.ENTITY_TEXTURE_RESOLUTION=实体纹理分辨率

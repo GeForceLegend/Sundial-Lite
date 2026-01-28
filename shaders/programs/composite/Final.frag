@@ -110,11 +110,11 @@ vec3 FidelityFX_RCAS(sampler2D colortex, vec2 coord, vec2 pixelSize) {
 }
 
 #define ScreenOverlay 0 //[0 1]
-
+#define VioletTitle 1 //[0 1]
 // 在屏幕中央绘制文字纹理
 vec4 drawTextFromTexture(vec2 uv, vec2 screenSize, int frameCounter) {
     // 只在加载的前几帧显示 (前180帧，约3秒)
-    if (frameCounter > 180) return vec4(0.0);
+    if (frameCounter > VioletTitle * 300) return vec4(0.0);
     
     // 计算文字位置（屏幕偏左）- 固定大小，不随屏幕比例拉伸
     vec2 textSize = vec2(0.5, 0.23); // 固定大小：宽度40%，高度13%
@@ -131,7 +131,7 @@ vec4 drawTextFromTexture(vec2 uv, vec2 screenSize, int frameCounter) {
     vec4 textColor = textureLod(colortex9, vec2(p.x, 1.0 - p.y), 0.0);
     
     // 修复透明度：确保文字在180帧后完全消失
-    float fade = 1.0 - smoothstep(0.0, 180.0, float(frameCounter));
+    float fade = 1.0 - smoothstep(0.0, VioletTitle * 300, float(frameCounter));
     
     // 确保alpha不会累积残留，透明部分不显示
     return vec4(textColor.rgb, textColor.a * fade);
@@ -145,8 +145,8 @@ void main() {
     #endif
     
     #if ScreenOverlay == 1
-    // 电影挡条 - 上下黑边效果
-    // 可以调整 LETTERBOX_RATIO 来改变黑边高度 (0.1 = 10%)
+    // 电影挡条
+    // LETTERBOX_RATIO
     #define LETTERBOX_RATIO 0.2 // [0.05 0.1 0.15 0.2]
     float letterboxSize = LETTERBOX_RATIO * 0.5;
     if (texcoord.y < letterboxSize || texcoord.y > 1.0 - letterboxSize) {
@@ -154,7 +154,7 @@ void main() {
     }
     #endif
     
-    // 绘制Violet文字纹理
+    // 绘制Violet
     vec4 textOverlay = drawTextFromTexture(texcoord, screenSize, frameCounter);
     color = mix(color, textOverlay.rgb, textOverlay.a);
     
