@@ -421,7 +421,9 @@ void main() {
         const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
         vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * commonLightColor;
         lightColor += blockLight;
-        lightColor += skyLightStrength * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength);
+        #ifdef SHADOW_AND_SKY
+            lightColor += skyLightStrength * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength);
+        #endif
         lightColor *= (1.0 - currData.w);
         #ifdef VBGI
             lightColor += currData.rgb;
