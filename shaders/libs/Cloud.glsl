@@ -203,11 +203,9 @@ vec4 sampleRealisticCloud(vec3 cloudPos, vec3 sunDir, vec3 atmosphere) {
             stepSize += CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
         }
         RdotP *= cloudDistance * 0.5;
-        vec2 c = inversesqrt(cloudDistance) * inversesqrt(scaledHeight);
         cloudDistance = cloudDistance2 * cloudDistance;
-        vec2 cExpH = c * exp2(earthScaledHeight - cloudDistance / scaledHeight * 1.44269502);
         vec3 sunlightStrength, moonlightStrength;
-        sampleInScatteringDoubleSide(cloudDistance * 1.44269502, c, cExpH, RdotP, sunlightStrength, moonlightStrength);
+        atmosphereAbsorptionDoubleSideLUT(cloudDistance, RdotP, sunlightStrength, moonlightStrength);
         RdotP *= abs(RdotP);
         sunlightStrength *= atmosphereAbsorption(RdotP, cloudDistance);
         moonlightStrength *= atmosphereAbsorption(-RdotP, cloudDistance);
@@ -483,12 +481,9 @@ vec4 planeClouds(vec3 worldPos, vec3 worldDir, vec3 sunDirection, vec3 skyColorU
             float cloudHeight2 = dot(relativeCloudPos, relativeCloudPos);
             float cloudHeightInv = inversesqrt(cloudHeight2);
             float LdotP = dot(sunDirection, relativeCloudPos) * cloudHeightInv;
-            float cloudHeight = cloudHeight2 * cloudHeightInv * 1.44269502;
-            vec2 c = inversesqrt(cloudHeightInv) * inversesqrt(scaledHeight);
-            vec2 currRelativeDensity = exp2(earthScaledHeight - cloudHeight / scaledHeight);
-            vec2 cExpH = c * currRelativeDensity;
+            float cloudHeight = cloudHeight2 * cloudHeightInv;
             vec3 sunlightStrength, moonlightStrength;
-            sampleInScatteringDoubleSide(cloudHeight, c, cExpH, LdotP, sunlightStrength, moonlightStrength);
+            atmosphereAbsorptionDoubleSideLUT(cloudHeight, LdotP, sunlightStrength, moonlightStrength);
 
             vec3 cloudColor = 10.0 * (sunlightStrength + moonlightStrength * nightBrightness) * SUNLIGHT_BRIGHTNESS;
             result = vec4(cloudColor, cloudDensity * cloudDensity);
