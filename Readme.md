@@ -13,3 +13,5 @@ Sundial Lite is using [visibility bitmask from shadertoy (CC0)](https://www.shad
 Optifine released after 04.12.2019 (1.8.9 L5) is supported.
 
 Iris above 1.7.0 may be supported with some artifacts, not tested yet.
+
+**Currently most latest Iris is not compatible due to [IrisShaders/Iris#3018](https://github.com/IrisShaders/Iris/issues/3018). If this is fixed, I'll remove this line.**
