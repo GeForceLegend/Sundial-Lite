@@ -58,8 +58,12 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
             vec3 shadowCoord = worldPosToShadowCoord(worldPos);
             NdotL = abs(dot(geoNormal, shadowDirection));
             NdotL = NdotL + (1.0 - NdotL) * clamp(porosity * 255.0 / 191.0 - 64.0 / 191.0, 0.0, 1.0);
+            shadow *= basicSunlight;
+            subsurfaceScattering *= basicSunlight;
             if (any(greaterThan(abs(shadowCoord - vec3(vec2(0.75), 0.5)), vec3(vec2(0.25), 0.5)))) {
-                shadow *= vec3(basicSunlight * smoothstep(0.8, 0.9, skyLight) * (normalFactor + (1.0 - normalFactor) * NdotL * step(64.5 / 255.0, porosity)));
+                skyLight = smoothstep(0.8, 0.9, skyLight);
+                shadow *= smoothstep(0.8, 0.9, skyLight) * normalFactor;
+                subsurfaceScattering *= smoothstep(0.8, 0.9, skyLight) * (1.0 - normalFactor) * NdotL * step(64.5 / 255.0, porosity);
             } else {
                 shadowCoord.z -= 4e-5;
                 float sssOffsetZ = sssShadowCoord.z - shadowCoord.z;
@@ -84,14 +88,17 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
                         vec3(sqrt(transparentShadowColor.w * 2.2 * 2.2 * 1.5))
                     );
                     float transparentShadowStrength = textureLod(shadowtex0, transparentShadowCoord, 0.0);
-                    shadow *= mix(transparentShadowColor.rgb, vec3(1.0), vec3(transparentShadowStrength));
+                    transparentShadowColor.rgb = mix(transparentShadowColor.rgb, vec3(1.0), vec3(transparentShadowStrength));
+                    shadow *= transparentShadowColor.rgb;
+                    subsurfaceScattering *= transparentShadowColor.rgb;
                 #endif
 
                 vec3 waterShadowCoord = shadowCoord - vec3(0.0, 0.5, 0.0);
                 vec3 caustic = waterCaustic(waterShadowCoord, worldPos, shadowDirection);
                 shadow *= caustic;
+                subsurfaceScattering *= caustic;
 
-                shadow *= lightFactor * basicSunlight;
+                shadow *= lightFactor;
             }
         }
     }
