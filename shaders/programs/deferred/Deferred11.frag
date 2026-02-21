@@ -259,11 +259,8 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         }
 
         screenSpaceShadow = clamp(mix(screenSpaceShadow, 1.0, shadowWeight), 0.0, 1.0);
-        if (absorption > 1.0) {
-            subsurfaceScattering *= screenSpaceShadow;
-        } else {
-            shadow *= screenSpaceShadow;
-        }
+        subsurfaceScattering *= screenSpaceShadow;
+        shadow *= screenSpaceShadow;
     }
 
     vec3 renderSun(vec3 rayDir, vec3 lightDir, vec3 sunLight) {
