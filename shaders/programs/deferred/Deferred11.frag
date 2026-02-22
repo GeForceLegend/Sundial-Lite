@@ -168,10 +168,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         }
     }
 
-    void screenSpaceShadow(
-        vec3 viewPos, float NdotL, float viewLength, float porosity, vec2 noise,
-        float materialID, inout vec3 shadow, inout vec3 subsurfaceScattering
-    ) {
+    float screenSpaceShadow(vec3 viewPos, float NdotL, float viewLength, float porosity, vec2 noise, float materialID) {
         vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos, -viewPos.z);
         originProjPos.z += gbufferProjection[3].z;
         originProjPos.xy += gbufferProjection[2].xy * viewPos.z;
@@ -199,7 +196,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         stepSize *= inversesqrt(dot(stepSize.xy, stepSize.xy));
         originCoord += stepSize * max(texelSize.x, texelSize.y) * 1.5;
 
-        float screenSpaceShadow = 1.0;
+        float shadow = 1.0;
         float stepScale = 1.0;
         float porosityScale = (1.0 - clamp(porosity - 0.25, 0.0, 1.0));
         stepSize *= 0.003 * 12.0 / SCREEN_SPACE_SHADOW_SAMPLES;
@@ -227,7 +224,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         sampleCoord.zw -= vec2(maximumThickness, maximumThicknessLod);
 
         for (int i = 0; i < SCREEN_SPACE_SHADOW_SAMPLES; i++) {
-            if (any(greaterThan(abs(sampleCoord.xy - 0.5), vec2(0.5))) || screenSpaceShadow < 0.01) {
+            if (any(greaterThan(abs(sampleCoord.xy - 0.5), vec2(0.5))) || shadow < 0.01) {
                 break;
             }
             float sampleDepth = textureLod(depthtex1, sampleCoord.st, 0.0).r;
@@ -254,13 +251,11 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                     hit = abs(sampleCoord.z - sampleDepth) < maximumThickness;
                 }
             }
-            screenSpaceShadow *= clamp(absorption - float(hit), 0.0, 1.0);
+            shadow *= clamp(absorption - float(hit), 0.0, 1.0);
             sampleCoord += stepSize;
         }
 
-        screenSpaceShadow = clamp(mix(screenSpaceShadow, 1.0, shadowWeight), 0.0, 1.0);
-        subsurfaceScattering *= screenSpaceShadow;
-        shadow *= screenSpaceShadow;
+        return clamp(mix(shadow, 1.0, shadowWeight), 0.0, 1.0);
     }
 
     vec3 renderSun(vec3 rayDir, vec3 lightDir, vec3 sunLight) {
@@ -347,17 +342,14 @@ void main() {
                 );
             vec2 noise = blueNoiseTemporal(texcoord).xy;
             float viewLength = inversesqrt(dot(viewPos, viewPos));
+            #ifdef SCREEN_SPACE_SHADOW
+                shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, gbufferData.materialID);
+            #endif
             #ifdef CLOUD_SHADOW
                 shadow *= cloudShadow(worldPos, shadowDirection);
             #endif
             vec3 subsurfaceScattering = vec3(float(gbufferData.porosity > 64.5 / 255.0)) * shadow * shadowDiffuse;
             shadow *= shadowDiffuse + shadowSpecular;
-            #ifdef SCREEN_SPACE_SHADOW
-                screenSpaceShadow(
-                    viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity,
-                    noise, gbufferData.materialID, shadow, subsurfaceScattering
-                );
-            #endif
             float shadowLightFactor = 1.0;
             #ifdef LIGHT_LEAKING_FIX
                 shadowLightFactor = clamp(gbufferData.lightmap.y * 10.0 + isEyeInWater, 0.0, 1.0);
