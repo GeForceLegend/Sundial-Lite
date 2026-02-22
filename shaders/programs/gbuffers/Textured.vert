@@ -76,7 +76,7 @@ void main() {
     coordRange = vec4(minCoord, coordSize);
 
     #ifdef ENTITIES
-        color.rgb = mix(color.rgb, entityColor.rgb, vec3(entityColor.a));
+        color.rgb *= mix(vec3(1.0), entityColor.rgb, vec3(entityColor.a));
     #endif
 
     #ifdef GLOWING
