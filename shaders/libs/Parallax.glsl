@@ -100,7 +100,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
             albedo.a += albedoSample.a;
             opaque = max(opaque, albedoSample.a);
         }
-        albedo.rgb *= clamp(1.0 / albedo.a, 0.0, 1.0);
+        albedo.rgb *= max(1.0 / albedo.a, 1e-5);
         albedo.a /= ANISOTROPIC_FILTERING_QUALITY;
         albedo.a = clamp(albedo.a + float(opaque > 0.999), 0.0, 1.0) * clamp(texture(gtexture, coord).a * 10.0, 0.0, 1.0);
     #else
