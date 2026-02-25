@@ -9,7 +9,7 @@
 //  \  \_____/  /     \  \____/  /    |  |    \    |   |  |_____/  /    __|  |__    |  |      |  |   |  |_________ 
 //   \_________/       \________/     |__|     \___|   |__________/    |________|   |__|      |__|   |____________|
 //
-//  General Public License v3.0. © 2021-Now GeForceLegend.
+//  General Public License v3.0. Copyright (C) 2026 GeForceLegend.
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
