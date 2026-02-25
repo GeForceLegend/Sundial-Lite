@@ -94,11 +94,9 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
                 #endif
 
                 vec3 waterShadowCoord = shadowCoord - vec3(0.0, 0.5, 0.0);
-                vec3 caustic = waterCaustic(waterShadowCoord, worldPos, shadowDirection);
+                vec3 caustic = waterCaustic(waterShadowCoord, worldPos, shadowDirection) * lightFactor;
                 shadow *= caustic;
                 subsurfaceScattering *= caustic;
-
-                shadow *= lightFactor;
             }
         }
     }
