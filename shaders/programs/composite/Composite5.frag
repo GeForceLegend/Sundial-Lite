@@ -224,7 +224,7 @@ void main() {
             waterStain = float(!isTargetWater);
         #endif
         stainedColor *= log2(1.0 - fresnel(LdotH, LdotH * LdotH, n));
-        stainedColor += sqrt(gbufferData.albedo.w * 1.5) * log2(gbufferData.albedo.rgb * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w)) * waterStain;
+        stainedColor += sqrt(gbufferData.albedo.w * 1.5) * log2(clamp(gbufferData.albedo.rgb + 1e-5, 0.0, 1.0) * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w)) * waterStain;
         stainedColor = exp2(stainedColor);
 
         stainedColor = mix(vec3(1.0), stainedColor, vec3(solidColor.w));
