@@ -267,7 +267,7 @@ void main() {
             }
         #endif
     }
-    solidColor.w = gbufferData.parallaxOffset;
+    solidColor.w = gbufferData.parallaxOffset - float(gbufferData.materialID == MAT_END_PORTAL);
     vec4 reflectionData = texelFetch(colortex4, texel, 0);
     solidColor.rgb += reflectionData.rgb * reflectionWeight;
     reflectionData.rgb = vec3(0.0, 0.0, gbufferData.materialID / 255.0 + 0.1 / 255.0);

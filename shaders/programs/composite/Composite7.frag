@@ -218,8 +218,8 @@ void main() {
     float closestDepth = getClosestDepth(texcoord);
     vec3 closest = vec3(texcoord, closestDepth);
 
-    float materialID = round(texelFetch(colortex0, texel, 0).b * 255.0);
-    vec3 velocity = calculateVelocity(closest, texel, materialID, centerData.w * PARALLAX_DEPTH * 0.2);
+    float materialID = 2.0 * clamp(centerDepth * -1e+10, 0.0, 1.0) + 4.0 * clamp(-centerData.w, 0.0, 1.0);
+    vec3 velocity = calculateVelocity(closest, texel, materialID, abs(centerData.w) * PARALLAX_DEPTH * 0.2);
     velocity = velocity * clamp(inversesqrt(dot(velocity.st, velocity.st)), 0.0, 1.0);
 
     float blendWeight = 1.0;
