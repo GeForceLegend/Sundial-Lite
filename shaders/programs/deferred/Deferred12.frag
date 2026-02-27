@@ -354,8 +354,8 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
             hor01 = hor01 * w0_remap_mul + w0_remap_add;
 
             uvec2 horInt = (floatBitsToUint(hor01 * 32.0 + 64.0) >> 17) & 0x3Fu;
-            uint mX = horInt.x < 32u ? 0xFFFFFFFFu <<        horInt.x  : 0u;
-            uint mY = horInt.y != 0u ? 0xFFFFFFFFu >> (32u - horInt.y) : 0u;
+            uint mX = 0xFFFFFFFFu << min(31u,       horInt.x);
+            uint mY = 0xFFFFFFFFu >> min(31u, 32u - horInt.y);
             uint occBits0 = mX & mY;
 
             uint visBits0 = occBits0 & (~occBits);
