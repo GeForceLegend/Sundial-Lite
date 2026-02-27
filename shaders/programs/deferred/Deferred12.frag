@@ -209,14 +209,13 @@ vec2 SamplePartialSliceDir(vec3 vvsN, float rnd01)
     return dir0;
 }
 
-vec2 SliceRelCDF_Cos(vec2 x, float angN, float cosN)
+vec2 SliceRelCDF_Cos(vec2 x, float angN, float t01, float t1)
 {
-    vec2 phi = x * PI - PI * 0.5;
+    vec2 phi = x * PI * 2.0 - PI;
 
-    vec2 t0 = 3.0 * cosN + -cos(angN - 2.0 * phi) + (4.0 * angN - 2.0 * phi + PI) * sin(angN);
-    float t1 = 4.0 * (cosN + angN * sin(angN));
+    vec2 t0 = -cos(angN - phi) - phi * sin(angN);
 
-    return mix(x, t0 / t1, step(abs(x - 0.5), vec2(0.5)));
+    return mix(x, t0 * t1 + t01, step(abs(x - 0.5), vec2(0.5)));
 }
 
 // transform v by unit quaternion q.xy0s
@@ -292,12 +291,13 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
         float cosN = dot(projN, viewDir) * projNRcpLen;
         float angN = signMul(ACos(cosN), dot(viewDir, T));
 
-        float angOff = angN / PI + 0.5;
-        float w0 = clamp((sin(angN) / (cos(angN) + angN * sin(angN))) * (PI/4.0) + 0.5, 0.0, 1.0);
+        float w0 = clamp((sin(angN) / (cosN + angN * sin(angN))) * (PI/4.0) + 0.5, 0.0, 1.0);
+        float t1 = 0.25 / (cosN + angN * sin(angN));
+        float t01 = (3.0 * cosN + (4.0 * angN + PI) * sin(angN)) * t1;
 
         // partial slice re-mapping constants
-        float w0_remap_mul = 1.0 / (1.0 - w0);
-        float w0_remap_add = -w0 * w0_remap_mul;
+        float w0_remap_mul = 32.0 / (1.0 - w0);
+        float w0_remap_add = -w0 * w0_remap_mul + 64.0;
 
         uint occBits = 0u;
         float stepSize = exp2(stepScale * noise.y);
@@ -345,15 +345,15 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
             vec2 horAng = ACos(horCos);
 
             // shift relative angles from V to N + map to [0,1]
-            vec2 hor01 = clamp(horAng / PI + angOff, 0.0, 1.0);
+            vec2 hor01 = clamp((horAng + angN) / PI + 0.5, 0.0, 1.0);
 
             // map to slice relative distribution
-            hor01 = SliceRelCDF_Cos(hor01, angN, cosN);
+            hor01 = SliceRelCDF_Cos(hor01, angN, t01, t1);
 
             // partial slice re-mapping
             hor01 = hor01 * w0_remap_mul + w0_remap_add;
 
-            uvec2 horInt = (floatBitsToUint(hor01 * 32.0 + 64.0) >> 17) & 0x3Fu;
+            uvec2 horInt = (floatBitsToUint(hor01) >> 17) & 0x3Fu;
             uint mX = 0xFFFFFFFFu << min(31u,       horInt.x);
             uint mY = 0xFFFFFFFFu >> min(31u, 32u - horInt.y);
             uint occBits0 = mX & mY;
