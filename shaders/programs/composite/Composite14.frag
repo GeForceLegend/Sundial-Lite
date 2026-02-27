@@ -54,7 +54,7 @@ vec2 bloomMipEdge(float level) {
 }
 
 vec2 floorMipEdge(vec2 coord, vec2 expEdge, uvec2 floorFactor) {
-    floorFactor << uvec2(lessThan(coord, expEdge));
+    floorFactor = floorFactor << uvec2(lessThan(coord, expEdge));
     return uintBitsToFloat(floatBitsToUint(coord) & floorFactor);
 }
 
@@ -76,7 +76,7 @@ vec3 calculateBloom(vec2 coord) {
     vec3 totalBloom = vec3(0.0);
     uvec2 screenSizeExp = floatBitsToUint(screenSize) >> 23;
     vec2 expEdge = uintBitsToFloat(floatBitsToUint(screenSize) & 0x7F800000u);
-    uvec2 floorFactor = 0u - (1u << (150u - screenSizeExp));
+    uvec2 floorFactor = uvec2(0u) - (uvec2(1u) << (150u - screenSizeExp));
     vec2 maxRange = bloomMipEdge(1.0);
     vec2 ceilMinRange = vec2(0.0);
     vec2 floorMaxRange = floorMipEdge(maxRange, expEdge, floorFactor);
