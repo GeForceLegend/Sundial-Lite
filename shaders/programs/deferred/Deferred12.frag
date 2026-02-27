@@ -337,7 +337,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
             }
 
             vec3 deltaPosFront = sampleViewPos - originViewPos;
-            vec3 deltaPosBack = deltaPosFront + sampleViewPos * inversesqrt(clamp(dot(sampleViewPos, sampleViewPos) * 0.5, 0.0, 1.0)) * 0.1;
+            vec3 deltaPosBack = deltaPosFront + sampleViewPos * inversesqrt(clamp(dot(sampleViewPos, sampleViewPos) * 0.25, 0.0, 1.0)) * 0.1;
 
             vec2 horCos = vec2(dot(deltaPosFront, viewDir) * inversesqrt(dot(deltaPosFront, deltaPosFront)),
                                dot(deltaPosBack , viewDir) * inversesqrt(dot(deltaPosBack , deltaPosBack )));
