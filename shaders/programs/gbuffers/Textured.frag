@@ -373,7 +373,7 @@ void main() {
                 float curveStart = dot(viewDir, rawData.geoNormal);
                 float weight = clamp(curveStart - curveStart * exp(NdotV / curveStart - 1.0), 0.0, 1.0);
                 weight = max(NdotV, curveStart) - weight;
-                rawData.normal = viewDir * weight + edgeNormal * inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight));
+                rawData.normal = viewDir * weight + edgeNormal * max(0.0, inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight)));
             }
         }
     }
