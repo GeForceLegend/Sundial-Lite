@@ -37,16 +37,6 @@ in vec2 texcoord;
 #include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
 
-vec3 directionDistribution(vec3 normal, vec2 randVec2) {
-    float randAngle = 6.2831853 * randVec2.x;
-    float randStrength = sqrt(randVec2.y);
-    float inversed = signI(normal.z);
-    vec3 tangentDirection = vec3(cos(randAngle) * randStrength, sin(randAngle) * randStrength, sqrt(1.0 - randVec2.y) * inversed);
-    vec3 reflectDirection = vec3(normal.xy, normal.z + inversed);
-    vec3 rayDirection = dot(tangentDirection, reflectDirection) * reflectDirection / abs(reflectDirection.z) - tangentDirection;
-    return rayDirection;
-}
-
 // https://graphics.stanford.edu/%7Eseander/bithacks.html#CountBitsSetParallel | license: public domain
 uint CountBits(uint v)
 {
