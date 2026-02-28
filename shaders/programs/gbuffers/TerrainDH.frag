@@ -83,6 +83,14 @@ void main() {
             rippleNormal = rainRippleNormal(viewPos);
             rippleNormal.xy *= viewDepthInv / (viewDepthInv + 0.1 * RIPPLE_FADE_SPEED);
             rawData.normal = mix(rawData.normal, tbnMatrix * rippleNormal, wetStrength);
+
+            vec3 viewDir = viewPos * (-viewDepthInv);
+            float NdotV = dot(rawData.normal, viewDir);
+            vec3 edgeNormal = rawData.normal - viewDir * NdotV;
+            float curveStart = dot(viewDir, tbnMatrix[2]);
+            float weight = clamp(curveStart - curveStart * exp(NdotV / curveStart - 1.0), 0.0, 1.0);
+            weight = max(NdotV, curveStart) - weight;
+            rawData.normal = viewDir * weight + edgeNormal * max(0.0, inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight)));
         #endif
     }
 
