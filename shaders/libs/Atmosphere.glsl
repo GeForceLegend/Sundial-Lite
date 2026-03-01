@@ -148,16 +148,15 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
     float atmosphereLength = atmosphereHeight - playerHeight;
     vec3 result = vec3(0.0);
     if (atmosphereLength > 0.0) {
-        vec2 prevRelativeDensity = exp2(earthScaledHeight - playerHeight / scaledHeight * 1.44269502);
+        vec2 originRelativeDensity = exp2(earthScaledHeight - playerHeight / scaledHeight * 1.44269502);
         vec3 originSunInScattering, originMoonInScattering;
         atmosphereAbsorptionDoubleSideLUT(playerHeight, lightHeight, originSunInScattering, originMoonInScattering);
 
-        vec3 prevSunRayleighInScattering = originSunInScattering * prevRelativeDensity.x;
-        vec3 prevSunMieInScattering = originSunInScattering * prevRelativeDensity.y;
-        vec3 prevMoonRayleighInScattering = originMoonInScattering * prevRelativeDensity.x;
-        vec3 prevMoonMieInScattering = originMoonInScattering * prevRelativeDensity.y;
+        vec3 prevSunRayleighInScattering = originSunInScattering * originRelativeDensity.x;
+        vec3 prevSunMieInScattering = originSunInScattering * originRelativeDensity.y;
+        vec3 prevMoonRayleighInScattering = originMoonInScattering * originRelativeDensity.x;
+        vec3 prevMoonMieInScattering = originMoonInScattering * originRelativeDensity.y;
 
-        vec2 opticalDepth = vec2(0.0);
         vec3 totalSunRayleighInScattering = vec3(0.0);
         vec3 totalSunMieInScattering = vec3(0.0);
         vec3 totalMoonRayleighInScattering = vec3(0.0);
@@ -176,25 +175,24 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
             vec3 currMoonInScattering;
             atmosphereAbsorptionDoubleSideLUT(sampleHeight, lightHeight, currSunInScattering, currMoonInScattering);
 
-            vec2 currRelativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight * 1.44269502);
+            vec2 sampleRelativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight * 1.44269502);
 
-            opticalDepth += (0.5 * 1.44269502 * stepLength) * (prevRelativeDensity + currRelativeDensity);
-            vec3 viewAbsorption = exp2(-opticalDepth.x * rayleighBeta - opticalDepth.y * rainyMieBeta);
+            vec2 viewOpticalDepth = 1.44269502 * scaledHeight * (originRelativeDensity - sampleRelativeDensity);
+            vec3 viewAbsorption = exp2(-viewOpticalDepth.x * rayleighBeta - viewOpticalDepth.y * rainyMieBeta);
             currSunInScattering *= viewAbsorption;
             currMoonInScattering *= viewAbsorption;
-            prevRelativeDensity = currRelativeDensity;
 
-            vec3 currSunRayleighInScattering = currSunInScattering * prevRelativeDensity.x;
+            vec3 currSunRayleighInScattering = currSunInScattering * sampleRelativeDensity.x;
             totalSunRayleighInScattering += stepLength * (prevSunRayleighInScattering + currSunRayleighInScattering);
             prevSunRayleighInScattering = currSunRayleighInScattering;
-            vec3 currSunMieInScattering = currSunInScattering * prevRelativeDensity.y;
+            vec3 currSunMieInScattering = currSunInScattering * sampleRelativeDensity.y;
             totalSunMieInScattering += stepLength * (prevSunMieInScattering + currSunMieInScattering);
             prevSunMieInScattering = currSunMieInScattering;
 
-            vec3 currMoonRayleighInScattering = currMoonInScattering * prevRelativeDensity.x;
+            vec3 currMoonRayleighInScattering = currMoonInScattering * sampleRelativeDensity.x;
             totalMoonRayleighInScattering += stepLength * (prevMoonRayleighInScattering + currMoonRayleighInScattering);
             prevMoonRayleighInScattering = currMoonRayleighInScattering;
-            vec3 currMoonMieInScattering = currMoonInScattering * prevRelativeDensity.y;
+            vec3 currMoonMieInScattering = currMoonInScattering * sampleRelativeDensity.y;
             totalMoonMieInScattering += stepLength * (prevMoonMieInScattering + currMoonMieInScattering);
             prevMoonMieInScattering = currMoonMieInScattering;
         }
