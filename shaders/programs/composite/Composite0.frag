@@ -285,7 +285,7 @@ vec4 reflection(GbufferData gbufferData, vec3 f0, vec3 f82, float firstWeight) {
             reflectionColor.rgb = snowFogTotal(reflectionColor.rgb, skyColorUp, reflectionColor.w, eyeBrightnessSmooth.y / 240.0);
         }
         reflectionColor.rgb = max(vec3(0.0), reflectionColor.rgb * brdfWeight);
-        reflectionColor.w /= far;
+        reflectionColor.w = min(2.0, reflectionColor.w / far);
     }
     return reflectionColor;
 }

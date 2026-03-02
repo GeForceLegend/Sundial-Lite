@@ -57,9 +57,9 @@ void main() {
                 float originReflectionDepth = originData.w;
                 float originSmoothness = gbufferData.smoothness;
                 if (originSmoothness < 0.9975 && originReflectionDepth > 1e-5) {
-                    float routhness = pow2(1.0 - originSmoothness);
-                    float roughnessInv = 100.0 / max(routhness, 1e-5);
-                    vec2 coordOffset = vec2(4.0 * clamp(routhness * 20.0, 0.0, 1.0) * (1.0 - exp(-sqrt(originReflectionDepth) * 50.0)));
+                    float roughness = pow2(1.0 - originSmoothness);
+                    float roughnessInv = 100.0 / max(roughness, 1e-5);
+                    vec2 coordOffset = vec2(4.0 * clamp(roughness * 20.0, 0.0, 1.0) * (1.0 - exp(-sqrt(originReflectionDepth) * 50.0)));
                     coordOffset *= blueNoiseTemporal(texcoord).x + 0.5;
 
                     vec3 accumulation = originData.rgb;
@@ -78,7 +78,7 @@ void main() {
                                 float weight =
                                     exp2(
                                         roughnessInv * log2(max(dot(gbufferData.normal, sampleNormal), 1e-6)) +
-                                        100.0 * log2(1.0 - abs(originSmoothness - sampleSmoothness)) -
+                                        100.0 * log2(1.0 - abs(roughness - pow2(1.0 - sampleSmoothness))) -
                                         1.44269502 * abs(originReflectionDepth - sampleReflectionDepth) / (max(originReflectionDepth, sampleReflectionDepth) + 0.2) * originSmoothness
                                     ) *
                                     step(sampleSmoothness, 0.9975);
