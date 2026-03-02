@@ -140,7 +140,7 @@ vec3 fresnel(float LdotH, vec3 f0) {
     return F_AdobeF82(f0, vec3(1.0), LdotH);
 }
 
-vec3 diffuseAbsorptionWeight(float NdotV, float smoothness, float metalness, vec3 f0, vec3 f82) {
+vec3 diffuseAbsorptionWeight(float NdotV, float smoothness, vec3 f0, vec3 f82) {
     vec3 F = F_AdobeF82(f0, f82, NdotV);
     F = 1.0 - F * pow(smoothness, 5.0);
     return F;
@@ -183,13 +183,7 @@ vec3 hardcodedMetal(float metalness) {
     return F82;
 }
 
-vec3 metalColor(vec3 albedo, float NdotV, float metalness, float smoothness) {
-    float f = pow(1.0 - NdotV, 6.0) * smoothness;
-    albedo = f + albedo - albedo * f;
-    return mix(vec3(1.0), albedo, vec3(metalness));
-}
-
-vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 albedo, float smoothness, float metalness, float NdotL, float NdotV, vec3 f0, vec3 f82) {
+vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, float smoothness, float NdotL, float NdotV, vec3 f0, vec3 f82) {
     float LdotV = dot(-viewDir, lightDir);
     float LdotH2 = LdotV * 0.5 + 0.5;
     float LdotHInv = inversesqrt(LdotH2);

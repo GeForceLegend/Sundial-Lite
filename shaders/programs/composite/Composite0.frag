@@ -46,7 +46,7 @@ in vec2 texcoord;
 #include "/libs/Cloud.glsl"
 #include "/libs/GbufferData.glsl"
 
-vec3 reflectionWeight(vec3 viewDir, vec3 lightDir, float metalness, vec3 f0, vec3 f82) {
+vec3 reflectionWeight(vec3 viewDir, vec3 lightDir, vec3 f0, vec3 f82) {
     float LdotH2 = clamp(dot(-viewDir, lightDir) * 0.5 + 0.5, 0.0, 1.0);
     if (f0.x < 0.0) {
         f0 = vec3(0.02);
@@ -135,10 +135,8 @@ vec4 reflection(GbufferData gbufferData, vec3 f0, vec3 f82, float firstWeight) {
     vec3 rayDir = directionDistribution(noise, gbufferData.normal, viewDir, basicRoughness, NdotV, pdfRatio);
     rayDir += gbufferData.geoNormal * 2.0 * clamp(-dot(rayDir, gbufferData.geoNormal), 0.0, 1.0);
 
-    vec3 brdfWeight = reflectionWeight(viewDir, rayDir, gbufferData.metalness, f0, f82) * pdfRatio;
-    vec3 metalWeight = metalColor(gbufferData.albedo.rgb, NdotV, gbufferData.metalness, gbufferData.smoothness) * firstWeight;
-
-    vec3 totalWeight = brdfWeight * metalWeight.rgb;
+    vec3 brdfWeight = reflectionWeight(viewDir, rayDir, f0, f82) * pdfRatio;
+    vec3 totalWeight = brdfWeight * firstWeight;
     vec4 reflectionColor = vec4(0.0);
     if (dot(totalWeight, totalWeight) > 1e-6) {
         vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);

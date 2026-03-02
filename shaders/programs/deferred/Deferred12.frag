@@ -431,7 +431,7 @@ void main() {
         #ifndef FULL_REFLECTION
             diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
         #endif
-        vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, f0, f82);
+        vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, f0, f82);
         lightColor *= diffuseAbsorption + diffuseWeight / PI;
         lightColor *= gbufferData.albedo.rgb;
         colorData.rgb += lightColor;

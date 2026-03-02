@@ -331,16 +331,12 @@ void main() {
             #endif
             f0 = mix(f0, gbufferData.albedo.rgb, gbufferData.metalness);
             float NdotV = clamp(dot(worldDir, -worldNormal), 0.0, 1.0);
-            vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, f0, f82);
+            vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, f0, f82);
 
             vec3 shadow = sunColor;
             float NdotL = clamp(dot(worldNormal, shadowDirection), 0.0, 1.0);
             vec3 shadowDiffuse = gbufferData.albedo.rgb * diffuseAbsorption;
-            vec3 shadowSpecular =
-                sunlightSpecular(
-                    worldDir, shadowDirection, worldNormal, gbufferData.albedo.rgb, gbufferData.smoothness * 0.995,
-                    gbufferData.metalness, NdotL, NdotV, f0, f82
-                );
+            vec3 shadowSpecular = sunlightSpecular(worldDir, shadowDirection, worldNormal, gbufferData.smoothness * 0.995, NdotL, NdotV, f0, f82);
             vec2 noise = blueNoiseTemporal(texcoord).xy;
             float viewLength = inversesqrt(dot(viewPos, viewPos));
             #ifdef SCREEN_SPACE_SHADOW
