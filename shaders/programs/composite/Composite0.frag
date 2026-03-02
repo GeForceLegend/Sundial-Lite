@@ -46,9 +46,13 @@ in vec2 texcoord;
 #include "/libs/Cloud.glsl"
 #include "/libs/GbufferData.glsl"
 
-vec3 reflectionWeight(vec3 viewDir, vec3 lightDir, float metalness, vec3 n, vec3 k) {
+vec3 reflectionWeight(vec3 viewDir, vec3 lightDir, float metalness, vec3 f0, vec3 f82) {
     float LdotH2 = clamp(dot(-viewDir, lightDir) * 0.5 + 0.5, 0.0, 1.0);
-    vec3 F = fresnelFull(sqrt(LdotH2), LdotH2, n, k, metalness);
+    if (f0.x < 0.0) {
+        f0 = vec3(0.02);
+        LdotH2 = clamp(1.777777 * LdotH2 - 0.777777, 0.0, 1.0);
+    }
+    vec3 F = F_AdobeF82(f0, f82, sqrt(LdotH2));
     return F;
 }
 
@@ -109,7 +113,7 @@ vec3 directionDistribution(vec2 noise, vec3 normal, vec3 viewDir, float roughnes
     return direction;
 }
 
-vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float firstWeight) {
+vec4 reflection(GbufferData gbufferData, vec3 f0, vec3 f82, float firstWeight) {
     vec3 viewPos;
     #ifdef LOD
         if (gbufferData.depth > 1.0) {
@@ -131,7 +135,7 @@ vec4 reflection(GbufferData gbufferData, vec3 gbufferN, vec3 gbufferK, float fir
     vec3 rayDir = directionDistribution(noise, gbufferData.normal, viewDir, basicRoughness, NdotV, pdfRatio);
     rayDir += gbufferData.geoNormal * 2.0 * clamp(-dot(rayDir, gbufferData.geoNormal), 0.0, 1.0);
 
-    vec3 brdfWeight = reflectionWeight(viewDir, rayDir, gbufferData.metalness, gbufferN, gbufferK) * pdfRatio;
+    vec3 brdfWeight = reflectionWeight(viewDir, rayDir, gbufferData.metalness, f0, f82) * pdfRatio;
     vec3 metalWeight = metalColor(gbufferData.albedo.rgb, NdotV, gbufferData.metalness, gbufferData.smoothness) * firstWeight;
 
     vec3 totalWeight = brdfWeight * metalWeight.rgb;
@@ -307,15 +311,19 @@ void main() {
                 gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
             }
 
-            vec3 n = vec3(1.5);
-            vec3 k = vec3(0.0);
+            vec3 f0 = vec3(0.04);
+            vec3 f82 = vec3(1.0);
+            #ifdef LABPBR_F0
+                f0 = mix(f0, vec3(gbufferData.metalness), vec3(clamp(gbufferData.metalness * 1e+10, 0.0, 1.0)));
+                f82 = hardcodedMetal(gbufferData.metalness);
+                gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
+            #endif
+            f0 = mix(f0, gbufferData.albedo.rgb, gbufferData.metalness);
             float reflectionStrength = 1.0;
             if (waterDepth < solidDepth) {
+                // Negative F0 marks ray shoot from water to air
                 if (gbufferData.materialID == MAT_WATER) {
-                    n -= 0.166666;
-                    n = mix(n, 1.0 / n, float(isEyeInWater == 1));
-                } else {
-                    n /= 1.0 + 0.333333 * float(isEyeInWater == 1);
+                    f0 -= 0.02 + 0.04 * float(isEyeInWater == 1);
                 }
                 reflectionStrength = float(gbufferData.smoothness > 0.01);
             } else {
@@ -332,12 +340,7 @@ void main() {
             }
 
             if (reflectionStrength > 1e-5) {
-                #ifdef LABPBR_F0
-                    n = mix(n, vec3(f0ToIor(gbufferData.metalness)), vec3(clamp(gbufferData.metalness * 1e+10, 0.0, 1.0)));
-                    hardcodedMetal(gbufferData.metalness, n, k);
-                    gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
-                #endif
-                reflectionColor = reflection(gbufferData, n, k, reflectionStrength);
+                reflectionColor = reflection(gbufferData, f0, f82, reflectionStrength);
             }
         }
     #endif

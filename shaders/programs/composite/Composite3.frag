@@ -44,7 +44,7 @@ void main() {
             #ifdef LABPBR_F0
                 gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
             #endif
-            vec3 reflectionWeight = metalColor(gbufferData.albedo.rgb, NdotV, gbufferData.metalness, gbufferData.smoothness);
+            float reflectionWeight = 1.0;
             if (waterDepth == texelFetch(depthtex1, texel, 0).r) {
                 float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
                 #ifndef FULL_REFLECTION

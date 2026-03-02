@@ -111,10 +111,6 @@ float luminanceLiner(vec3 color) {
     return dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));
 }
 
-float f0ToIor(float f0) {
-    return pow2(sqrt(f0) + 1.0) / max(1e-6, 1.0 - f0);
-}
-
 float distribution(float NoH2, float roughness) {
     float r2 = roughness * roughness;
     float k = r2 / pow2(1.0 + NoH2 * (r2 - 1.0));
@@ -127,86 +123,64 @@ float geometry(float NdotV, float NdotL, float a) {
     return ggx.x * ggx.y;
 }
 
-float fresnel(float LdotH, float LdotH2, float n) {
-    float sinR2 = 1.0 - LdotH2;
-    float n2 = n * n;
-    float nCosR = sqrt(max(n2 - sinR2, 0.0));
-    float r1 = (n2 * LdotH - nCosR) / (n2 * LdotH + nCosR);
-    float r2 = (nCosR - LdotH) / (nCosR + LdotH);
-    float kR = clamp(0.5 * (r1 * r1 + r2 * r2), 0.0, 1.0);
-    return kR;
+// [Kutz et al. 2021, "Novel aspects of the Adobe Standard Material" ]
+vec3 F_AdobeF82(vec3 F0, vec3 F82, float VdotH)
+{
+    const float K = 49.0 / 46656.0;
+    float Fc = pow(1.0 - VdotH, 5.0);
+    vec3 b = (K - K * F82) * (7776.0 + 9031.0 * F0);
+    return clamp(F0 + Fc * ((1.0 - F0) - b * (VdotH - VdotH * VdotH)), 0.0, 1.0);
 }
 
-// https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
-vec3 fresnelFull(float LdotH, float LdotH2, vec3 n, vec3 k, float metalness) {
-    float sinR2 = 1.0 - LdotH2;
-    vec3 n2 = n * n;
-    vec3 k2 = k * k;
-
-    vec3 t0 = n2 - k2 - sinR2;
-    vec3 a2b2 = sqrt(t0 * t0 + 4.0 * n2 * k2);
-    vec3 t1 = a2b2 + LdotH2;
-    vec3 a = sqrt(2.0 * max(a2b2 + t0, 0.0));
-    vec3 t2 = a * LdotH;
-
-    vec3 t3 = LdotH2 * a2b2 + sinR2 * sinR2;
-    vec3 t4 = t2 * sinR2;
-
-    vec3 kR = t3 * (t1 - t2) / ((t1 + t2) * (t3 + t4));
-    #ifndef LABPBR_F0
-        kR = mix(kR, vec3(1.0), metalness);
-    #endif
-    return kR;
+vec3 fresnel(float LdotH, vec3 f0) {
+    if (f0.x < 0.0) {
+        f0 = vec3(0.02);
+        LdotH = sqrt(clamp(1.777777 * LdotH * LdotH - 0.777777, 0.0, 1.0));
+    }
+    return F_AdobeF82(f0, vec3(1.0), LdotH);
 }
 
-vec3 diffuseAbsorptionWeight(float NdotV, float smoothness, float metalness, vec3 n, vec3 k) {
-    vec3 F = fresnelFull(NdotV, NdotV * NdotV, n, k, metalness);
+vec3 diffuseAbsorptionWeight(float NdotV, float smoothness, float metalness, vec3 f0, vec3 f82) {
+    vec3 F = F_AdobeF82(f0, f82, NdotV);
     F = 1.0 - F * pow(smoothness, 5.0);
     return F;
 }
 
-void hardcodedMetal(float metalness, inout vec3 n, inout vec3 k) {
+vec3 hardcodedMetal(float metalness) {
+    vec3 F82 = vec3(1.0);
     #ifdef HARDCODED_METAL
     float materialId = round(metalness * 255.0);
     // 230 ~ 237, hardcoded metals
     float isHardcoded = clamp(abs(materialId / 4.0 - 233.5 / 4.0) * 1e+10 - 1e+10, 0.0, 1.0);
 
     if (isHardcoded < 1e-6) {
-        n = vec3(0.0);
-
+        F82 = vec3(0.0);
         float isIron = clamp(1e+4 - abs(materialId - 230.0) * 1e+5, 0.0, 1.0);
-        n += isIron * vec3(2.9114, 2.9497, 2.5845);
-        k += isIron * vec3(3.0893, 2.9318, 2.7670);
+        F82 += isIron * vec3(0.8851, 0.8800, 0.8966);
 
         float isGold = clamp(1e+4 - abs(materialId - 231.0) * 1e+5, 0.0, 1.0);
-        n += isGold * vec3(0.18299, 0.42108, 1.3734);
-        k += isGold * vec3(3.4242, 2.3459, 1.7704);
+        F82 += isGold * vec3(0.9408, 0.9636, 0.9099);
 
         float isAluminum = clamp(1e+4 - abs(materialId - 232.0) * 1e+5, 0.0, 1.0);
-        n += isAluminum * vec3(1.3456, 0.96521, 0.61722);
-        k += isAluminum * vec3(7.4746, 6.3995, 5.3031);
+        F82 += isAluminum * vec3(0.9090, 0.9365, 0.9596);
 
         float isChrome = clamp(1e+4 - abs(materialId - 233.0) * 1e+5, 0.0, 1.0);
-        n += isChrome * vec3(3.1071, 3.1812, 2.3230);
-        k += isChrome * vec3(3.3314, 3.3291, 3.1350);
+        F82 += isChrome * vec3(0.7372, 0.7511, 0.8170);
 
         float isCopper = clamp(1e+4 - abs(materialId - 234.0) * 1e+5, 0.0, 1.0);
-        n += isCopper * vec3(0.27105, 0.67693, 1.3164);
-        k += isCopper * vec3(3.6092, 2.6248, 2.2921);
+        F82 += isCopper * vec3(0.9755, 0.9349, 0.9301);
 
         float isLead = clamp(1e+4 - abs(materialId - 235.0) * 1e+5, 0.0, 1.0);
-        n += isLead * vec3(1.9100, 1.8300, 1.4400);
-        k += isLead * vec3(3.5100, 3.4000, 3.1800);
+        F82 += isLead * vec3(0.8095, 0.8369, 0.8739);
 
         float isPlatinum = clamp(1e+4 - abs(materialId - 236.0) * 1e+5, 0.0, 1.0);
-        n += isPlatinum * vec3(2.3757, 2.0847, 1.8453);
-        k += isPlatinum * vec3(4.2655, 3.7153, 3.1365);
+        F82 += isPlatinum * vec3(0.9501, 0.9464, 0.9352);
 
         float isSilver = clamp(1e+4 - abs(materialId - 237.0) * 1e+5, 0.0, 1.0);
-        n += isSilver * vec3(0.15943, 0.14512, 0.13547);
-        k += isSilver * vec3(3.9291, 3.1900, 2.3808);
+        F82 += isSilver * vec3(0.9929, 0.9961, 1.0);
     }
     #endif
+    return F82;
 }
 
 vec3 metalColor(vec3 albedo, float NdotV, float metalness, float smoothness) {
@@ -215,7 +189,7 @@ vec3 metalColor(vec3 albedo, float NdotV, float metalness, float smoothness) {
     return mix(vec3(1.0), albedo, vec3(metalness));
 }
 
-vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 albedo, float smoothness, float metalness, float NdotL, float NdotV, vec3 n, vec3 k) {
+vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 albedo, float smoothness, float metalness, float NdotL, float NdotV, vec3 f0, vec3 f82) {
     float LdotV = dot(-viewDir, lightDir);
     float LdotH2 = LdotV * 0.5 + 0.5;
     float LdotHInv = inversesqrt(LdotH2);
@@ -227,7 +201,11 @@ vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 albedo, flo
 
     float D = clamp(distribution(NdotH2, roughness) / 300.0, 0.0, 1.0) * 300.0;
     float V = geometry(NdotV, NdotL, roughness);
-    vec3 F = fresnelFull(LdotH, LdotH2, n, k, metalness) * metalColor(albedo, LdotH, metalness, 1.0);
+    if (f0.x < 0.0) {
+        f0 = vec3(0.02);
+        LdotH = sqrt(clamp(1.777777 * LdotH * LdotH - 0.777777, 0.0, 1.0));
+    }
+    vec3 F = F_AdobeF82(f0, f82, LdotH);
     return D * V * F;
 }
 

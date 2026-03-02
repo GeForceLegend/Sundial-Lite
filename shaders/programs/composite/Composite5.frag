@@ -128,7 +128,6 @@ void main() {
 
     /********************************************************** Water Refraction **********************************************************/
 
-    float n = 1.5;
     float reflectionWeight = 1.0;
     if (waterDepth < solidDepth) {
         reflectionWeight = solidColor.w;
@@ -144,7 +143,7 @@ void main() {
             float roughness = 1.0 - gbufferData.smoothness;
             vec2 blueNoise = textureLod(noisetex, texcoord * screenSize / 64.0, 0.0).xy;
             vec2 randomOffset = vec2(cos(blueNoise.x * 2.0 * PI), sin(blueNoise.x * 2.0 * PI)) * blueNoise.y;
-            float k = sqrt(n * n - (1.0 - LdotH * LdotH));
+            float k = sqrt(1.5 * 1.5 - (1.0 - LdotH * LdotH));
             vec3 viewDir = viewPos * worldDistanceInv;
             vec3 refractDirection = normalize(
                 viewDir - (LdotH + k) * gbufferData.normal +
@@ -184,18 +183,18 @@ void main() {
         vec3 waterWorldPos = waterWorldDir * waterViewDepthNoLimit + gbufferModelViewInverse[3].xyz;
         float waterDistance = distance(worldPos, waterWorldPos);
         vec3 rawSolidColor = solidColor.rgb;
-        n -= 0.166666 * float(isTargetWater);
+        vec3 f0 = vec3(0.04 - 0.02 * float(isTargetWater));
         #ifdef LABPBR_F0
-            n = mix(n, f0ToIor(gbufferData.metalness) , step(0.001, gbufferData.metalness));
+            f0 = mix(f0, vec3(gbufferData.metalness) , step(0.001, gbufferData.metalness));
             gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
         #endif
+        f0 = mix(f0, gbufferData.albedo.rgb, gbufferData.metalness);
         #ifdef LOD
             solidDepth -= float(solidDepth > 1.0);
         #endif
         waterDistance = mix(waterDistance, 114514.0, step(0.999999, solidDepth));
         if (isEyeInWater == 1 ^^ isTargetWater) {
             solidColor.rgb = waterFogTotal(solidColor.rgb, worldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
-            n *= 1.0 - 0.25 * float(isEyeInWater);
         }
         else if (isEyeInWater == 2) {
             solidColor.rgb = lavaFogTotal(solidColor.rgb, waterDistance);
@@ -218,13 +217,13 @@ void main() {
                 #endif
                 solidColor.rgb *= airAbsorption(waterDistance);
             #endif
-            n = mix(n, 1.0 / n, float(isTargetWater));
+            f0 -= 0.04 * float(isTargetWater);
         }
         float waterStain = 1.0;
         #if WATER_TYPE == 0
             waterStain = float(!isTargetWater);
         #endif
-        stainedColor *= log2(1.0 - fresnel(LdotH, LdotH * LdotH, n));
+        stainedColor *= log2(1.0 - fresnel(LdotH, f0));
         stainedColor += sqrt(gbufferData.albedo.w * 1.5) * log2(clamp(gbufferData.albedo.rgb + 1e-5, 0.0, 1.0) * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w)) * waterStain;
         stainedColor = exp2(stainedColor);
 
@@ -257,7 +256,7 @@ void main() {
                 );
                 shadow *= (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle + sunlightSpecular(
                     waterWorldDir, shadowDirection, worldNormal, gbufferData.albedo.rgb,
-                    gbufferData.smoothness * 0.995, gbufferData.metalness, NdotL, LdotH, vec3(n), vec3(0.0)
+                    gbufferData.smoothness * 0.995, gbufferData.metalness, NdotL, LdotH, f0, vec3(1.0)
                 );
                 shadow += subsurfaceScattering * (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle;
                 #ifdef CLOUD_SHADOW

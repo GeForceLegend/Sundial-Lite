@@ -322,15 +322,16 @@ void main() {
         finalColor.rgb *= gbufferData.albedo.rgb;
 
         #ifdef SHADOW_AND_SKY
-            vec3 n = vec3(1.5);
-            vec3 k = vec3(0.0);
+            vec3 f0 = vec3(0.04);
+            vec3 f82 = vec3(1.0);
             #ifdef LABPBR_F0
-                n = mix(n, vec3(f0ToIor(gbufferData.metalness)), step(0.001, gbufferData.metalness));
-                hardcodedMetal(gbufferData.metalness, n, k);
+                f0 = mix(f0, vec3(gbufferData.metalness), step(0.001, gbufferData.metalness));
+                f82 = hardcodedMetal(gbufferData.metalness);
                 gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
             #endif
+            f0 = mix(f0, gbufferData.albedo.rgb, gbufferData.metalness);
             float NdotV = clamp(dot(worldDir, -worldNormal), 0.0, 1.0);
-            vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, n, k);
+            vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, gbufferData.metalness, f0, f82);
 
             vec3 shadow = sunColor;
             float NdotL = clamp(dot(worldNormal, shadowDirection), 0.0, 1.0);
@@ -338,7 +339,7 @@ void main() {
             vec3 shadowSpecular =
                 sunlightSpecular(
                     worldDir, shadowDirection, worldNormal, gbufferData.albedo.rgb, gbufferData.smoothness * 0.995,
-                    gbufferData.metalness, NdotL, NdotV, n, k
+                    gbufferData.metalness, NdotL, NdotV, f0, f82
                 );
             vec2 noise = blueNoiseTemporal(texcoord).xy;
             float viewLength = inversesqrt(dot(viewPos, viewPos));
