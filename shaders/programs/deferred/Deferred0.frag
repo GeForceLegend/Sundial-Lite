@@ -80,12 +80,12 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 geoNormal, ou
         prevSampleViewPos = prevProjectionToViewPos(vec3(screenCoord, prevSampleDepth) * 2.0 - 1.0);
     }
 
-    isPrevValid = step(dot(abs(sampleCoord - clamp(sampleCoord, 0.0, 1.0)) * screenSize, vec2(1.0)), 0.5);
+    isPrevValid = float(all(lessThan(abs(sampleCoord - vec2(0.5)), vec2(0.5))));
 
     vec3 prevSampleWorldPos = prevViewToWorldPos(prevSampleViewPos);
     vec3 positionDiff = prevSampleWorldPos - prevWorldPos;
-    float positionDistance = inversesqrt((dot(prevSampleViewPos, prevSampleViewPos) + 2.0) / max(1e-8, abs(dot(positionDiff, geoNormal)))) * 50.0;
-    isPrevValid *= clamp(1.0 - positionDistance * positionDistance, 0.0, 1.0) * step(prevSampleDepth, 0.999999);
+    float positionDistance = abs(dot(positionDiff, geoNormal)) / (dot(prevSampleViewPos, prevSampleViewPos) + 2.0) * 2500.0;
+    isPrevValid *= clamp(1.0 - positionDistance, 0.0, 1.0) * step(prevSampleDepth, 0.999999);
 
     return vec4(prevSampleData);
 }
