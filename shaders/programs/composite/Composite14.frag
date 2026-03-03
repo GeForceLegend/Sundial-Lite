@@ -100,16 +100,6 @@ vec3 calculateBloom(vec2 coord) {
     return pow(totalBloom * (1.0 / 5.084764), vec3(2.2));
 }
 
-vec3 vignette(vec2 coord, vec3 color) {
-    vec2 dist = (coord - 0.5);
-    return color * exp(-2.0 * dot(dist, dist) * VIGNETTE_STRENGTH);
-}
-
-vec3 averageExposure(vec3 color) {
-    float averageBrightness = textureLod(colortex7, vec2(0.0), 0.0).w;
-    return color * pow(averageBrightness + 1e-5, -AVERAGE_EXPOSURE_STRENGTH) * 0.2;
-}
-
 // Uchimura 2017, "HDR theory and practice"
 // Math: https://www.desmos.com/calculator/gslcdxvipg
 // Source: https://www.slideshare.net/nikuque/hdr-theory-and-practicce-jp
@@ -276,9 +266,12 @@ void main() {
     float bloomAmount = 0.2 * BLOOM_INTENSITY + 1.0 * step(weatherData, -0.3) + 0.6 * step(0.5, float(isEyeInWater)) + step(1.5, float(isEyeInWater));
     finalColor = (finalColor + bloomColor * bloomAmount) / (1.0 + bloomAmount * 0.5);
 
-    finalColor = vignette(texcoord, finalColor);
-
-    finalColor = averageExposure(finalColor);
+    vec2 dist = (texcoord - 0.5);
+    float averageBrightness = textureLod(colortex7, vec2(0.0), 0.0).w;
+    finalColor *= exp2(
+        -2.0 * 1.44269502 * dot(dist, dist) * VIGNETTE_STRENGTH +       // Vignette
+        log2(averageBrightness + 1e-5) * -AVERAGE_EXPOSURE_STRENGTH     // Average exposure
+    ) * 0.2;
 
     finalColor *= exp2(EXPOSURE_VALUE);
 
