@@ -130,12 +130,12 @@ vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2
             stepDir.z = -stepDir.z;
 
             coord *= albedoTexSize;
-            ivec2 basicTexel = ivec2(floor(coordRange.xy * albedoTexSize));
+            ivec2 basicTexel = ivec2(round(coordRange.xy * albedoTexSize));
             ivec2 sampleTexel = ivec2(floor(coord));
             vec2 stepLength = abs(1.0 / stepDir.xy);
             ivec2 dirSigned = (floatBitsToInt(stepDir.xy) >> 31) * 2 + 1;
             vec2 nextLength = (dirSigned * (0.5 - coord + sampleTexel) + 0.5) * stepLength;
-            ivec2 tileSize = ivec2(ceil(coordRange.zw * albedoTexSize));
+            ivec2 tileSize = ivec2(round(coordRange.zw * albedoTexSize));
             sampleHeight = 1.0 - sampleHeight;
             sampleTexel -= basicTexel;
 
