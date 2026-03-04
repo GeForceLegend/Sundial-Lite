@@ -71,7 +71,7 @@ vec2 clampCoordRange(vec2 coord, vec4 coordRange) {
     }
 #endif
 
-vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX, vec2 texGradY, vec4 coordRange, vec2 quadSize) {
+vec3 anisotropicOffsetLod(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX, vec2 texGradY, vec2 quadSize) {
     //https://www.shadertoy.com/view/4lXfzn
     mat2 qd = inverse(mat2(texGradX * albedoTexSize, texGradY * albedoTexSize));
     qd = transpose(qd) * qd;
@@ -85,17 +85,20 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
     float v = t + D;
     float l = -0.5 * log2(v);
 
-    #if ANISOTROPIC_FILTERING_QUALITY > 1
-        vec2 A = vec2(qd[0][1], qd[0][0] - V);
-        A *= inversesqrt(V * dot(A, A)) / ANISOTROPIC_FILTERING_QUALITY;
-        A = max(vec2(0.0), abs(A)) * atlasTexelSize * quadSize;
+    vec2 A = vec2(qd[0][1], qd[0][0] - V);
+    A *= inversesqrt(V * dot(A, A)) / ANISOTROPIC_FILTERING_QUALITY;
+    A = max(vec2(0.0), abs(A)) * atlasTexelSize * quadSize;
+    return vec3(A, l);
+}
 
-        vec2 sampleCoord = (coord - coordRange.xy) * quadSize + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * A;
+vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2 quadSize) {
+    #if ANISOTROPIC_FILTERING_QUALITY > 1
+        vec2 sampleCoord = (coord - coordRange.xy) * quadSize + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * offset;
         vec4 albedo = vec4(0.0);
         float opaque = 0.0;
         for (int i = 0; i < ANISOTROPIC_FILTERING_QUALITY; i++) {
-            sampleCoord += A;
-            vec4 albedoSample = textureLod(gtexture, clampCoordRange(sampleCoord, coordRange), l);
+            sampleCoord += offset;
+            vec4 albedoSample = textureLod(gtexture, clampCoordRange(sampleCoord, coordRange), lod);
             albedo.rgb += albedoSample.rgb * albedoSample.a;
             albedo.a += albedoSample.a;
             opaque = max(opaque, albedoSample.a);
@@ -105,9 +108,8 @@ vec4 anisotropicFilter(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2
         albedo.a = clamp(albedo.a + float(opaque > 0.999), 0.0, 1.0) * clamp(texture(gtexture, coord).a * 10.0, 0.0, 1.0);
     #else
         vec2 noise = blueNoiseTemporal(gl_FragCoord.st * texelSize).xy - 0.5;
-        vec2 sampleCoord = coord + noise.x * texGradX + noise.y * texGradY;
-        sampleCoord = clampCoordRange((sampleCoord - coordRange.xy) * quadSize, coordRange);
-        vec4 albedo = textureLod(gtexture, sampleCoord, l);
+        vec2 sampleCoord = clampCoordRange((coord - coordRange.xy) * quadSize + noise.x * offset, coordRange);
+        vec4 albedo = textureLod(gtexture, sampleCoord, lod);
     #endif
 
     return albedo;

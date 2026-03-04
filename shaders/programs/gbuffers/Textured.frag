@@ -210,6 +210,7 @@ void main() {
         float parallaxScale = ENTITY_TEXTURE_RESOLUTION / max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y);
         vec2 pixelScale = albedoTexSize * textureScale * parallaxScale;
         vec2 quadSize = 1.0 / fixedCoordRange.zw;
+        vec3 anisotropicParam = anisotropicOffsetLod(texcoord, albedoTexSize, albedoTexelSize, texGradX, texGradY, quadSize);
         #if (defined ENTITY_PARALLAX && defined PARALLAX) || ANISOTROPIC_FILTERING_QUALITY > 0
             #ifdef ENTITY_PARALLAX
                 #ifdef PARALLAX
@@ -230,13 +231,13 @@ void main() {
         #endif
 
         #if ANISOTROPIC_FILTERING_QUALITY > 0 && !defined PARTICLE && !defined MC_ANISOTROPIC_FILTERING
-            vec4 texAlbedo = anisotropicFilter(texcoord, albedoTexSize, albedoTexelSize, texGradX, texGradY, fixedCoordRange, quadSize);
+            vec4 texAlbedo = anisotropicFilter(texcoord, anisotropicParam.xy, anisotropicParam.z, fixedCoordRange, quadSize);
         #else
             vec4 texAlbedo = textureGrad(gtexture, texcoord, texGradX, texGradY);
         #endif
         #ifdef MC_NORMAL_MAP
-            vec2 grad = min(abs(texGradX) , abs(texGradY));
-            vec4 normalData = textureGrad(normals, texcoord, grad, grad);
+            anisotropicParam.z -= 1.0;
+            vec4 normalData = textureLod(normals, texcoord, anisotropicParam.z);
             #ifdef LABPBR_TEXTURE_AO
                 texAlbedo.rgb *= pow(normalData.b, 1.0 / 2.2);
             #endif
@@ -340,10 +341,10 @@ void main() {
                             #else
                                 const float eps = 1e-4;
                                 vec2 tileCoord = (texcoord - fixedCoordRange.xy) * quadTexelSize;
-                                float rD = textureGrad(normals, clampCoordRange(tileCoord + vec2(eps * quadTexelSize.x, 0.0), fixedCoordRange), grad, grad).a;
-                                float lD = textureGrad(normals, clampCoordRange(tileCoord - vec2(eps * quadTexelSize.x, 0.0), fixedCoordRange), grad, grad).a;
-                                float uD = textureGrad(normals, clampCoordRange(tileCoord + vec2(0.0, eps * quadTexelSize.y), fixedCoordRange), grad, grad).a;
-                                float dD = textureGrad(normals, clampCoordRange(tileCoord - vec2(0.0, eps * quadTexelSize.y), fixedCoordRange), grad, grad).a;
+                                float rD = textureLod(normals, clampCoordRange(tileCoord + vec2(eps * quadTexelSize.x, 0.0), fixedCoordRange), anisotropicParam.z).a;
+                                float lD = textureLod(normals, clampCoordRange(tileCoord - vec2(eps * quadTexelSize.x, 0.0), fixedCoordRange), anisotropicParam.z).a;
+                                float uD = textureLod(normals, clampCoordRange(tileCoord + vec2(0.0, eps * quadTexelSize.y), fixedCoordRange), anisotropicParam.z).a;
+                                float dD = textureLod(normals, clampCoordRange(tileCoord - vec2(0.0, eps * quadTexelSize.y), fixedCoordRange), anisotropicParam.z).a;
                                 rawData.normal = vec3((lD - rD), (dD - uD), step(abs(lD - rD) + abs(dD - uD), 1e-3));
                             #endif
                             rawData.normal = mix(rawData.normal, rippleNormal, wetStrength);
@@ -351,7 +352,7 @@ void main() {
                         #endif
                         texGradX *= albedoTexSize;
                         texGradY *= albedoTexSize;
-                        rawData.normal = normalize(mix(rawData.geoNormal, rawData.normal, exp2(-sqrt(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY))))));
+                        rawData.normal = normalize(mix(rawData.geoNormal, rawData.normal, clamp(inversesqrt(dot(vec4(texGradX, texGradY), vec4(texGradX, texGradY))), 0.0, 1.0)));
                     } else
                 #endif
             #endif
