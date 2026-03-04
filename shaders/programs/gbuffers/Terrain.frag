@@ -85,9 +85,9 @@ void main() {
             vec3 textureViewer = viewPos * tbnMatrix;
             textureViewer.xy *= textureScale;
             #ifdef VOXEL_PARALLAX
-                texcoord = perPixelParallax(texlmcoord.st, textureViewer, albedoTexSize, albedoTexelSize, fixedCoordRange, parallaxTexNormal, parallaxOffset);
+                texcoord = perPixelParallax(texcoord, textureViewer, albedoTexSize, albedoTexelSize, fixedCoordRange, parallaxTexNormal, parallaxOffset);
             #else
-                texcoord = calculateParallax(texlmcoord.st, textureViewer, fixedCoordRange, quadSize, albedoTexSize, albedoTexelSize, parallaxOffset);
+                texcoord = calculateParallax(texcoord, textureViewer, fixedCoordRange, quadSize, albedoTexSize, albedoTexelSize, parallaxOffset);
             #endif
         }
     #endif

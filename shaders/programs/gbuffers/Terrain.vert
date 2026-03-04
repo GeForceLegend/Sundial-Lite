@@ -143,11 +143,12 @@ void main() {
     if (min(abs(mc_midTexCoord.s - gl_MultiTexCoord0.s), abs(mc_midTexCoord.t - gl_MultiTexCoord0.t)) < 1e-6) {
         vertexCoord = gl_MultiTexCoord0.st + (mc_midTexCoord.st - gl_MultiTexCoord0.st).ts;
     }
-    vec2 coordToCenter = abs(vertexCoord - mc_midTexCoord.st);
     vec2 albedoTexSize = textureSize(gtexture, 0);
     vec2 albedoTexelSize = 1.0 / albedoTexSize;
-    minCoord = floor((mc_midTexCoord.st - coordToCenter) * albedoTexSize) * albedoTexelSize;
-    coordSize = ceil(coordToCenter * 2.0 * albedoTexSize) * albedoTexelSize;
+    vec2 midCoord = mc_midTexCoord.st * albedoTexSize;
+    vec2 coordToCenter = abs(vertexCoord - mc_midTexCoord.st) * albedoTexSize;
+    minCoord = floor(midCoord - coordToCenter) * albedoTexelSize;
+    coordSize = ceil(midCoord + coordToCenter) * albedoTexelSize - minCoord;
     coordRange = vec4(minCoord, coordSize);
 
 

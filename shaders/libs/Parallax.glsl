@@ -13,6 +13,50 @@ vec2 clampCoordRange(vec2 coord, vec4 coordRange) {
     return coordRange.xy + fract(coord) * coordRange.zw;
 }
 
+vec3 anisotropicOffsetLod(vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX, vec2 texGradY, vec2 quadSize) {
+    //https://www.shadertoy.com/view/4lXfzn
+    mat2 qd = inverse(mat2(texGradX * albedoTexSize, texGradY * albedoTexSize));
+    qd = transpose(qd) * qd;
+
+    float d = determinant(qd);
+    float t = (qd[0][0] + qd[1][1]) * 0.5;
+
+    float D = abs(t * t - d);
+    D = D * inversesqrt(D);
+    float V = t - D;
+    float v = t + D;
+    float l = -0.5 * log2(v);
+
+    vec2 A = vec2(qd[0][1], qd[0][0] - V);
+    A *= inversesqrt(V * dot(A, A)) / ANISOTROPIC_FILTERING_QUALITY;
+    A = max(vec2(0.0), abs(A)) * atlasTexelSize * quadSize;
+    return vec3(A, l);
+}
+
+vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2 quadSize) {
+    #if ANISOTROPIC_FILTERING_QUALITY > 1
+        vec2 sampleCoord = (coord - coordRange.xy) * quadSize + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * offset;
+        vec4 albedo = vec4(0.0);
+        float opaque = 0.0;
+        for (int i = 0; i < ANISOTROPIC_FILTERING_QUALITY; i++) {
+            sampleCoord += offset;
+            vec4 albedoSample = textureLod(gtexture, clampCoordRange(sampleCoord, coordRange), lod);
+            albedo.rgb += albedoSample.rgb * albedoSample.a;
+            albedo.a += albedoSample.a;
+            opaque = max(opaque, albedoSample.a);
+        }
+        albedo.rgb *= max(1.0 / albedo.a, 1e-5);
+        albedo.a /= ANISOTROPIC_FILTERING_QUALITY;
+        albedo.a = clamp(albedo.a + float(opaque > 0.999), 0.0, 1.0) * clamp(texture(gtexture, coord).a * 10.0, 0.0, 1.0);
+    #else
+        vec2 noise = blueNoiseTemporal(gl_FragCoord.st * texelSize).xy - 0.5;
+        vec2 sampleCoord = clampCoordRange((coord - coordRange.xy) * quadSize + noise.x * offset, coordRange);
+        vec4 albedo = textureLod(gtexture, sampleCoord, lod);
+    #endif
+
+    return albedo;
+}
+
 #ifdef MC_NORMAL_MAP
     vec4 heightGather(sampler2D normalSampler, vec2 coord, vec2 coord00, vec4 coordRange, vec2 quadTexelSize, vec2 normalTexSize) {
         ivec2 texel00 = ivec2(coord00);
@@ -69,53 +113,7 @@ vec2 clampCoordRange(vec2 coord, vec4 coordRange) {
             vec4(fpc.y)
         );
     }
-#endif
 
-vec3 anisotropicOffsetLod(vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX, vec2 texGradY, vec2 quadSize) {
-    //https://www.shadertoy.com/view/4lXfzn
-    mat2 qd = inverse(mat2(texGradX * albedoTexSize, texGradY * albedoTexSize));
-    qd = transpose(qd) * qd;
-
-    float d = determinant(qd);
-    float t = (qd[0][0] + qd[1][1]) * 0.5;
-
-    float D = abs(t * t - d);
-    D = D * inversesqrt(D);
-    float V = t - D;
-    float v = t + D;
-    float l = -0.5 * log2(v);
-
-    vec2 A = vec2(qd[0][1], qd[0][0] - V);
-    A *= inversesqrt(V * dot(A, A)) / ANISOTROPIC_FILTERING_QUALITY;
-    A = max(vec2(0.0), abs(A)) * atlasTexelSize * quadSize;
-    return vec3(A, l);
-}
-
-vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2 quadSize) {
-    #if ANISOTROPIC_FILTERING_QUALITY > 1
-        vec2 sampleCoord = (coord - coordRange.xy) * quadSize + (0.5 - 0.5 * ANISOTROPIC_FILTERING_QUALITY) * offset;
-        vec4 albedo = vec4(0.0);
-        float opaque = 0.0;
-        for (int i = 0; i < ANISOTROPIC_FILTERING_QUALITY; i++) {
-            sampleCoord += offset;
-            vec4 albedoSample = textureLod(gtexture, clampCoordRange(sampleCoord, coordRange), lod);
-            albedo.rgb += albedoSample.rgb * albedoSample.a;
-            albedo.a += albedoSample.a;
-            opaque = max(opaque, albedoSample.a);
-        }
-        albedo.rgb *= max(1.0 / albedo.a, 1e-5);
-        albedo.a /= ANISOTROPIC_FILTERING_QUALITY;
-        albedo.a = clamp(albedo.a + float(opaque > 0.999), 0.0, 1.0) * clamp(texture(gtexture, coord).a * 10.0, 0.0, 1.0);
-    #else
-        vec2 noise = blueNoiseTemporal(gl_FragCoord.st * texelSize).xy - 0.5;
-        vec2 sampleCoord = clampCoordRange((coord - coordRange.xy) * quadSize + noise.x * offset, coordRange);
-        vec4 albedo = textureLod(gtexture, sampleCoord, lod);
-    #endif
-
-    return albedo;
-}
-
-#ifdef MC_NORMAL_MAP
     vec2 perPixelParallax(
         vec2 coord, vec3 viewVector, vec2 albedoTexSize, vec2 atlasTexelSize, vec4 coordRange,
         inout vec3 parallaxTexNormal, inout float parallaxOffset
@@ -132,12 +130,12 @@ vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2
             stepDir.z = -stepDir.z;
 
             coord *= albedoTexSize;
-            ivec2 basicTexel = ivec2(round(coordRange.xy * albedoTexSize));
+            ivec2 basicTexel = ivec2(floor(coordRange.xy * albedoTexSize));
             ivec2 sampleTexel = ivec2(floor(coord));
             vec2 stepLength = abs(1.0 / stepDir.xy);
             ivec2 dirSigned = (floatBitsToInt(stepDir.xy) >> 31) * 2 + 1;
             vec2 nextLength = (dirSigned * (0.5 - coord + sampleTexel) + 0.5) * stepLength;
-            ivec2 tileSize = ivec2(round(coordRange.zw * albedoTexSize));
+            ivec2 tileSize = ivec2(ceil(coordRange.zw * albedoTexSize));
             sampleHeight = 1.0 - sampleHeight;
             sampleTexel -= basicTexel;
 
