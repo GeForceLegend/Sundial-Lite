@@ -71,7 +71,7 @@ vec2 clampCoordRange(vec2 coord, vec4 coordRange) {
     }
 #endif
 
-vec3 anisotropicOffsetLod(vec2 coord, vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX, vec2 texGradY, vec2 quadSize) {
+vec3 anisotropicOffsetLod(vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX, vec2 texGradY, vec2 quadSize) {
     //https://www.shadertoy.com/view/4lXfzn
     mat2 qd = inverse(mat2(texGradX * albedoTexSize, texGradY * albedoTexSize));
     qd = transpose(qd) * qd;

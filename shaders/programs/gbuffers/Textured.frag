@@ -210,7 +210,7 @@ void main() {
         float parallaxScale = ENTITY_TEXTURE_RESOLUTION / max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y);
         vec2 pixelScale = albedoTexSize * textureScale * parallaxScale;
         vec2 quadSize = 1.0 / fixedCoordRange.zw;
-        vec3 anisotropicParam = anisotropicOffsetLod(texcoord, albedoTexSize, albedoTexelSize, texGradX, texGradY, quadSize);
+        vec3 anisotropicParam = anisotropicOffsetLod(albedoTexSize, albedoTexelSize, texGradX, texGradY, quadSize);
         #if (defined ENTITY_PARALLAX && defined PARALLAX) || ANISOTROPIC_FILTERING_QUALITY > 0
             #ifdef ENTITY_PARALLAX
                 #ifdef PARALLAX
