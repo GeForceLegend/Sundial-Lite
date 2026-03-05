@@ -241,7 +241,7 @@ vec4 reflection(GbufferData gbufferData, vec3 f0, vec3 f82, float firstWeight) {
             reflectionColor = vec4(vec3(0.0), rayLength);
             #ifdef SHADOW_AND_SKY
                 vec3 atmosphere;
-                reflectionColor.rgb = singleAtmosphereScattering(vec3(0.0), worldPos, rayDir, sunDirection, intersectionData, 30.0, atmosphere);
+                reflectionColor.rgb = singleAtmosphereScattering(vec3(0.0), worldPos, rayDir, sunDirection, intersectionData, skyColorUp, 30.0, atmosphere);
                 vec4 planeCloud = vec4(0.0);
                 #ifdef PLANE_CLOUD
                     planeCloud = planeClouds(worldPos, rayDir, sunDirection, skyColorUp, intersectionData.xyz);
@@ -270,7 +270,7 @@ vec4 reflection(GbufferData gbufferData, vec3 f0, vec3 f82, float firstWeight) {
             #else
                 reflectionColor.rgb *= airAbsorption(reflectionColor.w);
                 #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
-                    float atmosphereLength = mix(reflectionColor.w, 500.0 + 500.0 * float(intersectionData.z > 0.0), float(hitSky));
+                    float atmosphereLength = mix(reflectionColor.w * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 1000.0, float(hitSky));
                     reflectionColor.rgb = solidAtmosphereScattering(reflectionColor.rgb, rayDir, skyColorUp, atmosphereLength, gbufferData.lightmap.y);
                 #endif
             #endif

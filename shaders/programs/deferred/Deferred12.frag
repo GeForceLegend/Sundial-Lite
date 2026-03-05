@@ -412,7 +412,7 @@ void main() {
         vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * commonLightColor;
         lightColor += blockLight;
         #ifdef SHADOW_AND_SKY
-            lightColor += skyLightStrength * (skyColorUp + sunColor) * (0.9 - 0.5 * weatherStrength);
+            lightColor += skyLightStrength * (skyColorUp + sunColor) * (0.9 - 0.7 * weatherStrength);
         #endif
         lightColor *= (1.0 - currData.w);
         #ifdef VBGI
