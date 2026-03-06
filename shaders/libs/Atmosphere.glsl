@@ -226,7 +226,7 @@ vec3 solidAtmosphereScattering(vec3 color, vec3 worldDir, vec3 skyColor, float w
     float LdotV = dot(worldDir, sunDirection);
     sunLightColor *= rayleighPhase(LdotV) + miePhase(LdotV, mieG, mieG2);
     moonLightColor *= (rayleighPhase(-LdotV) + miePhase(-LdotV, mieG, mieG2)) * mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);
-    vec3 scatteringColor = mix((sunLightColor + moonLightColor) * 30.0, skyColor * 0.25, sqrt(weatherStrength) * 0.99);
+    vec3 scatteringColor = mix((sunLightColor + moonLightColor) * 30.0, skyColor * 0.25, sqrt(weatherStrength) * 0.99) * skyLight * skyLight;
 
     vec2 originRelativeHeight = earthScaledHeight - playerHeight / scaledHeight * 1.44269502;
     vec2 originDensity = exp2(originRelativeHeight);
