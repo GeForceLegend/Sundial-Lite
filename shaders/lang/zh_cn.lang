@@ -178,8 +178,6 @@ option.VOLUMETRIC_FOG=体积雾
 option.ATMOSPHERE_SCATTERING_FOG=大气散射雾
 option.ATMOSPHERE_SCATTERING_FOG.comment=与体积光或体积雾不同. 如果不喜欢刚进入黑暗室内时的蓝色雾气可以关闭此选项
 # RainFog
-option.RF_SKY_BRIGHTNESS=雨雾天空光照亮度
-option.RF_SUN_BRIGHTNESS=雨雾阳光光照亮度
 option.RF_DENSITY=雨雾密度
 option.RF_DENSITY.comment=雨雾整体的密度. 同时影响天空部分能见度和地面部分能见度
 option.RF_GROUND_EXTRA_DENSITY=雨雾地面额外密度

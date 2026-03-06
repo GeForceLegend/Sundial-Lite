@@ -168,8 +168,6 @@ option.VOLUMETRIC_LIGHT=Volumetric light
 option.VOLUMETRIC_FOG=Volumetric fog
 option.ATMOSPHERE_SCATTERING_FOG=Atmosphere scattering fog
 # RainFog
-option.RF_SKY_BRIGHTNESS=Rain fog skylight brightness
-option.RF_SUN_BRIGHTNESS=Rain fog sunlight brightness
 option.RF_DENSITY=Rain fog density
 option.RF_DENSITY.comment=Overall density of rain fog. Affect visibility of sky and ground
 option.RF_GROUND_EXTRA_DENSITY=Rain fog ground extra density
