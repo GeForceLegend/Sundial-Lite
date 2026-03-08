@@ -27,15 +27,15 @@ in vec2 texcoord;
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.xy);
-    float waterDepth = texelFetch(depthtex0, texel, 0).r;
     vec3 reflectionColor = vec3(0.0);
-
     #ifdef REFLECTION
-        bool isTerrain = waterDepth < 1.0;
+        float waterDepth = texelFetch(depthtex0, texel, 0).r;
+        float solidDepth = texelFetch(depthtex1, texel, 0).r;
         #ifdef LOD
-            isTerrain = isTerrain || getLodDepthWater(texcoord) < 1.0;
+            waterDepth += float(waterDepth == 1.0) * (getLodDepthWater(texcoord) - 1.0);
+            solidDepth += float(solidDepth == 1.0) * (getLodDepthSolid(texcoord) - 1.0);
         #endif
-        if (isTerrain) {
+        if (abs(waterDepth) < 1.0) {
             GbufferData gbufferData = getGbufferData(texel, texcoord);
             vec4 originData = texelFetch(colortex4, texel, 0);
 
@@ -43,7 +43,7 @@ void main() {
                 gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
             #endif
             float reflectionWeight = 1.0;
-            if (waterDepth == texelFetch(depthtex1, texel, 0).r) {
+            if (waterDepth == solidDepth) {
                 float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
                 #ifndef FULL_REFLECTION
                     diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));

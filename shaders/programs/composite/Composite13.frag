@@ -58,6 +58,10 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
+    vec2 offset = uintBitsToFloat(floatBitsToUint(1.0 - (texel + 0.5) * texelSize) & 0x7F800000u);
+    if (offset.x != offset.y) {
+        discard;
+    }
     vec3 bloomColor = vec3(0.0);
     bloomColor += texelFetch(colortex4, texel, 0).rgb;
     bloomColor += texelFetch(colortex4, texel + ivec2(-1,  0), 0).rgb;

@@ -32,7 +32,7 @@ void main() {
     #ifdef LOD
         depth += float(depth == 1.0) * (getLodDepthWater(texcoord) - 1.0);
     #endif
-    if (depth < 1.0)
+    if (abs(depth) < 1.0)
         texBuffer4 = reflectionFilter(2.5, false);
 }
 
