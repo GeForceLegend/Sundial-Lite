@@ -1,46 +1,41 @@
-vec4 reflectionFilter(float offset, bool useNoise) {
-    ivec2 centerTexel = ivec2(texcoord * screenSize);
-
-    vec4 originData = texelFetch(colortex4, centerTexel, 0);
+vec4 reflectionFilter(vec4 originData, ivec2 centerTexel, float offset, bool useNoise) {
     float originReflectionDepth = originData.w;
     float originSmoothness = unpack2x8Bit(texelFetch(colortex2, centerTexel, 0).g).x;
-    if (originSmoothness < 0.9975 && originReflectionDepth > 1e-5) {
-        float roughness = pow2(1.0 - originSmoothness);
-        float roughnessInv = 100.0 / max(roughness, 1e-5);
-        vec2 coordOffset = vec2(4.0 * offset * clamp(roughness * 20.0, 0.0, 1.0) * (1.0 - exp(-originReflectionDepth * 1000.0)));
-        if (useNoise) {
-            coordOffset *= blueNoiseTemporal(texcoord).x + 0.5;
-        }
+    float roughness = pow2(1.0 - originSmoothness);
+    float roughnessInv = 100.0 / max(roughness, 1e-5);
+    vec2 coordOffset = vec2(4.0 * offset * clamp(roughness * 20.0, 0.0, 1.0) * (1.0 - exp(-originReflectionDepth * 1000.0)));
+    if (useNoise) {
+        coordOffset *= blueNoiseTemporal(texcoord).x + 0.5;
+    }
 
-        vec3 originNormal = getNormalTexel(centerTexel);
+    vec3 originNormal = getNormalTexel(centerTexel);
 
-        vec4 accumulation = originData;
-        float weightAccumulation = 1.0;
-        vec2 centerTexelCoord = centerTexel + 0.5;
+    vec3 accumulation = originData.rgb;
+    float weightAccumulation = 1.0;
+    vec2 centerTexelCoord = centerTexel + 0.5;
 
-        for (int i = -REFLECTION_FILTER; i < REFLECTION_FILTER + 1; i++) {
-            for (int j = -REFLECTION_FILTER; j < REFLECTION_FILTER + 1; j++) {
-                ivec2 sampleTexel = ivec2(centerTexelCoord + vec2(i, j) * coordOffset);
-                vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
-                float sampleReflectionDepth = sampleData.w;
-                vec3 sampleNormal = getNormalTexel(sampleTexel);
-                float sampleSmoothness = unpack2x8Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
+    for (int i = -REFLECTION_FILTER; i < REFLECTION_FILTER + 1; i++) {
+        for (int j = -REFLECTION_FILTER; j < REFLECTION_FILTER + 1; j++) {
+            ivec2 sampleTexel = ivec2(centerTexelCoord + vec2(i, j) * coordOffset);
+            vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
+            float sampleReflectionDepth = sampleData.w;
+            vec3 sampleNormal = getNormalTexel(sampleTexel);
+            float sampleSmoothness = unpack2x8Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
 
-                float weight =
-                    exp2(
-                        roughnessInv * log2(max(dot(originNormal, sampleNormal), 1e-6)) +
-                        100.0 * log2(1.0 - abs(roughness - pow2(1.0 - sampleSmoothness))) -
-                        1.44269502 * abs(originReflectionDepth - sampleReflectionDepth) / (max(originReflectionDepth, sampleReflectionDepth) + 0.2) * originSmoothness
-                    ) *
-                    step(0.0025, sampleSmoothness);
-                weight = clamp(weight, 0.0, 1.0);
-                if (abs(i) != -abs(j) && all(lessThan(sampleTexel * texelSize - 0.5, vec2(0.5)))) {
-                    accumulation += sampleData * weight;
-                    weightAccumulation += weight;
-                }
+            float weight =
+                exp2(
+                    roughnessInv * log2(max(dot(originNormal, sampleNormal), 1e-6)) +
+                    100.0 * log2(1.0 - abs(roughness - pow2(1.0 - sampleSmoothness))) -
+                    1.44269502 * abs(originReflectionDepth - sampleReflectionDepth) / (max(originReflectionDepth, sampleReflectionDepth) + 0.2) * originSmoothness
+                ) *
+                step(0.0025, sampleSmoothness);
+            weight = clamp(weight, 0.0, 1.0);
+            if (abs(i) != -abs(j) && all(lessThan(sampleTexel * texelSize - 0.5, vec2(0.5)))) {
+                accumulation += sampleData.rgb * weight;
+                weightAccumulation += weight;
             }
         }
-        originData.rgb = accumulation.rgb / weightAccumulation;
     }
+    originData.rgb = accumulation / weightAccumulation;
     return originData;
 }

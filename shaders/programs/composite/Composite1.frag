@@ -27,13 +27,16 @@ in vec2 texcoord;
 #include "/libs/ReflectionFilter.glsl"
 
 void main() {
-    texBuffer4 = texture(colortex4, texcoord, 0.0);
+    ivec2 texel = ivec2(texcoord * screenSize);
+    vec4 reflectionColor = texelFetch(colortex4, texel, 0);
     float depth = getWaterDepth(texcoord);
     #ifdef LOD
         depth += float(depth == 1.0) * (getLodDepthWater(texcoord) - 1.0);
     #endif
-    if (abs(depth) < 1.0)
-        texBuffer4 = reflectionFilter(6.0, false);
+    if (abs(depth) < 1.0 && reflectionColor.w > 1e-6) {
+        reflectionColor = reflectionFilter(reflectionColor, texel, 6.0, false);
+    }
+    texBuffer4 = reflectionColor;
 }
 
 /* DRAWBUFFERS:4 */
