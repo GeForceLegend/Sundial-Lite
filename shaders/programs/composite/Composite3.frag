@@ -36,25 +36,28 @@ void main() {
             solidDepth += float(solidDepth == 1.0) * (getLodDepthSolid(texcoord) - 1.0);
         #endif
         if (abs(waterDepth) < 1.0) {
-            GbufferData gbufferData = getGbufferData(texel, texcoord);
             vec4 originData = texelFetch(colortex4, texel, 0);
+            vec2 materialData = unpack2x8Bit(texelFetch(colortex2, texel, 0).g);
+            float smoothness = materialData.x;
+            float metalness = materialData.y;
 
             #ifdef LABPBR_F0
-                gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
+                metalness = step(229.5 / 255.0, metalness);
             #endif
             float reflectionWeight = 1.0;
             if (waterDepth == solidDepth) {
-                float diffuseWeight = pow(1.0 - gbufferData.smoothness, 5.0);
+                float diffuseWeight = pow(1.0 - smoothness, 5.0);
                 #ifndef FULL_REFLECTION
-                    diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(gbufferData.smoothness - (1.0 - gbufferData.smoothness) * (1.0 - 0.6666 * gbufferData.metalness), 0.0, 1.0));
+                    diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(smoothness - (1.0 - smoothness) * (1.0 - 0.6666 * metalness), 0.0, 1.0));
                 #endif
                 reflectionWeight *= 1.0 - diffuseWeight;
             }
 
             #if REFLECTION_FILTER > 0
                 float originReflectionDepth = originData.w;
-                float originSmoothness = gbufferData.smoothness;
+                float originSmoothness = smoothness;
                 if (originSmoothness < 0.9975 && originReflectionDepth > 1e-5) {
+                    vec3 originNormal = getNormalTexel(texel);
                     float roughness = pow2(1.0 - originSmoothness);
                     float roughnessInv = 100.0 / max(roughness, 1e-5);
                     vec2 coordOffset = vec2(4.0 * clamp(roughness * 20.0, 0.0, 1.0) * (1.0 - exp(-sqrt(originReflectionDepth) * 50.0)));
@@ -75,7 +78,7 @@ void main() {
 
                                 float weight =
                                     exp2(
-                                        roughnessInv * log2(max(dot(gbufferData.normal, sampleNormal), 1e-6)) +
+                                        roughnessInv * log2(max(dot(originNormal, sampleNormal), 1e-6)) +
                                         100.0 * log2(1.0 - abs(roughness - pow2(1.0 - sampleSmoothness))) -
                                         1.44269502 * abs(originReflectionDepth - sampleReflectionDepth) / (max(originReflectionDepth, sampleReflectionDepth) + 0.2) * originSmoothness
                                     ) *
