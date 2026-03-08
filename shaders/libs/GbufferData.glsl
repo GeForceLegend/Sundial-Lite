@@ -258,12 +258,6 @@ vec3 getGeoNormalTexel(ivec2 texel) {
     return decodeNormal(rawData);
 }
 
-void getBothNormalsTexel(ivec2 texel, out vec3 normal, out vec3 geoNormal) {
-    vec4 rawData = texelFetch(colortex1, texel, 0);
-    normal = decodeNormal(rawData.xy);
-    geoNormal = decodeNormal(rawData.zw);
-}
-
 float getSolidDepth(vec2 coord) {
     return textureLod(depthtex1, coord, 0.0).x;
 }
