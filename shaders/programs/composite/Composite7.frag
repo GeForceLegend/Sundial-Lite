@@ -224,7 +224,6 @@ void main() {
 
     float blendWeight = 1.0;
     #ifdef TAA
-        vec2 reprojectCoord = closest.st + velocity.xy;
         float depthDiffFactor = getDepthConfidenceFactor(closest, velocity);
 
         blendWeight *= 0.95 - min(0.7, 4.0 * pow(dot(velocity.xy, velocity.xy), 0.25)) * step(closest.z, 0.999999);

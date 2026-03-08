@@ -59,7 +59,7 @@ float max3(float a, float b, float c) {
     return max(max(a, b), c);
 }
 
-vec3 FidelityFX_RCAS(sampler2D colortex, vec2 coord, vec2 pixelSize) {
+vec3 FidelityFX_RCAS(sampler2D colortex, vec2 coord, vec3 colorE, vec2 pixelSize) {
     // Algorithm uses minimal 3x3 pixel neighborhood.
     //    b
     //  d e f
@@ -67,7 +67,6 @@ vec3 FidelityFX_RCAS(sampler2D colortex, vec2 coord, vec2 pixelSize) {
     // Input and output might not be same size in Optifine, so we should use textureLod()
 	vec3 colorB = textureLod(colortex, coord + vec2( 0.0, -1.0) * pixelSize, 0.0).rgb;
 	vec3 colorD = textureLod(colortex, coord + vec2(-1.0,  0.0) * pixelSize, 0.0).rgb;
-	vec3 colorE = textureLod(colortex, coord                               , 0.0).rgb;
 	vec3 colorF = textureLod(colortex, coord + vec2( 1.0,  0.0) * pixelSize, 0.0).rgb;
 	vec3 colorH = textureLod(colortex, coord + vec2( 0.0,  1.0) * pixelSize, 0.0).rgb;
     // Luma times 2.
@@ -113,7 +112,7 @@ void main() {
     vec3 color = textureLod(colortex0, texcoord, 0.0).rgb;
     #ifdef FINAL_SHARPENING
         vec2 pixelSize = 1.0 / vec2(textureSize(colortex0, 0));
-        color = FidelityFX_RCAS(colortex0, texcoord, pixelSize);
+        color = FidelityFX_RCAS(colortex0, texcoord, color, pixelSize);
     #endif
     fragColor = vec4(color, 1.0);
 }
