@@ -32,6 +32,9 @@ void main() {
         clrwl_computeFragment(albedo, albedo, lightmap, ao, overlayColor);
         albedo.rgb = mix(albedo.rgb, overlayColor.rgb, overlayColor.a);
     #endif
+    #ifdef DAMAGED_BLOCK
+        albedo.rgb = log(3.0 * albedo.rgb + 1.0) / 3.0;
+    #endif
     if (albedo.w < alphaTestRef) discard;
     gbufferData0 = albedo;
 }
