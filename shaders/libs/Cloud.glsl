@@ -235,21 +235,21 @@ vec4 realisticCloud(
             float RdotP = 2.0 * dot(sunDir, relativeCloudPos);
             float sunlightOpticalDepth = 0.0;
             float moonlightOpticalDepth = 0.0;
-            float stepSize = CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
+            float shadowStepSize = CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
             float stepLength = 0.0;
             for (int i = 0; i < CLOUD_REALISTIC_SHADOWLIGHT_SAMPLES; i++) {
-                stepLength += stepSize;
+                stepLength += shadowStepSize;
                 vec3 sunlightSamplePos = cloudPos + sunDir * stepLength;
                 sunlightOpticalDepth += realisticCloudDensity(
                     sunlightSamplePos, wind, sqrt(cloudDistance2 + stepLength * (RdotP + stepLength)),
                     CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES, cloudShadowDensityWeights
-                ) * stepSize;
+                ) * shadowStepSize;
                 vec3 moonlightSamplePos = cloudPos - sunDir * stepLength;
                 moonlightOpticalDepth += realisticCloudDensity(
                     moonlightSamplePos, wind, sqrt(cloudDistance2 + stepLength * (-RdotP + stepLength)),
                     CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES, cloudShadowDensityWeights
-                ) * stepSize;
-                stepSize += CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
+                ) * shadowStepSize;
+                shadowStepSize += CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
             }
             RdotP *= cloudDistanceInv * 0.5;
             float cloudDistance = cloudDistance2 * cloudDistanceInv;

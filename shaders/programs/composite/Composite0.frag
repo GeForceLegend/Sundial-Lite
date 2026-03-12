@@ -113,7 +113,7 @@ vec3 directionDistribution(vec2 noise, vec3 normal, vec3 viewDir, float roughnes
     return direction;
 }
 
-vec4 reflection(ivec2 texel, float smoothness, float depth, float skyLightLevel, vec3 f0, vec3 f82, float firstWeight) {
+vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, float firstWeight) {
     vec3 viewPos;
     #ifdef LOD
         if (depth > 1.0) {
@@ -250,14 +250,13 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, float skyLightLevel,
                 #ifdef PLANE_CLOUD
                     planeCloud = planeClouds(worldPos, rayDir, sunDirection, skyColorUp, intersectionData.xyz);
                     reflectionColor.rgb = mix(reflectionColor.rgb, planeCloud.rgb, planeCloud.a * float(worldPos.y + cameraPosition.y < PLANE_CLOUD_HEIGHT));
+                    planeCloud.a *= float(worldPos.y + cameraPosition.y >= PLANE_CLOUD_HEIGHT);
                 #endif
                 #ifdef CLOUD_IN_REFLECTION
                     float cloudDepth;
                     reflectionColor.rgb = sampleClouds(reflectionColor.rgb, atmosphere, worldPos, rayDir, shadowDirection, sunDirection, skyColorUp, intersectionData.xyz, 0.0, cloudDepth).rgb;
                 #endif
-                if (worldPos.y + cameraPosition.y >= PLANE_CLOUD_HEIGHT) {
-                    reflectionColor.rgb = mix(reflectionColor.rgb, planeCloud.rgb, planeCloud.a);
-                }
+                reflectionColor.rgb = mix(reflectionColor.rgb, planeCloud.rgb, planeCloud.a);
                 #ifdef LIGHT_LEAKING_FIX
                     reflectionColor.rgb *= clamp(eyeBrightnessSmooth.y / 16.0, 0.0, 1.0);
                 #endif
@@ -275,7 +274,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, float skyLightLevel,
                 reflectionColor.rgb *= airAbsorption(reflectionColor.w);
                 #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
                     float atmosphereLength = mix(reflectionColor.w * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 1600.0, float(hitSky));
-                    reflectionColor.rgb = solidAtmosphereScattering(reflectionColor.rgb, rayDir, skyColorUp, atmosphereLength, skyLightLevel);
+                    reflectionColor.rgb = solidAtmosphereScattering(reflectionColor.rgb, rayDir, skyColorUp, atmosphereLength, eyeBrightnessSmooth.y / 240.0);
                 #endif
             #endif
         }
@@ -345,7 +344,7 @@ void main() {
             if (reflectionStrength > 1e-5) {
                 f0 = signI(f0) * mix(abs(f0), pow(texelFetch(colortex0, texel, 0).rgb, vec3(2.2)), smoothMetalness.y);
                 float skyLightLevel = unpack2x8Bit(gbufferData.x).y;
-                reflectionColor = reflection(texel, smoothMetalness.x, waterDepth, skyLightLevel, f0, f82, reflectionStrength);
+                reflectionColor = reflection(texel, smoothMetalness.x, waterDepth, f0, f82, reflectionStrength);
             }
         }
     #endif
