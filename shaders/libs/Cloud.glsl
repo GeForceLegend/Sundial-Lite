@@ -131,12 +131,12 @@ float baseCloudNoise(vec2 coord) {
     return textureLod(noisetex, coord, 0.0).w;
 }
 
-float realisticCloudDensity(vec3 cloudPos, vec3 wind, float cloudDistance, int octaves, float weights) {
+float realisticCloudDensity(vec3 cloudPos, float cloudDistance, int octaves, float weights) {
     cloudPos += frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0);
     float density = baseCloudNoise(cloudPos.xz * 0.00001 / CLOUD_SCALE);
     float weight = 1.0;
     for (int i = 0; i < octaves; i++) {
-        cloudPos = cloudPos * CLOUD_REALISTIC_OCTAVE_SCALE + wind;
+        cloudPos = cloudPos * CLOUD_REALISTIC_OCTAVE_SCALE - CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0);
         weight *= CLOUD_REALISTIC_OCTAVE_FADE;
         density += smooth3DNoise(cloudPos * 0.000015 / CLOUD_SCALE) * weight;
     }
@@ -156,7 +156,7 @@ float realisticCloudDensity(vec3 cloudPos, vec3 wind, float cloudDistance, int o
     return density;
 }
 
-float atmosphereAbsorption(float RdotP, float cloudDistance) {
+float atmosphereAbsorptionGround(float RdotP, float cloudDistance) {
     float rayHeight = cloudDistance * sqrt(max(0.0, 1.0 + RdotP)) - earthRadius - 500.0;
     float absorption = pow2(clamp(rayHeight / (CLOUD_REALISTIC_HEIGHT * 4.0), 0.0, 1.0));
 
@@ -214,14 +214,12 @@ vec4 realisticCloud(
             float sampleDensity = 0.0;
             vec3 relativeCloudPos;
             float cloudDistance2;
-            float cloudDistanceInv;
-            vec3 wind = -CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0);
             while(maximumSteps > 0.5) {
                 maximumSteps -= 1.0;
                 relativeCloudPos = cloudPos - vec3(cameraPosition.x + CLOUD_REALISTIC_OFFSET_X, 0.0, cameraPosition.z + CLOUD_REALISTIC_OFFSET_Z);
                 cloudDistance2 = dot(relativeCloudPos, relativeCloudPos);
-                cloudDistanceInv = inversesqrt(cloudDistance2);
-                sampleDensity = realisticCloudDensity(cloudPos, wind, cloudDistance2 * cloudDistanceInv, CLOUD_REALISTIC_OCTAVES, cloudDensityWeights);
+                float cloudDistanceInv = inversesqrt(cloudDistance2);
+                sampleDensity = realisticCloudDensity(cloudPos, cloudDistance2 * cloudDistanceInv, CLOUD_REALISTIC_OCTAVES, cloudDensityWeights);
                 if (sampleDensity > 1e-5) {
                     break;
                 }
@@ -241,23 +239,24 @@ vec4 realisticCloud(
                 stepLength += shadowStepSize;
                 vec3 sunlightSamplePos = cloudPos + sunDir * stepLength;
                 sunlightOpticalDepth += realisticCloudDensity(
-                    sunlightSamplePos, wind, sqrt(cloudDistance2 + stepLength * (RdotP + stepLength)),
+                    sunlightSamplePos, sqrt(cloudDistance2 + stepLength * (RdotP + stepLength)),
                     CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES, cloudShadowDensityWeights
                 ) * shadowStepSize;
                 vec3 moonlightSamplePos = cloudPos - sunDir * stepLength;
                 moonlightOpticalDepth += realisticCloudDensity(
-                    moonlightSamplePos, wind, sqrt(cloudDistance2 + stepLength * (-RdotP + stepLength)),
+                    moonlightSamplePos, sqrt(cloudDistance2 + stepLength * (-RdotP + stepLength)),
                     CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES, cloudShadowDensityWeights
                 ) * shadowStepSize;
                 shadowStepSize += CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
             }
+            float cloudDistanceInv = inversesqrt(cloudDistance2);
             RdotP *= cloudDistanceInv * 0.5;
             float cloudDistance = cloudDistance2 * cloudDistanceInv;
             vec3 sunlightStrength, moonlightStrength;
             atmosphereAbsorptionDoubleSideLUT(cloudDistance, RdotP, sunlightStrength, moonlightStrength);
             RdotP *= abs(RdotP);
-            sunlightStrength *= atmosphereAbsorption(RdotP, cloudDistance);
-            moonlightStrength *= atmosphereAbsorption(-RdotP, cloudDistance);
+            sunlightStrength *= atmosphereAbsorptionGround(RdotP, cloudDistance);
+            moonlightStrength *= atmosphereAbsorptionGround(-RdotP, cloudDistance);
 
             sunlightStrength *= CLOUD_REALISTIC_BASIC_SHADOWLIGHT + exp2(-sqrt(sunlightOpticalDepth * CLOUD_REALISTIC_SAMPLE_DENSITY * 1.44269502 * 1.44269502));
             moonlightStrength *= CLOUD_REALISTIC_BASIC_SHADOWLIGHT + exp2(-sqrt(moonlightOpticalDepth * CLOUD_REALISTIC_SAMPLE_DENSITY * 1.44269502 * 1.44269502));
