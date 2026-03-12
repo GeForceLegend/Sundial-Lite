@@ -68,6 +68,7 @@ void main() {
         #endif
         if (gbufferModelViewInverse[3].y + cameraPosition.y + WORLD_BASIC_HEIGHT - 500.0 < PLANE_CLOUD_HEIGHT) {
             solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
+            planeCloud.a = 0.0;
         }
     }
     float cloudDepth;
@@ -75,9 +76,7 @@ void main() {
         solidColor.rgb, backColor, gbufferModelViewInverse[3].xyz, worldDir, shadowDirection, sunDirection, skyColorUp, intersectionData.xyz, backDepth, cloudDepth
     );
 
-    if (gbufferModelViewInverse[3].y + cameraPosition.y + WORLD_BASIC_HEIGHT - 500.0 >= PLANE_CLOUD_HEIGHT) {
-        solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
-    }
+    solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
 
     float transparentDensity = 1.0;
     if (cloudDepth > -0.5) {
