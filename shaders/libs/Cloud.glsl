@@ -132,10 +132,6 @@ float baseCloudNoise(vec2 coord) {
 }
 
 float realisticCloudDensity(vec3 cloudPos, vec3 wind, float cloudDistance, int octaves, float weights) {
-    #ifdef LQ_REALISTIC_CLOUD
-        octaves = (octaves + 1) / 2;
-    #endif
-
     cloudPos += frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0);
     float density = baseCloudNoise(cloudPos.xz * 0.00001 / CLOUD_SCALE);
     float weight = 1.0;
@@ -167,70 +163,8 @@ float atmosphereAbsorption(float RdotP, float cloudDistance) {
     return absorption;
 }
 
-#ifdef LQ_REALISTIC_CLOUD
-    const float cloudDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, (CLOUD_REALISTIC_OCTAVES + 1) / 2 + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
-    const float cloudShadowDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, (CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES + 1) / 2 + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
-#else
-    const float cloudDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
-    const float cloudShadowDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
-#endif
-
-vec4 sampleRealisticCloud(vec3 cloudPos, vec3 sunDir, vec3 atmosphere) {
-    vec3 relativeCloudPos = cloudPos - vec3(cameraPosition.x + CLOUD_REALISTIC_OFFSET_X, 0.0, cameraPosition.z + CLOUD_REALISTIC_OFFSET_Z);
-    float cloudDistance2 = dot(relativeCloudPos, relativeCloudPos);
-    float cloudDistance = inversesqrt(cloudDistance2);
-    vec3 wind = -CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0);
-    vec4 result = vec4(0.0);
-    result.w = realisticCloudDensity(cloudPos, wind, cloudDistance2 * cloudDistance, CLOUD_REALISTIC_OCTAVES, cloudDensityWeights);
-    if (result.w > 1e-5) {
-        float RdotP = 2.0 * dot(sunDir, relativeCloudPos);
-        float sunlightOpticalDepth = 0.0;
-        float moonlightOpticalDepth = 0.0;
-        float stepSize = CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
-        float stepLength = 0.0;
-        for (int i = 0; i < CLOUD_REALISTIC_SHADOWLIGHT_SAMPLES; i++) {
-            stepLength += stepSize;
-            vec3 sunlightSamplePos = cloudPos + sunDir * stepLength;
-            sunlightOpticalDepth += realisticCloudDensity(
-                sunlightSamplePos, wind, sqrt(cloudDistance2 + stepLength * (RdotP + stepLength)),
-                CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES, cloudShadowDensityWeights
-            ) * stepSize;
-            vec3 moonlightSamplePos = cloudPos - sunDir * stepLength;
-            moonlightOpticalDepth += realisticCloudDensity(
-                moonlightSamplePos, wind, sqrt(cloudDistance2 + stepLength * (-RdotP + stepLength)),
-                CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES, cloudShadowDensityWeights
-            ) * stepSize;
-            stepSize += CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
-        }
-        RdotP *= cloudDistance * 0.5;
-        cloudDistance = cloudDistance2 * cloudDistance;
-        vec3 sunlightStrength, moonlightStrength;
-        atmosphereAbsorptionDoubleSideLUT(cloudDistance, RdotP, sunlightStrength, moonlightStrength);
-        RdotP *= abs(RdotP);
-        sunlightStrength *= atmosphereAbsorption(RdotP, cloudDistance);
-        moonlightStrength *= atmosphereAbsorption(-RdotP, cloudDistance);
-
-        sunlightStrength *= CLOUD_REALISTIC_BASIC_SHADOWLIGHT + exp2(-sqrt(sunlightOpticalDepth * CLOUD_REALISTIC_SAMPLE_DENSITY * 1.44269502 * 1.44269502));
-        moonlightStrength *= CLOUD_REALISTIC_BASIC_SHADOWLIGHT + exp2(-sqrt(moonlightOpticalDepth * CLOUD_REALISTIC_SAMPLE_DENSITY * 1.44269502 * 1.44269502));
-        result.rgb += 10.0 * SUNLIGHT_BRIGHTNESS * (sunlightStrength + moonlightStrength * nightBrightness);
-
-        float cloudHeight = -clamp(1.0 + (earthRadius + CLOUD_REALISTIC_HEIGHT + 500.0) / CLOUD_REALISTIC_CENTER_THICKNESS - cloudDistance / CLOUD_REALISTIC_CENTER_THICKNESS, 0.0, 1.0) +
-            clamp(
-                cloudDistance / (CLOUD_REALISTIC_THICKNESS - CLOUD_REALISTIC_CENTER_THICKNESS) -
-                (CLOUD_REALISTIC_CENTER_THICKNESS + earthRadius + CLOUD_REALISTIC_HEIGHT + 500.0) / (CLOUD_REALISTIC_THICKNESS - CLOUD_REALISTIC_CENTER_THICKNESS)
-            , 0.0, 1.0);
-        cloudHeight = cloudHeight * 0.5 + 0.5;
-        float skyLightStrength = cloudHeight;
-        skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
-        skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
-        skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
-        skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
-        const float cloudAbsorptionBeta = exp2(-CLOUD_REALISTIC_THICKNESS * CLOUD_REALISTIC_SAMPLE_DENSITY);
-        skyLightStrength += cloudAbsorptionBeta - skyLightStrength * cloudAbsorptionBeta;
-        result.rgb += atmosphere * (skyLightStrength + CLOUD_REALISTIC_BASIC_SKYLIGHT);
-    }
-    return result;
-}
+const float cloudDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
+const float cloudShadowDensityWeights = (1.0 - pow(CLOUD_REALISTIC_OCTAVE_FADE, CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES + 1.0)) / ((1.0 - CLOUD_REALISTIC_OCTAVE_FADE) * CLOUD_REALISTIC_HARDNESS * 10.0);
 
 vec4 realisticCloud(
     vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, vec3 sunDir, vec3 skyColorUp, vec3 intersectionData, float backDepth, out float cloudDepth
@@ -265,13 +199,8 @@ vec4 realisticCloud(
     cloudDepth = -1.0;
     if (hit) {
         float cloudTransmittance = 1.0;
-        #ifdef LQ_REALISTIC_CLOUD
-            float stepSize = (endIntersection - startIntersection) / (CLOUD_REALISTIC_LQ_SAMPLES + 1.0);
-            float startNoise = stepSize * 0.5;
-        #else
-            float stepSize = (endIntersection - startIntersection) / (CLOUD_REALISTIC_HQ_SAMPLES + 1.0);
-            float startNoise = stepSize * bayer64Temporal(gl_FragCoord.xy);
-        #endif
+        float stepSize = (endIntersection - startIntersection) / (CLOUD_REALISTIC_HQ_SAMPLES + 1.0);
+        float startNoise = stepSize * bayer64Temporal(gl_FragCoord.xy);
         float stepTransmittance = -stepSize * CLOUD_REALISTIC_SAMPLE_DENSITY * 1.44269502;
         cloudPos += worldDir * (startIntersection + startNoise);
         cloudPos.xz += cameraPosition.xz + vec2(CLOUD_REALISTIC_OFFSET_X, CLOUD_REALISTIC_OFFSET_Z);
@@ -280,19 +209,81 @@ vec4 realisticCloud(
         float unHitted = 1.0;
         vec3 cloudColor = vec3(0.0);
         cloudDepth = startIntersection + startNoise;
-        #ifdef LQ_REALISTIC_CLOUD
-            for (int i = 0; i < CLOUD_REALISTIC_LQ_SAMPLES; i++)
-        #else
-            for (int i = 0; i < CLOUD_REALISTIC_HQ_SAMPLES; i++)
-        #endif
-        {
-            vec4 sampleCloud = sampleRealisticCloud(cloudPos, sunDir, (skyColorUp + atmosphere) * vec3(0.5) / PI);
-            float sampleTransmittance = exp2(sampleCloud.w * stepTransmittance) * cloudTransmittance;
-            cloudColor += (cloudTransmittance - sampleTransmittance) * sampleCloud.rgb;
+        float maximumSteps = float(CLOUD_REALISTIC_HQ_SAMPLES);
+        while (true) {
+            float sampleDensity = 0.0;
+            vec3 relativeCloudPos;
+            float cloudDistance2;
+            float cloudDistanceInv;
+            vec3 wind = -CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0);
+            while(maximumSteps > 0.5) {
+                maximumSteps -= 1.0;
+                relativeCloudPos = cloudPos - vec3(cameraPosition.x + CLOUD_REALISTIC_OFFSET_X, 0.0, cameraPosition.z + CLOUD_REALISTIC_OFFSET_Z);
+                cloudDistance2 = dot(relativeCloudPos, relativeCloudPos);
+                cloudDistanceInv = inversesqrt(cloudDistance2);
+                sampleDensity = realisticCloudDensity(cloudPos, wind, cloudDistance2 * cloudDistanceInv, CLOUD_REALISTIC_OCTAVES, cloudDensityWeights);
+                if (sampleDensity > 1e-5) {
+                    break;
+                }
+                cloudDepth += stepSize * unHitted;
+                cloudPos += worldDir;
+                cloudTransmittance = clamp(cloudTransmittance * 1.005 - 0.005, 0.0, 1.0);
+            }
+            if (maximumSteps < 0.5) {
+                break;
+            }
+            float RdotP = 2.0 * dot(sunDir, relativeCloudPos);
+            float sunlightOpticalDepth = 0.0;
+            float moonlightOpticalDepth = 0.0;
+            float stepSize = CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
+            float stepLength = 0.0;
+            for (int i = 0; i < CLOUD_REALISTIC_SHADOWLIGHT_SAMPLES; i++) {
+                stepLength += stepSize;
+                vec3 sunlightSamplePos = cloudPos + sunDir * stepLength;
+                sunlightOpticalDepth += realisticCloudDensity(
+                    sunlightSamplePos, wind, sqrt(cloudDistance2 + stepLength * (RdotP + stepLength)),
+                    CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES, cloudShadowDensityWeights
+                ) * stepSize;
+                vec3 moonlightSamplePos = cloudPos - sunDir * stepLength;
+                moonlightOpticalDepth += realisticCloudDensity(
+                    moonlightSamplePos, wind, sqrt(cloudDistance2 + stepLength * (-RdotP + stepLength)),
+                    CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES, cloudShadowDensityWeights
+                ) * stepSize;
+                stepSize += CLOUD_REALISTIC_SHADOW_LIGHT_STEP_SIZE;
+            }
+            RdotP *= cloudDistanceInv * 0.5;
+            float cloudDistance = cloudDistance2 * cloudDistanceInv;
+            vec3 sunlightStrength, moonlightStrength;
+            atmosphereAbsorptionDoubleSideLUT(cloudDistance, RdotP, sunlightStrength, moonlightStrength);
+            RdotP *= abs(RdotP);
+            sunlightStrength *= atmosphereAbsorption(RdotP, cloudDistance);
+            moonlightStrength *= atmosphereAbsorption(-RdotP, cloudDistance);
+
+            sunlightStrength *= CLOUD_REALISTIC_BASIC_SHADOWLIGHT + exp2(-sqrt(sunlightOpticalDepth * CLOUD_REALISTIC_SAMPLE_DENSITY * 1.44269502 * 1.44269502));
+            moonlightStrength *= CLOUD_REALISTIC_BASIC_SHADOWLIGHT + exp2(-sqrt(moonlightOpticalDepth * CLOUD_REALISTIC_SAMPLE_DENSITY * 1.44269502 * 1.44269502));
+            vec3 sampleCloudColor = 10.0 * SUNLIGHT_BRIGHTNESS * (sunlightStrength + moonlightStrength * nightBrightness);
+
+            float cloudHeight = -clamp(1.0 + (earthRadius + CLOUD_REALISTIC_HEIGHT + 500.0) / CLOUD_REALISTIC_CENTER_THICKNESS - cloudDistance / CLOUD_REALISTIC_CENTER_THICKNESS, 0.0, 1.0) +
+                clamp(
+                    cloudDistance / (CLOUD_REALISTIC_THICKNESS - CLOUD_REALISTIC_CENTER_THICKNESS) -
+                    (CLOUD_REALISTIC_CENTER_THICKNESS + earthRadius + CLOUD_REALISTIC_HEIGHT + 500.0) / (CLOUD_REALISTIC_THICKNESS - CLOUD_REALISTIC_CENTER_THICKNESS)
+                , 0.0, 1.0);
+            cloudHeight = cloudHeight * 0.5 + 0.5;
+            float skyLightStrength = cloudHeight;
+            skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
+            skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
+            skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
+            skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
+            const float cloudAbsorptionBeta = exp2(-CLOUD_REALISTIC_THICKNESS * CLOUD_REALISTIC_SAMPLE_DENSITY);
+            skyLightStrength += cloudAbsorptionBeta - skyLightStrength * cloudAbsorptionBeta;
+            sampleCloudColor += atmosphere * (skyLightStrength + CLOUD_REALISTIC_BASIC_SKYLIGHT);
+
+            float sampleTransmittance = exp2(sampleDensity * stepTransmittance) * cloudTransmittance;
+            cloudColor += (cloudTransmittance - sampleTransmittance) * sampleCloudColor;
             cloudTransmittance = sampleTransmittance;
+
             if (cloudTransmittance < 0.0001) break;
-            unHitted *= float(sampleTransmittance > 0.99999);
-            cloudDepth += stepSize * unHitted;
+            unHitted = 0.0;
             cloudPos += worldDir;
             cloudTransmittance = clamp(cloudTransmittance * 1.005 - 0.005, 0.0, 1.0);
         }
