@@ -393,9 +393,9 @@ float cloudShadowRealistic(vec3 worldPos, vec3 shadowDir) {
     float RdotP = dot(worldPos, shadowDir);
     float RdotP2 = RdotP * RdotP - R2;
 
-    vec2 cloudIntersection = raySphereIntersection(RdotP, RdotP2, -pow2(cloudCenterHeight));
-    float startIntersection = mix(cloudIntersection.x, cloudIntersection.y, float(worldPos.y < cloudCenterHeight));
-    bool hit = cloudIntersection.y >= 0.0 || worldPos.y < cloudCenterHeight;
+    float d = sqrt(RdotP2 + pow2(cloudCenterHeight));
+    float startIntersection = max(-1.0, -RdotP + signMul(d, cloudCenterHeight - worldPos.y));
+    bool hit = startIntersection > 0.0;
 
     float cloudTransmittance = 1.0;
     if (hit) {
@@ -441,9 +441,8 @@ vec4 planeClouds(vec3 worldPos, vec3 worldDir, vec3 sunDirection, vec3 skyColorU
     worldPos.y += max(300.0 + earthRadius, cameraPosition.y + WORLD_BASIC_HEIGHT + earthRadius);
 
     float planetIntersection = intersectionData.z;
-    vec2 cloudIntersection = raySphereIntersection(intersectionData.x, intersectionData.y, -pow2(planeCloudHeight));
-
-    float intersection = mix(cloudIntersection.y, cloudIntersection.x, float(worldPos.y > planeCloudHeight));
+    float d = sqrt(intersectionData.y + pow2(planeCloudHeight));
+    float intersection = max(-1.0, -intersectionData.x + signMul(d, planeCloudHeight - worldPos.y));
     bool hit = intersection > 0.0 && (worldPos.y > planeCloudHeight || planetIntersection < 0.0);
 
     vec4 result = vec4(0.0);

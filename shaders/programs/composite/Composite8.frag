@@ -40,7 +40,7 @@ void main() {
     const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
     const float strength = 15.0 * MAX_BLUR_RADIUS;
     vec2 noise = blueNoiseTemporal(texcoord).xy;
-    float radius = noise.y / DOF_SAMPLES + 1e-6;
+    float radius = noise.y / DOF_SAMPLES + 1e-10;
     float noiseAngle = noise.x * PI * 2.0;
     float cosNoise = cos(noiseAngle);
     float sinNoise = sin(noiseAngle);
