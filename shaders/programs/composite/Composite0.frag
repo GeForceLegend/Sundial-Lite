@@ -236,7 +236,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
                 sampleViewPos = vec3(sampleProjPos.xy * projectionScale, -projectionScale);
             }
             float rayLength = distance(viewPos, sampleViewPos);
-            vec3 sampleLight = textureLod(colortex3, sampleCoord.xy, 0.0).rgb;
+            vec3 sampleLight = texelFetch(colortex3, ivec2(sampleCoord.xy * screenSize), 0).rgb;
             reflectionColor = vec4(sampleLight, rayLength);
         }
         else {
