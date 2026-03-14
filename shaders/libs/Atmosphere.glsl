@@ -255,7 +255,7 @@ vec3 waterFogAbsorption(float waterDepth) {
 
 vec3 waterFogScattering(vec3 worldDir, vec3 skyColor, float waterDepth, float skyLight) {
     float miePhase = miePhase(worldDir.y, 0.4, 0.16);
-    vec3 scattering = skyLight * miePhase * skyColor * (1.0 - exp(-waterDepth * waterAbsorptionBeta)) * exp(-16.0 * (1.0 - skyLight) * waterAbsorptionBeta);
+    vec3 scattering = skyLight * miePhase * skyColor * (1.0 - exp(-waterDepth * waterAbsorptionBeta)) * exp(-16.0 * (1.0 - skyLight * 0.8) * waterAbsorptionBeta);
     return scattering;
 }
 

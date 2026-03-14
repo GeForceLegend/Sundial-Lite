@@ -36,7 +36,7 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
                 float waterDepth = (waterHeight - mcPos.y) * waterShadowHeightInv;
 
                 float causticStrength = casuticData.r;
-                causticStrength = mix(causticStrength * 4.0, 1.0, clamp(exp(-0.3 * waterDepth), 0.0, 1.0));
+                causticStrength = mix(causticStrength * 4.0, 1.0, clamp(exp(-0.3 * waterDepth), 0.0, 1.0)) * causticsFresnel;
                 caustic = causticStrength * clamp(waterFogAbsorption(waterDepth), 0.0, 1.0);
                 caustic = mix(caustic, vec3(1.0), vec3(waterShadow));
             }
