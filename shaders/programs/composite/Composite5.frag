@@ -230,7 +230,7 @@ void main() {
         solidColor.rgb = mix(rawSolidColor, solidColor.rgb, vec3(solidColor.w)) * stainedColor;
 
         float isTargetParticle = 1.0 - float(isTargetNotParticle);
-        vec3 vanillaLight = pow2(gbufferData.lightmap.y) * (skyColorUp + sunColor * SUNLIGHT_BRIGHTNESS) * (1.0 - gbufferData.metalness);
+        vec3 vanillaLight = pow2(gbufferData.lightmap.y) * (skyColorUp + sunColor * SUNLIGHT_BRIGHTNESS) * (1.0 - gbufferData.metalness) * (1.0 - 0.8 * weatherStrength);
         #ifdef IS_IRIS
             float eyeRelatedDistance = length(waterWorldPos + relativeEyePosition);
             gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
