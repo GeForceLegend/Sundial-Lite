@@ -96,6 +96,7 @@ void main() {
         shadowOffset.y = -isWater;
         if (mc_Entity.x == 8192) {
             color.rgb = worldPos;
+            color.a = 0.98 - pow(1.0 - clamp(dot(shadowModelViewInverse[2].xyz, worldNormal), 0.0, 1.0), 5.0) * 0.98;
         }
         float isTransparent = float(abs(textureLod(gtexture, mc_midTexCoord.st + 1e-6, 0.0).w - 0.5) + 1e-4 < 0.49) * (1.0 - isWater);
         shadowOffset.x = -isTransparent;

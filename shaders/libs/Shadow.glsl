@@ -28,7 +28,7 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
         #ifdef WATER_CAUSTIC
             float waterShadow = textureLod(shadowtex0, waterShadowCoord, 0.0);
             if (waterShadow < 1.0) {
-                vec3 casuticData = textureLod(shadowcolor0, waterShadowCoord.st, 0.0).xyz;
+                vec4 casuticData = textureLod(shadowcolor0, waterShadowCoord.st, 0.0);
                 float waterHeight = (1.0 - casuticData.z) * 510.0 - 128.0 + casuticData.y * 2.0;
 
                 float waterShadowHeightInv = inversesqrt(0.4375 + 0.5625 * lightDir.y * lightDir.y);
@@ -36,7 +36,7 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
                 float waterDepth = (waterHeight - mcPos.y) * waterShadowHeightInv;
 
                 float causticStrength = casuticData.r;
-                causticStrength = mix(causticStrength * 4.0, 1.0, clamp(exp(-0.3 * waterDepth), 0.0, 1.0)) * causticsFresnel;
+                causticStrength = mix(causticStrength * 4.0, 1.0, clamp(exp(-0.3 * waterDepth), 0.0, 1.0)) * casuticData.w;
                 caustic = causticStrength * clamp(waterFogAbsorption(waterDepth), 0.0, 1.0);
                 caustic = mix(caustic, vec3(1.0), vec3(waterShadow));
             }

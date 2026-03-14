@@ -10,7 +10,6 @@ uniform float rainStrength;
 uniform float rainyMieBeta;
 uniform float rainyStrength;
 uniform float darknessFactor;
-uniform float causticsFresnel;
 uniform float weatherStrength;
 uniform float frameTimeCounter;
 uniform ivec2 atlasSize;

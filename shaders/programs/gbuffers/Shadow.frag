@@ -18,7 +18,7 @@
 
 layout(location = 0) out vec4 shadowColor0;
 
-in vec4 color;              // Will become vec4(worldPos, 0.0) when rendering water
+in vec4 color;              // Will become vec4(worldPos, causticsStrength) when rendering water
 in vec3 worldNormal;
 in vec2 texcoord;
 in vec2 shadowOffset;
@@ -91,7 +91,7 @@ void main() {
             mcPos.y += 128.0;
             float floorMcHeight = floor(mcPos.y / 2.0);
             float caustic = waterCaustic(mcPos, shadowDirection);
-            albedo = vec4(caustic, mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, 1.0);
+            albedo = vec4(caustic, mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, color.a);
         }
 
         vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
