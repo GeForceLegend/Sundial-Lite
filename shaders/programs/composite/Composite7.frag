@@ -25,8 +25,6 @@ layout(location = 2) out vec4 texBuffer5;
 in float smoothCenterDepth;
 in vec2 texcoord;
 
-#define TEMPORAL_DATA
-
 #define DEPTH_OF_FIELD
 #define FOCUS_MODE 0 // [0 1]
 #define HAND_DOF
