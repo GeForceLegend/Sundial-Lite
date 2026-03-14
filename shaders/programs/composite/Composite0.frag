@@ -142,7 +142,6 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
     vec3 totalWeight = brdfWeight * firstWeight;
     vec4 reflectionColor = vec4(0.0);
     if (dot(totalWeight, totalWeight) > 1e-6) {
-        reflectionColor.w = step(smoothness, 0.9975);
         vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);
         vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos, -viewPos.z);
         projDirection.xy += gbufferProjection[2].xy * rayDir.z;
@@ -238,11 +237,10 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
             }
             float rayLength = distance(viewPos, sampleViewPos);
             vec3 sampleLight = textureLod(colortex3, sampleCoord.xy, 0.0).rgb;
-            reflectionColor = vec4(sampleLight, reflectionColor.w * rayLength);
+            reflectionColor = vec4(sampleLight, rayLength);
         }
         else {
-            float rayLength = 114514.0;
-            reflectionColor = vec4(vec3(0.0), reflectionColor.w * rayLength);
+            reflectionColor.rgb = vec3(0.0);
             #ifdef SHADOW_AND_SKY
                 vec3 atmosphere;
                 reflectionColor.rgb = singleAtmosphereScattering(vec3(0.0), worldPos, rayDir, sunDirection, intersectionData, skyColorUp, 30.0, atmosphere);
@@ -261,6 +259,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
                     reflectionColor.rgb *= clamp(eyeBrightnessSmooth.y / 16.0, 0.0, 1.0);
                 #endif
             #endif
+            reflectionColor.w = 114514.0;
         }
         if (isEyeInWater == 0) {
             #ifdef THE_END
@@ -288,7 +287,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
             reflectionColor.rgb = snowFogTotal(reflectionColor.rgb, skyColorUp, reflectionColor.w, eyeBrightnessSmooth.y / 240.0);
         }
         reflectionColor.rgb = max(vec3(0.0), reflectionColor.rgb * brdfWeight);
-        reflectionColor.w = min(2.0, reflectionColor.w / far);
+        reflectionColor.w = min(2.0, reflectionColor.w * step(smoothness, 0.9975) / far);
     }
     return reflectionColor;
 }
