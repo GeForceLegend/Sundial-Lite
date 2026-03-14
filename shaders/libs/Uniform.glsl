@@ -42,13 +42,17 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 uniform sampler2D colortex5;
 uniform usampler2D colortex6;
-uniform sampler2D colortex7;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
 uniform sampler2D depthtex2;
 uniform sampler2D shadowtex1;
 uniform sampler2D shadowcolor0;
 uniform sampler2DShadow shadowtex0;
+#ifdef TEMPORAL_DATA
+    uniform sampler2D colortex7;
+#else
+    uniform sampler2DRect colortex7;
+#endif
 
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
