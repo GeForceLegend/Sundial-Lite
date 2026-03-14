@@ -275,7 +275,7 @@ vec4 realisticCloud(
             skyLightStrength *= skyLightStrength * (3.0 - 2.0 * skyLightStrength);
             const float cloudAbsorptionBeta = exp2(-CLOUD_REALISTIC_THICKNESS * CLOUD_REALISTIC_SAMPLE_DENSITY);
             skyLightStrength += cloudAbsorptionBeta - skyLightStrength * cloudAbsorptionBeta;
-            sampleCloudColor += atmosphere * (skyLightStrength + CLOUD_REALISTIC_BASIC_SKYLIGHT);
+            sampleCloudColor += (skyColorUp + atmosphere) * vec3(0.5) / PI * (skyLightStrength + CLOUD_REALISTIC_BASIC_SKYLIGHT);
 
             float sampleTransmittance = exp2(sampleDensity * stepTransmittance) * cloudTransmittance;
             cloudColor += (cloudTransmittance - sampleTransmittance) * sampleCloudColor;
