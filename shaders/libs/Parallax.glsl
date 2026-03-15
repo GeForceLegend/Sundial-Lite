@@ -25,7 +25,7 @@ vec3 anisotropicOffsetLod(vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX
     D = D * inversesqrt(D);
     float V = t - D;
     float v = t + D;
-    float l = -0.5 * log2(v);
+    float l = max(0.0, -0.5 * log2(v));
 
     vec2 A = vec2(qd[0][1], qd[0][0] - V);
     A *= inversesqrt(V * dot(A, A)) / ANISOTROPIC_FILTERING_QUALITY;
