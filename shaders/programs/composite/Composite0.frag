@@ -342,7 +342,6 @@ void main() {
 
             if (reflectionStrength > 1e-5) {
                 f0 = signI(f0) * mix(abs(f0), pow(texelFetch(colortex0, texel, 0).rgb, vec3(2.2)), smoothMetalness.y);
-                float skyLightLevel = unpack2x8Bit(gbufferData.x).y;
                 reflectionColor = reflection(texel, smoothMetalness.x, waterDepth, f0, f82, reflectionStrength);
             }
         }
