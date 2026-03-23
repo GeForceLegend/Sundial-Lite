@@ -49,6 +49,9 @@ uniform sampler2D depthtex2;
 uniform sampler2D shadowtex1;
 uniform sampler2D shadowcolor0;
 uniform sampler2DShadow shadowtex0;
+#ifdef IS_IRIS
+    uniform sampler2D transmittanceTex;
+#endif
 
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;

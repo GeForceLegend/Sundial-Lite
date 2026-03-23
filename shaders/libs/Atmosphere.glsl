@@ -37,6 +37,9 @@ float miePhase(float cosAngle, float g, float g2) {
 vec3 atmosphereAbsorptionLUT(float height, float angle) {
     float lutHeight = sqrt(clamp((height - earthRadius) / atmosphereThickness, 0.0, 1.0)) * 255.0 / 256.0 + 0.5 / 256.0;
     float lutAngle = 0.5 + angle * 255.0 / 512.0;
+    #ifdef IS_IRIS
+        return textureLod(transmittanceTex, vec2(lutHeight, lutAngle), 0.0).rgb;
+    #endif
     return textureLod(colortex7, vec2(lutHeight, lutAngle), 0.0).rgb;
 }
 
@@ -44,8 +47,13 @@ void atmosphereAbsorptionDoubleSideLUT(float height, float angle, out vec3 sunAb
     float lutHeight = sqrt(clamp((height - earthRadius) / atmosphereThickness, 0.0, 1.0)) * 255.0 / 256.0 + 0.5 / 256.0;
     float sunLutAngle = 0.5 + angle * 255.0 / 512.0;
     float moonLutAngle = 0.5 - angle * 255.0 / 512.0;
-    sunAbsorption = textureLod(colortex7, vec2(lutHeight, sunLutAngle), 0.0).rgb;
-    moonAbsorption = textureLod(colortex7, vec2(lutHeight, moonLutAngle), 0.0).rgb;
+    #ifdef IS_IRIS
+        sunAbsorption = textureLod(transmittanceTex, vec2(lutHeight, sunLutAngle), 0.0).rgb;
+        moonAbsorption = textureLod(transmittanceTex, vec2(lutHeight, moonLutAngle), 0.0).rgb;
+    #else
+        sunAbsorption = textureLod(colortex7, vec2(lutHeight, sunLutAngle), 0.0).rgb;
+        moonAbsorption = textureLod(colortex7, vec2(lutHeight, moonLutAngle), 0.0).rgb;
+    #endif
 }
 
 vec3 singleAtmosphereScattering(
