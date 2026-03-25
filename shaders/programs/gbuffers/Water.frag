@@ -82,7 +82,7 @@ void main() {
     rawData.metalness = 0.0;
     rawData.porosity = 0.0;
     rawData.emissive = 0.0;
-    rawData.materialID = MAT_DEFAULT + MAT_WATER * float(materialID == 8192);
+    rawData.materialID = MAT_DEFAULT + MAT_WATER * float(materialID == 8192 || materialID == 8194);
     rawData.parallaxOffset = 0.0;
     rawData.depth = 0.0;
 
