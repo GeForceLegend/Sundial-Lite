@@ -255,10 +255,7 @@ option.PLANE_CLOUD_FADE_DISTANCE=平面云消散距离
 option.PLANE_CLOUD_OCTAVE_SCALE=平面云噪声每层缩放
 option.PLANE_CLOUD_OCTAVE_FADE=平面云噪声每层减淡
 # RealisticCloudQuality
-option.CLOUD_REALISTIC_HQ_SAMPLES=高质量体积云采样数
-option.CLOUD_REALISTIC_HQ_SAMPLES.comment=用于体积云的直接渲染及反射内渲染
-option.CLOUD_REALISTIC_LQ_SAMPLES=低质量体积云采样数
-option.CLOUD_REALISTIC_LQ_SAMPLES.comment=用于GI内体积云的渲染及云影
+option.CLOUD_REALISTIC_HQ_SAMPLES=体积云采样数
 option.CLOUD_REALISTIC_SHADOWLIGHT_SAMPLES=体积云阴影光照采样数
 option.CLOUD_REALISTIC_SHADOWLIGHT_SAMPLES.comment=日光与月光的光照采样数
 option.CLOUD_REALISTIC_SHADOWLIGHT_OCTAVES=体积云阴影光照噪声层数
