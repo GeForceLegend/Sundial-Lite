@@ -174,7 +174,9 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
         bool hitSky = true;
         float minimumThichness = max(0.001 * originProjScale, abs(stepSize.z));
         float minimumThichnessLod = max(0.01 * originProjScale, abs(stepSize.w));
-        vec2 offset = vec2(minimumThichness, minimumThichnessLod) * (1.0 - clamp(exp2(-SCREEN_SPACE_REFLECTION_REFINEMENTS + 1.0), 0.0, 1.0));
+        vec2 offset =
+            vec2(minimumThichness, minimumThichnessLod) -
+            max(vec2(0.001 * originProjScale, 0.01 * originProjScale), vec2(minimumThichness, minimumThichnessLod) * clamp(exp2(-SCREEN_SPACE_REFLECTION_REFINEMENTS + 1.0), 0.0, 1.0));
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
             float sampleDepth = uintBitsToFloat(textureLod(colortex6, sampleCoord.st, 0.0).x);
             sampleDepth -= float(sampleDepth > 1.0);
