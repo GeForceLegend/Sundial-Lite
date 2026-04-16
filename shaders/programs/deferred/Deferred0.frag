@@ -37,6 +37,7 @@ vec2 getPrevCoord(inout vec3 prevWorldPos, vec3 viewPos, vec3 worldGeoNormal, fl
         prevViewPos = viewPos;
         #ifndef TEMPORAL_IGNORE_HAND_ANIMATION
             prevViewPos -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
+            prevViewPos = handPrevRotation() * prevViewPos;
             prevViewPos += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
         #endif
         vec3 prevViewNormal = mat3(gbufferModelView) * worldGeoNormal;

@@ -8,6 +8,8 @@ uniform float nightVision;
 uniform float alphaTestRef;
 uniform float rainStrength;
 uniform float rainyMieBeta;
+uniform float handRotationX;
+uniform float handRotationY;
 uniform float rainyStrength;
 uniform float darknessFactor;
 uniform float weatherStrength;
