@@ -105,7 +105,7 @@ vec3 calculateVelocity(vec3 coord, ivec2 texel, float materialID, float parallax
         #ifndef TEMPORAL_IGNORE_HAND_ANIMATION
             view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
             view -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
-            view = handPrevRotation() * view;
+            // view = handPrevRotation() * view;
             view += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
             view -= view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
         #endif
