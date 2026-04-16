@@ -201,7 +201,7 @@ void main() {
             angle = goldenRotate * angle;
             radius2 += 1.0 / COC_SPREAD_SAMPLES;
             float sampleCoC = clamp(abs(circleOfConfusionRadius(sampleDepth, focusDepth)), 0.0, 1.0);
-            if (sampleCoC > radius && sampleDepth <= centerDepth) {
+            if (sampleCoC > radius && abs(sampleDepth) <= abs(centerDepth)) {
                 sampleRadius = max(sampleRadius, sampleCoC);
                 if (abs(centerCoC) < sampleCoC - radius) {
                     centerCoC = radius - sampleCoC;
