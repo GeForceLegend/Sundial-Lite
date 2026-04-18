@@ -23,11 +23,13 @@ layout(location = 1) out vec4 texBuffer5;
 layout(location = 2) out uint texBuffer6;
 
 in vec2 texcoord;
+in vec2 prevHandAnimation;
 
 uniform vec2 prevTaaOffset;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
+#include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
 
 vec2 getPrevCoord(inout vec3 prevWorldPos, vec3 viewPos, vec3 worldGeoNormal, float parallaxOffset, float materialID) {
@@ -37,7 +39,9 @@ vec2 getPrevCoord(inout vec3 prevWorldPos, vec3 viewPos, vec3 worldGeoNormal, fl
         prevViewPos = viewPos;
         #ifndef TEMPORAL_IGNORE_HAND_ANIMATION
             prevViewPos -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
-            prevViewPos = handPrevRotation() * prevViewPos;
+            mat3 xRotation = rotation(vec4(0.0, sin(prevHandAnimation.x * 0.5), 0.0, cos(prevHandAnimation.x * 0.5)));
+            mat3 yRotation = rotation(vec4(sin(prevHandAnimation.y * 0.5), 0.0, 0.0, cos(prevHandAnimation.y * 0.5)));
+            prevViewPos = xRotation * yRotation * prevViewPos;
             prevViewPos += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
         #endif
         vec3 prevViewNormal = mat3(gbufferModelView) * worldGeoNormal;
@@ -164,6 +168,22 @@ void main() {
         vec2 prevCoord = getPrevCoord(prevWorldPos, viewPos, worldGeoNormal, gbufferData.parallaxOffset, gbufferData.materialID);
 
         prevData = prevVisibilityBitmask(prevCoord, prevWorldPos, worldGeoNormal, prevFrames);
+    }
+    if (texel.y < 1 && texel.x < 4) {
+        if (texel.x > 1) {
+            gbufferData.depth = texel.x > 2 ? prevHandAnimation.y : prevHandAnimation.x;
+        } else {
+            float prevHandAnimation = uintBitsToFloat(texelFetch(colortex6, texel, 0).x);
+            float currHandAnimation;
+            if (texel.x == 0) {
+                currHandAnimation = atan(gbufferModelView[0].x, -gbufferModelView[2].x);
+                currHandAnimation += float(abs(currHandAnimation - prevHandAnimation) > PI) * signMul(2.0 * PI, prevHandAnimation);
+            } else {
+                currHandAnimation = asin(clamp(gbufferModelView[1].z, -1.0, 1.0));
+            }
+            gbufferData.depth = mix(currHandAnimation, prevHandAnimation, exp2(-20.0 * frameTime));
+            gbufferData.depth = mod(gbufferData.depth + PI, 2.0 * PI) - PI;
+        }
     }
     texBuffer3 = vec4(0.0, 0.0, 0.0, prevFrames + 1.0);
     texBuffer5 = prevData;

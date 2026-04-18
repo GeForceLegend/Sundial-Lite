@@ -307,6 +307,9 @@ void main() {
     }
     float blendedFrames = texelFetch(colortex3, texel, 0).w;
     texBuffer6 = packF8D24(blendedFrames, gbufferData.depth);
+    if (texel.y < 1 && texel.x < 4) {
+        texBuffer6 = floatBitsToUint(depthWithParallax);
+    }
     vec3 worldPos = viewToWorldPos(viewPosNoPOM);
     vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
 

@@ -26,6 +26,10 @@ out vec2 texcoord;
     out float smoothCenterDepth;
 #endif
 
+#ifdef PREV_HAND_ANIMATION
+    out vec2 prevHandAnimation;
+#endif
+
 #define DOF_FOCUS_TEXTURE 2 // [0 1 2]
 
 #include "/settings/GlobalSettings.glsl"
@@ -35,6 +39,11 @@ out vec2 texcoord;
     out vec3 skyColorUp;
 
     #include "/libs/Atmosphere.glsl"
+#endif
+
+#ifdef PREV_HAND_ANIMATION
+    #include "/libs/Common.glsl"
+    #include "/libs/GbufferData.glsl"
 #endif
 
 void main() {
@@ -71,5 +80,26 @@ void main() {
     #ifdef SKY_COLOR_UP
         vec3 atmosphere;
         skyColorUp = atmosphereScatteringUp(sunDirection.y, 30.0);
+    #endif
+
+    #ifdef PREV_HAND_ANIMATION
+        float prevHandRotationX = uintBitsToFloat(texelFetch(colortex6, ivec2(0, 0), 0).x);
+        float prevHandRotationY = uintBitsToFloat(texelFetch(colortex6, ivec2(1, 0), 0).x);
+        float currHeadRotationX = atan(gbufferModelView[0].x, -gbufferModelView[2].x);
+        float currHeadRotationY = asin(clamp(gbufferModelView[1].z, -1.0, 1.0));
+        float blendFactor = exp2(-20.0 * frameTime);
+        float currHandRotationX = mix(currHeadRotationX, prevHandRotationX + float(abs(currHeadRotationX - prevHandRotationX) > PI) * signMul(2.0 * PI, currHeadRotationX), blendFactor);
+        float currHandRotationY = mix(currHeadRotationY, prevHandRotationY, blendFactor);
+
+        float prevHeadRotationX = atan(gbufferPreviousModelView[0].x, -gbufferPreviousModelView[2].x);
+        float prevHeadRotationY = asin(clamp(gbufferPreviousModelView[1].z, -1.0, 1.0));
+        prevHandRotationX = prevHeadRotationX - prevHandRotationX - float(abs(prevHeadRotationX - prevHandRotationX) > PI) * signMul(2.0 * PI, prevHeadRotationX);
+        prevHandRotationY = prevHeadRotationY - prevHandRotationY;
+        currHandRotationX = currHeadRotationX - currHandRotationX;
+        currHandRotationY = currHeadRotationY - currHandRotationY;
+
+        float prevHandAnimationX = (prevHandRotationX - currHandRotationX) * 0.1;
+        float prevHandAnimationY = (prevHandRotationY - currHandRotationY) * 0.1;
+        prevHandAnimation = vec2(prevHandAnimationX, prevHandAnimationY);
     #endif
 }
