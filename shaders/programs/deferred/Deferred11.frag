@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Lighting that need to be calculated in visibility bitmask; Bake depth containing parallax and hand correction for future shader
+//  Lighting that need to be calculated in visibility bitmask; Write current solid depth for GI accumulation
 //
 
 #extension GL_ARB_gpu_shader5 : enable
@@ -217,9 +217,9 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec4 sampleCoord = originCoord + noise.x * stepSize;
         sampleCoord.zw -= 2e-7;
 
-        float maximumThickness = 0.0005 * viewLength + 0.03 * float(materialID == MAT_HAND);
-        float maximumThicknessLod = 0.5 * viewLength;
         float handOffset = float(materialID == MAT_HAND);
+        float maximumThickness = 0.0005 * viewLength + 0.03 * handOffset;
+        float maximumThicknessLod = 0.5 * viewLength;
         sampleCoord.zw -= vec2(maximumThickness, maximumThicknessLod);
 
         for (int i = 0; i < SCREEN_SPACE_SHADOW_SAMPLES; i++) {

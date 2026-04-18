@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Parallax depth offset for less calculation in upcoming shaders; Move previous visibility mask result to current frame position
+//  Bake depth containing parallax and hand correction for future shaders; Move previous visibility mask result to current frame position
 //
 
 #define VB_MAX_BLEDED_FRAMES 20 // [4 5 6 7 8 10 12 14 16 20 24 28 32 36 40 48 56 64 72 80 96 112 128]
