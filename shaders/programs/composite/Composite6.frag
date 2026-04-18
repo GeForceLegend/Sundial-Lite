@@ -53,7 +53,11 @@ void main() {
         #endif
         viewPos *= (1.0 - 2.0 * float(isHand));
     }
-    texBuffer6 = floatBitsToUint(-viewPos.z);
+    uint data = floatBitsToUint(-viewPos.z);
+    if (texel.y < 1 && texel.x < 2) {
+        data = texelFetch(colortex6, ivec2(texel.x + 2, 0), 0).x;
+    }
+    texBuffer6 = data;
 }
 
 /* DRAWBUFFERS:6 */

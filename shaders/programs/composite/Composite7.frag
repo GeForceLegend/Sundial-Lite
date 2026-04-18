@@ -105,7 +105,11 @@ vec3 calculateVelocity(vec3 coord, ivec2 texel, float materialID, float parallax
         #ifndef TEMPORAL_IGNORE_HAND_ANIMATION
             view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
             view -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
-            // view = handPrevRotation() * view;
+            float prevHandAnimationX = uintBitsToFloat(texelFetch(colortex6, ivec2(0, 0), 0).x);
+            float prevHandAnimationY = uintBitsToFloat(texelFetch(colortex6, ivec2(1, 0), 0).x);
+            mat3 xRotation = rotation(vec4(0.0, sin(prevHandAnimationX * 0.5), 0.0, cos(prevHandAnimationX * 0.5)));
+            mat3 yRotation = rotation(vec4(sin(prevHandAnimationY * 0.5), 0.0, 0.0, cos(prevHandAnimationY * 0.5)));
+            view = xRotation * yRotation * view;
             view += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
             view -= view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);
         #endif
