@@ -157,12 +157,6 @@ mat3 rotation(vec4 quaternion) {
     );
 }
 
-mat3 handPrevRotation() {
-    mat3 xRotation = rotation(vec4(0.0, sin(handRotationX * 0.5), 0.0, cos(handRotationX * 0.5)));
-    mat3 yRotation = rotation(vec4(sin(handRotationY * 0.5), 0.0, 0.0, cos(handRotationY * 0.5)));
-    return xRotation * yRotation;
-}
-
 vec2 encodeNormal(vec3 normal) {
     normal.xy /= dot(vec3(1.0), abs(normal));
     float useInv = clamp(normal.z * -1e+10, 0.0, 1.0);
