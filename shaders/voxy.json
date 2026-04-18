@@ -10,6 +10,8 @@
         "taaOffsetVX",
         "texelSize",
         "screenSize",
+        "handRotationX",
+        "handRotationY",
         "cameraPosition",
         "gbufferModelView",
         "gbufferProjection",

@@ -91,7 +91,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 geoNormal, ou
     return vec4(prevSampleData);
 }
 
-vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 geoNormal, out float prevFrames) {
+vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 geoNormal, inout float prevFrames) {
     vec2 sampleCoord = prevCoord;
     const float offset = 0.25;
     sampleCoord += prevTaaOffset * offset - taaOffset * 0.5 * offset;
@@ -142,16 +142,13 @@ void main() {
     vec3 parallaxViewOffset = parallaxViewPos * gbufferData.parallaxOffset / max(1e-5, dot(parallaxViewPos, -gbufferData.geoNormal));
     viewPos += parallaxViewOffset;
     float parallaxViewDepth = parallaxViewPos.z + parallaxViewOffset.z;
-    float parallaxDepth = viewToScreenDepth(-parallaxViewDepth);
-    float parallaxDepthDiff = (parallaxDepth - parallaxDepthOrigin) * 512.0;
-
-    texBuffer3 = vec4(0.0, 0.0, 0.0, parallaxDepthDiff);
+    gbufferData.depth = viewToScreenDepth(-parallaxViewDepth);
 
     #ifdef LOD
         gbufferData.depth -= float(gbufferData.depth == 1.0) * (1.0 + getLodDepthSolidDeferred(texcoord));
     #endif
     vec4 prevData = vec4(0.0);
-    uint temporalGeometry = 0u;
+    float prevFrames = 0.0;
     if (abs(gbufferData.depth) < 0.999999) {
         ivec2 texel = ivec2 (gl_FragCoord.st);
         #ifdef LOD
@@ -159,18 +156,18 @@ void main() {
                 viewPos = screenToViewPosLod(texcoord, -gbufferData.depth);
             }
         #endif
+        gbufferData.depth += float(isHand);
         vec3 worldPos = viewToWorldPos(viewPos);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
 
         vec3 prevWorldPos = worldPos;
         vec2 prevCoord = getPrevCoord(prevWorldPos, viewPos, worldGeoNormal, gbufferData.parallaxOffset, gbufferData.materialID);
 
-        float prevFrames;
         prevData = prevVisibilityBitmask(prevCoord, prevWorldPos, worldGeoNormal, prevFrames);
-        temporalGeometry = packF8D24(prevFrames + 1.0, gbufferData.depth);
     }
+    texBuffer3 = vec4(0.0, 0.0, 0.0, prevFrames + 1.0);
     texBuffer5 = prevData;
-    texBuffer6 = temporalGeometry;
+    texBuffer6 = floatBitsToUint(gbufferData.depth);
 }
 
 /* DRAWBUFFERS:356 */
