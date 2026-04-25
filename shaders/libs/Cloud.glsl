@@ -473,6 +473,9 @@ vec4 planeClouds(vec3 worldPos, vec3 worldDir, vec3 sunDirection, vec3 skyColorU
             float cloudHeight = cloudHeight2 * cloudHeightInv;
             vec3 sunlightStrength, moonlightStrength;
             atmosphereAbsorptionDoubleSideLUT(cloudHeight, LdotP, sunlightStrength, moonlightStrength);
+            LdotP *= abs(LdotP);
+            sunlightStrength *= atmosphereAbsorptionGround(LdotP, cloudHeight);
+            moonlightStrength *= atmosphereAbsorptionGround(-LdotP, cloudHeight);
 
             vec3 cloudColor = 10.0 * (sunlightStrength + moonlightStrength * nightBrightness) * SUNLIGHT_BRIGHTNESS;
             result = vec4(cloudColor, cloudDensity * cloudDensity);
