@@ -166,7 +166,9 @@ vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2
 
         vec2 firstCoord = (coord - coordRange.xy) * quadSize;
         #ifdef SMOOTH_PARALLAX
-            float startHeight = bilinearHeightSample(normals, firstCoord, coordRange, quadTexelSize, albedoTexSize);
+            vec2 coord00 = clampCoordRange(firstCoord - 0.499 * quadTexelSize, coordRange) * albedoTexSize;
+            vec4 sh = heightGather(normals, firstCoord, coord00, coordRange, quadTexelSize, albedoTexSize);
+            float startHeight = dot(sh, vec4(0.25));
         #else
             float startHeight = textureLod(normals, parallaxCoord.st, 0.0).a;
             startHeight += clamp(1.0 - startHeight * 1e+10, 0.0, 1.0);
