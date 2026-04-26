@@ -14,23 +14,16 @@ vec2 clampCoordRange(vec2 coord, vec4 coordRange) {
 }
 
 vec3 anisotropicOffsetLod(vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX, vec2 texGradY, vec2 quadSize) {
-    //https://www.shadertoy.com/view/4lXfzn
-    mat2 qd = inverse(mat2(texGradX * albedoTexSize, texGradY * albedoTexSize));
-    qd = transpose(qd) * qd;
+    texGradX *= albedoTexSize;
+    texGradY *= albedoTexSize;
+    float xLength = dot(texGradX, texGradX);
+    float yLength = dot(texGradY, texGradY);
+    float lod = 0.5 * log2(min(xLength, yLength));
 
-    float d = determinant(qd);
-    float t = (qd[0][0] + qd[1][1]) * 0.5;
-
-    float D = abs(t * t - d);
-    D = D * inversesqrt(D);
-    float V = t - D;
-    float v = t + D;
-    float l = max(0.0, -0.5 * log2(v));
-
-    vec2 A = vec2(qd[0][1], V - qd[0][0]);
-    A *= inversesqrt(V * dot(A, A)) / ANISOTROPIC_FILTERING_QUALITY;
-    A = signMul(max(vec2(0.0), abs(A)), A) * atlasTexelSize * quadSize;
-    return vec3(A, l);
+    vec2 offset = yLength < xLength ? texGradX : texGradY;
+    offset *= atlasTexelSize * quadSize / ANISOTROPIC_FILTERING_QUALITY;
+    offset = signMul(max(vec2(0.0), abs(offset)), offset);
+    return vec3(offset, lod);
 }
 
 vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2 quadSize) {
