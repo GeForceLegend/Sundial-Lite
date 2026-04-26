@@ -72,7 +72,6 @@ vec3 singleAtmosphereScattering(
         float atmosphereLength = -b + d;
         if (atmosphereLength > 0.0) {
             float groundLength = intersectionData.z;
-            float hitSky = clamp(-1e+10 * groundLength, 0.0, 1.0);
             float originHeight2 = dot(originPos, originPos);
             groundLength = max(groundLength, uintBitsToFloat(floatBitsToUint(-sqrt(originHeight2 - earthRadius * earthRadius)) ^ (floatBitsToUint(groundLength) & 0x80000000u)));
             atmosphereLength = mix(groundLength, atmosphereLength, intersectionData.w);

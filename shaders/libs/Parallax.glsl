@@ -18,11 +18,10 @@ vec3 anisotropicOffsetLod(vec2 albedoTexSize, vec2 atlasTexelSize, vec2 texGradX
     texGradY *= albedoTexSize;
     float xLength = dot(texGradX, texGradX);
     float yLength = dot(texGradY, texGradY);
-    float lod = 0.5 * log2(min(xLength, yLength));
+    float lod = max(0.0, 0.5 * log2(min(xLength, yLength)));
 
     vec2 offset = yLength < xLength ? texGradX : texGradY;
     offset *= atlasTexelSize * quadSize / ANISOTROPIC_FILTERING_QUALITY;
-    offset = signMul(max(vec2(0.0), abs(offset)), offset);
     return vec3(offset, lod);
 }
 
