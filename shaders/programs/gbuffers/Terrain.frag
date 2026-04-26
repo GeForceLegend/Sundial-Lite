@@ -82,12 +82,10 @@ void main() {
             if (material != 8192)
         #endif
         {
-            vec3 textureViewer = viewPos * tbnMatrix;
-            textureViewer.xy *= textureScale;
             #ifdef VOXEL_PARALLAX
-                texcoord = perPixelParallax(texcoord, textureViewer, albedoTexSize, albedoTexelSize, fixedCoordRange, parallaxTexNormal, parallaxOffset);
+                texcoord = perPixelParallax(texcoord, viewPos, tbnMatrix, textureScale, albedoTexSize, albedoTexelSize, fixedCoordRange, parallaxTexNormal, parallaxOffset);
             #else
-                texcoord = calculateParallax(texcoord, textureViewer, fixedCoordRange, quadSize, albedoTexSize, albedoTexelSize, parallaxOffset);
+                texcoord = calculateParallax(texcoord, viewPos, tbnMatrix, textureScale, fixedCoordRange, quadSize, albedoTexSize, albedoTexelSize, parallaxOffset);
             #endif
         }
     #endif

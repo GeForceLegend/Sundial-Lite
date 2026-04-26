@@ -107,7 +107,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2
     }
 
     vec2 perPixelParallax(
-        vec2 coord, vec3 viewVector, vec2 albedoTexSize, vec2 atlasTexelSize, vec4 coordRange,
+        vec2 coord, vec3 viewPos, mat3 tbnMatrix, vec2 textureScale, vec2 albedoTexSize, vec2 atlasTexelSize, vec4 coordRange,
         inout vec3 parallaxTexNormal, inout float parallaxOffset
     ) {
         vec2 parallaxCoord = coord;
@@ -116,7 +116,8 @@ vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2
         sampleHeight += clamp(1.0 - sampleHeight * 1e+10, 0.0, 1.0);
 
         if (sampleHeight < 0.999) {
-            vec3 stepDir = viewVector;
+            vec3 stepDir = viewPos * tbnMatrix;
+            stepDir.xy *= textureScale;
             stepDir.xy *= PARALLAX_DEPTH * albedoTexSize * 0.2;
             stepDir = normalize(stepDir);
             stepDir.z = -stepDir.z;
@@ -157,7 +158,7 @@ vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2
     }
 
     vec2 calculateParallax(
-        vec2 coord, vec3 viewVector, vec4 coordRange, vec2 quadSize, vec2 albedoTexSize, vec2 albedoTexelSize, inout float parallaxOffset
+        vec2 coord, vec3 viewPos, mat3 tbnMatrix, vec2 textureScale, vec4 coordRange, vec2 quadSize, vec2 albedoTexSize, vec2 albedoTexelSize, inout float parallaxOffset
     ) {
         vec2 quadTexelSize = albedoTexelSize * quadSize;
 
@@ -173,6 +174,8 @@ vec4 anisotropicFilter(vec2 coord, vec2 offset, float lod, vec4 coordRange, vec2
 
         if (startHeight < 1.0) {
             parallaxCoord.st = firstCoord;
+            vec3 viewVector = viewPos * tbnMatrix;
+            viewVector.xy *= textureScale;
             vec3 stepSize = viewVector / (PARALLAX_QUALITY * abs(viewVector.z));
             stepSize.xy *= PARALLAX_DEPTH * 0.2 * quadSize;
             float stepScale = 2.0 / PARALLAX_QUALITY;
