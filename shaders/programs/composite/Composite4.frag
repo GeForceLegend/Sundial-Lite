@@ -81,7 +81,16 @@ void main() {
     float transparentDensity = 1.0;
     if (cloudDepth > -0.5) {
         float waterDepth = texelFetch(depthtex0, texel, 0).r;
-        vec3 waterViewPos = screenToViewPos(texcoord, waterDepth);
+        vec3 waterViewPos;
+        #ifdef LOD
+            if (waterDepth == 1.0) {
+                waterDepth = getLodDepthWater(texcoord);
+                waterViewPos = screenToViewPosLod(texcoord, waterDepth);
+            } else
+        #endif
+        {
+            waterViewPos = screenToViewPos(texcoord, waterDepth);
+        }
         float waterViewDepth = length(waterViewPos);
 
         float depthDiff = waterViewDepth - cloudDepth;
