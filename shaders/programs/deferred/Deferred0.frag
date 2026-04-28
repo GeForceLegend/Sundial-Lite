@@ -38,15 +38,16 @@ vec2 getPrevCoord(inout vec3 prevWorldPos, vec3 viewPos, vec3 worldGeoNormal, fl
     if (materialID == MAT_HAND) {
         prevViewPos = viewPos;
         #ifndef TEMPORAL_IGNORE_HAND_ANIMATION
-            prevViewPos -= gbufferModelView[3].xyz * MC_HAND_DEPTH;
+            prevViewPos -= gbufferModelView[3].xyz;
             mat3 xRotation = rotation(vec4(0.0, sin(prevHandAnimation.x * 0.5), 0.0, cos(prevHandAnimation.x * 0.5)));
             mat3 yRotation = rotation(vec4(sin(prevHandAnimation.y * 0.5), 0.0, 0.0, cos(prevHandAnimation.y * 0.5)));
             prevViewPos = xRotation * yRotation * prevViewPos;
-            prevViewPos += gbufferPreviousModelView[3].xyz * MC_HAND_DEPTH;
+            prevViewPos += gbufferPreviousModelView[3].xyz;
         #endif
         vec3 prevViewNormal = mat3(gbufferModelView) * worldGeoNormal;
         prevViewPos -= parallaxOffset * prevViewPos / max(dot(prevViewPos, -prevViewNormal), 1e-5);
         prevScreenPos = viewToProjectionPos(prevViewPos);
+        prevScreenPos.z *= MC_HAND_DEPTH;
     } else {
         prevWorldPos += cameraMovement;
         prevViewPos = prevWorldToViewPos(prevWorldPos);
@@ -71,25 +72,23 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 geoNormal, ou
     float prevSampleDepth = prevFramesDepth.y + float(prevFramesDepth.y == 0.0);
 
     vec2 sampleCoord = sampleTexelCoord * texelSize;
-    vec2 screenCoord = sampleCoord;
+    isPrevValid = float(all(lessThan(abs(sampleCoord - vec2(0.5)), vec2(0.5))));
     #ifdef TAA
-        screenCoord -= prevTaaOffset;
+        sampleCoord -= prevTaaOffset;
     #endif
     vec3 prevSampleViewPos;
     #ifdef LOD
         if (prevSampleDepth < 0.0) {
-            prevSampleViewPos = prevProjectionToViewPosLod(vec3(screenCoord, -prevSampleDepth) * 2.0 - 1.0);
+            prevSampleViewPos = prevProjectionToViewPosLod(vec3(sampleCoord, -prevSampleDepth) * 2.0 - 1.0);
         } else
     #endif
     {
-        prevSampleViewPos = prevProjectionToViewPos(vec3(screenCoord, prevSampleDepth) * 2.0 - 1.0);
+        prevSampleViewPos = prevProjectionToViewPos(vec3(sampleCoord, prevSampleDepth) * 2.0 - 1.0);
     }
-
-    isPrevValid = float(all(lessThan(abs(sampleCoord - vec2(0.5)), vec2(0.5))));
 
     vec3 prevSampleWorldPos = prevViewToWorldPos(prevSampleViewPos);
     vec3 positionDiff = prevSampleWorldPos - prevWorldPos;
-    float positionDistance = abs(dot(positionDiff, geoNormal)) / (dot(prevSampleViewPos, prevSampleViewPos) + 2.0) * 2500.0;
+    float positionDistance = abs(dot(positionDiff, geoNormal)) / (dot(prevSampleViewPos, prevSampleViewPos) + 2.0) * 5000.0;
     isPrevValid *= clamp(1.0 - positionDistance, 0.0, 1.0) * step(prevSampleDepth, 0.999999);
 
     return vec4(prevSampleData);
@@ -134,19 +133,14 @@ void main() {
     ivec2 texel = ivec2 (gl_FragCoord.st);
     GbufferData gbufferData = getGbufferData(texel, texcoord);
     gbufferData.parallaxOffset *= PARALLAX_DEPTH * 0.2;
-    vec3 viewPos = screenToViewPos(texcoord, gbufferData.depth);
 
     bool isHand = gbufferData.materialID == MAT_HAND;
-    vec3 parallaxViewPos = viewPos;
-    float parallaxDepthOrigin = gbufferData.depth;
     if (isHand) {
-        parallaxDepthOrigin = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
-        parallaxViewPos = screenToViewPos(texcoord, parallaxDepthOrigin);
+        gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
     }
-    vec3 parallaxViewOffset = parallaxViewPos * gbufferData.parallaxOffset / max(1e-5, dot(parallaxViewPos, -gbufferData.geoNormal));
-    viewPos += parallaxViewOffset;
-    float parallaxViewDepth = parallaxViewPos.z + parallaxViewOffset.z;
-    gbufferData.depth = viewToScreenDepth(-parallaxViewDepth);
+    vec3 viewPos = screenToViewPos(texcoord, gbufferData.depth);
+    viewPos += viewPos * gbufferData.parallaxOffset / max(1e-5, dot(viewPos, -gbufferData.geoNormal));
+    gbufferData.depth = viewToScreenDepth(-viewPos.z);
 
     #ifdef LOD
         gbufferData.depth -= float(gbufferData.depth == 1.0) * (1.0 + getLodDepthSolidDeferred(texcoord));
