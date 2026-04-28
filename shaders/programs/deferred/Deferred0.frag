@@ -32,9 +32,8 @@ uniform vec2 prevTaaOffset;
 #include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
 
-vec2 getPrevCoord(inout vec3 prevWorldPos, vec3 viewPos, vec3 worldGeoNormal, float parallaxOffset, float materialID) {
+vec2 getPrevCoord(out vec3 prevViewPos, vec3 viewPos, vec3 worldGeoNormal, float parallaxOffset, float materialID) {
     vec3 prevScreenPos;
-    vec3 prevViewPos;
     if (materialID == MAT_HAND) {
         prevViewPos = viewPos;
         #ifndef TEMPORAL_IGNORE_HAND_ANIMATION
@@ -49,18 +48,17 @@ vec2 getPrevCoord(inout vec3 prevWorldPos, vec3 viewPos, vec3 worldGeoNormal, fl
         prevScreenPos = viewToProjectionPos(prevViewPos);
         prevScreenPos.z *= MC_HAND_DEPTH;
     } else {
-        prevWorldPos += cameraMovement;
+        vec3 prevWorldPos = viewToWorldPos(viewPos) + cameraMovement;
         prevViewPos = prevWorldToViewPos(prevWorldPos);
         vec3 prevViewNormal = mat3(gbufferPreviousModelView) * worldGeoNormal;
         prevViewPos -= parallaxOffset * prevViewPos / max(dot(prevViewPos, -prevViewNormal), 1e-5);
         prevScreenPos = prevViewToProjectionPos(prevViewPos);
     }
-    prevWorldPos = prevViewToWorldPos(prevViewPos);
     vec2 prevCoord = prevScreenPos.st * 0.5 + 0.5;
     return prevCoord;
 }
 
-vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 geoNormal, out float isPrevValid, out float samplePrevFrames) {
+vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevViewPos, vec3 geoNormal, out float isPrevValid, out float samplePrevFrames) {
     ivec2 sampleTexel = ivec2(sampleTexelCoord);
     vec4 prevSampleData = max(vec4(0.0), texelFetch(colortex5, sampleTexel, 0));
     #ifndef VBGI
@@ -86,8 +84,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevWorldPos, vec3 geoNormal, ou
         prevSampleViewPos = prevProjectionToViewPos(vec3(sampleCoord, prevSampleDepth) * 2.0 - 1.0);
     }
 
-    vec3 prevSampleWorldPos = prevViewToWorldPos(prevSampleViewPos);
-    vec3 positionDiff = prevSampleWorldPos - prevWorldPos;
+    vec3 positionDiff = prevSampleViewPos - prevViewPos;
     float positionDistance = abs(dot(positionDiff, geoNormal)) / (dot(prevSampleViewPos, prevSampleViewPos) + 2.0) * 5000.0;
     isPrevValid *= clamp(1.0 - positionDistance, 0.0, 1.0) * step(prevSampleDepth, 0.999999);
 
@@ -102,6 +99,7 @@ vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 geoNormal, in
         sampleCoord += taaOffset * 0.5;
     #endif
 
+    vec3 prevViewGeoNormal = mat3(gbufferPreviousModelView) * geoNormal;
     vec2 prevTexel = sampleCoord * screenSize;
     vec2 sampleCenter = round(prevTexel);
     vec4 dataAccum = vec4(0.0);
@@ -113,7 +111,7 @@ vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 geoNormal, in
         for (int j = 0; j < 2; j++) {
             vec2 sampleTexel = sampleCenter + vec2(sampleOffsetX, sampleOffsetY);
             float isSampleValid, samplePrevFrames;
-            vec4 sampleData = samplePrevData(sampleTexel, prevWorldPos, geoNormal, isSampleValid, samplePrevFrames);
+            vec4 sampleData = samplePrevData(sampleTexel, prevWorldPos, prevViewGeoNormal, isSampleValid, samplePrevFrames);
             float weight = (1.0 - abs(sampleTexel.x - prevTexel.x)) * (1.0 - abs(sampleTexel.y - prevTexel.y));
             isSampleValid *= weight;
             samplePrevFrames *= isSampleValid;
@@ -155,13 +153,12 @@ void main() {
             }
         #endif
         gbufferData.depth += float(isHand);
-        vec3 worldPos = viewToWorldPos(viewPos);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
 
-        vec3 prevWorldPos = worldPos;
-        vec2 prevCoord = getPrevCoord(prevWorldPos, viewPos, worldGeoNormal, gbufferData.parallaxOffset, gbufferData.materialID);
+        vec3 prevViewPos;
+        vec2 prevCoord = getPrevCoord(prevViewPos, viewPos, worldGeoNormal, gbufferData.parallaxOffset, gbufferData.materialID);
 
-        prevData = prevVisibilityBitmask(prevCoord, prevWorldPos, worldGeoNormal, prevFrames);
+        prevData = prevVisibilityBitmask(prevCoord, prevViewPos, worldGeoNormal, prevFrames);
     }
     if (texel.y < 1 && texel.x < 4) {
         if (texel.x > 1) {
