@@ -26,10 +26,6 @@ out vec2 texcoord;
     out float smoothCenterDepth;
 #endif
 
-#ifdef PREV_HAND_ANIMATION
-    out vec2 prevHandAnimation;
-#endif
-
 #define DOF_FOCUS_TEXTURE 2 // [0 1 2]
 
 #include "/settings/GlobalSettings.glsl"
@@ -42,8 +38,9 @@ out vec2 texcoord;
 #endif
 
 #ifdef PREV_HAND_ANIMATION
+    out vec2 prevHandAnimation;
+
     #include "/libs/Common.glsl"
-    #include "/libs/GbufferData.glsl"
 #endif
 
 void main() {

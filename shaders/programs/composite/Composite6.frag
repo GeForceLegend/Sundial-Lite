@@ -55,7 +55,7 @@ void main() {
     }
     uint data = floatBitsToUint(-viewPos.z);
     if (texel.y < 1 && texel.x < 2) {
-        data = texelFetch(colortex6, ivec2(texel.x + 2, 0), 0).x;
+        data = texel.x > 0 ? texelFetch(colortex6, ivec2(3, 0), 0).x : texelFetch(colortex6, ivec2(2, 0), 0).x;
     }
     texBuffer6 = data;
 }
