@@ -78,7 +78,7 @@ void main() {
     vec3 anisotropicParam = anisotropicOffsetLod(albedoTexSize, albedoTexelSize, texGradX, texGradY, quadSize);
     #ifdef PARALLAX
         vec3 parallaxTexNormal = vec3(0.0, 0.0, 1.0);
-        #if WATER_TYPE == 0 && defined CAULDRON_WAVE
+        #if WATER_TYPE == 0 && defined CAULDRON_WAVE && MC_VERSION <= 12111
             if (material != 8192)
         #endif
         {
