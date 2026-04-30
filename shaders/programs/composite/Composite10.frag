@@ -60,24 +60,28 @@ vec3 calculateBloomBase(vec2 coord) {
 }
 
 float getAvgBrightness() {
-    const float mipmapLevel = 6.0;
-    const float texelScale = exp2(mipmapLevel);
-    vec3 totalColor = vec3(0.0);
+    const int sampleCount = 8;
+    const float sampleStart = 0.5 / float(sampleCount + 1);
+    float sampleMipLevel = ceil(log2(max(screenSize.x, screenSize.y) / float(sampleCount)));
+    float sampleCoordX = sampleStart;
+
+    float totalBrightness = 0.0;
     float totalWeight = 0.0;
-    vec2 avgExposureTexel = texelSize * texelScale;
-    ivec2 avgExposureSteps = ivec2(screenSize / texelScale);
-    for (int i = 0; i < avgExposureSteps.x; i++) {
-        for (int j = 0; j < avgExposureSteps.y; j++) {
-            float sampleWeight = exp2(-length((vec2(i, j) - avgExposureSteps * 0.5) * avgExposureTexel) * exp2(AVERAGE_EXPOSURE_CENTER_WEIGHT));
-            totalColor += pow(texelFetch(colortex3, ivec2(i, j), int(mipmapLevel)).rgb * 0.01, vec3(1.0 / AVERAGE_EXPOSURE_TENDENCY)) * sampleWeight;
+    for (int i = 0; i < sampleCount; i++) {
+        float sampleCoordY = sampleStart;
+        for (int j = 0; j < sampleCount; j++) {
+            vec2 sampleCoord = vec2(sampleCoordX, sampleCoordY);
+            float sampleWeight = exp2(-length(vec2(sampleCoordX, sampleCoordY) - 0.5) * exp2(AVERAGE_EXPOSURE_CENTER_WEIGHT));
+            totalBrightness += pow(dot(textureLod(colortex3, sampleCoord, sampleMipLevel).rgb, vec3(1.0 / 3.0)) * 0.01, 1.0 / AVERAGE_EXPOSURE_TENDENCY) * sampleWeight;
             totalWeight += sampleWeight;
+            sampleCoordY += 1.0 / float(sampleCount + 1.0);
         }
+        sampleCoordX += 1.0 / float(sampleCount + 1.0);
     }
-    totalColor = pow(totalColor / totalWeight, vec3(AVERAGE_EXPOSURE_TENDENCY));
-    float currBrightness = dot(totalColor, vec3(600.0 / 3.0));
+    totalBrightness = pow(totalBrightness / totalWeight, AVERAGE_EXPOSURE_TENDENCY);
+    float currBrightness = totalBrightness * 600.0;
 
     float averageBrightness = mix(prevExposure, currBrightness, clamp(frameTime * (step(currBrightness, prevExposure) * 2.0 + 2.0) + float(prevExposure == 0.0), 0.0, 1.0));
-
     return averageBrightness;
 }
 
