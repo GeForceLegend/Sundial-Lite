@@ -38,8 +38,6 @@ screen.ModSupport=Mod support
 screen.Experimental=Experimental effect
 
 # Texture
-option.ENTITY_TEXTURE_RESOLUTION=Entity texture resolution
-option.ENTITY_TEXTURE_RESOLUTION.comment=Set to resolution of current resource pack. Entity texture resolution cannot set to Auto. Affect entity parallax
 option.ANISOTROPIC_FILTERING_QUALITY=Anisotropic filter
 option.ANISOTROPIC_FILTERING_QUALITY.comment=Use this but not settings in Optifine / graphics card drivers. Settings in Optifine / graphics card drivers will cause issues
 value.ANISOTROPIC_FILTERING_QUALITY.0=off
@@ -81,6 +79,8 @@ option.SMOOTH_PARALLAX.comment=Smoothes parallax. Will be overwritten with voxel
 option.VOXEL_PARALLAX=Voxel parallax
 option.VOXEL_PARALLAX.comment=Using voxel stepping in parallax for exact result. Will overwrite smooth parallax, works well on low resolution packs
 option.ENTITY_PARALLAX=Entity parallax
+option.ENTITY_TEXTURE_RESOLUTION=Entity texture resolution
+option.ENTITY_TEXTURE_RESOLUTION.comment=Set to resolution of current resource pack. Entity texture resolution cannot set to Auto. Affect entity parallax
 option.PARALLAX_DEPTH=Parallax depth
 option.PARALLAX_QUALITY=Parallax quality
 option.PARALLAX_QUALITY.comment=Improves parallax quality with more performance cost. Improves the "pane edge" effect
