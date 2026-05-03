@@ -71,7 +71,8 @@ float getAvgBrightness() {
         float sampleCoordY = sampleStart;
         for (int j = 0; j < sampleCount; j++) {
             vec2 sampleCoord = vec2(sampleCoordX, sampleCoordY);
-            float sampleWeight = exp2(-length(vec2(sampleCoordX, sampleCoordY) - 0.5) * exp2(AVERAGE_EXPOSURE_CENTER_WEIGHT));
+            vec2 centerOffset = sampleCoord - 0.5;
+            float sampleWeight = exp2(-max(centerOffset.x * centerOffset.x, centerOffset.y * centerOffset.y) * exp2(AVERAGE_EXPOSURE_CENTER_WEIGHT * 2.0));
             totalBrightness += pow(dot(textureLod(colortex3, sampleCoord, sampleMipLevel).rgb, vec3(1.0 / 3.0)) * 0.01, 1.0 / AVERAGE_EXPOSURE_TENDENCY) * sampleWeight;
             totalWeight += sampleWeight;
             sampleCoordY += 1.0 / float(sampleCount + 1.0);
