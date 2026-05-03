@@ -17,8 +17,11 @@
 //
 
 layout(location = 0) out vec4 texBuffer3;
+layout(location = 1) out uint texBuffer6;
 
 in vec2 texcoord;
+in float prevExposure;
+in float smoothCenterDepth;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
@@ -155,6 +158,18 @@ void main() {
         solidColor = temporalAntiAliasing(texcoord, velocity.st, solidColor, velocity.w);
     #endif
     texBuffer3 = vec4(pow(clamp(solidColor * 0.1, 0.0, 1.0), vec3(2.2)) * 100.0, 1.0);
+
+    float depth = texelFetch(depthtex0, texel, 0).x;
+    #ifdef LOD
+        depth += getLodDepthWater(texcoord) * float(depth == 1.0);
+    #endif
+    if (dot(texcoord, screenSize) < 1.1) {
+        depth = prevExposure;
+    }
+    if (dot(1.0 - texcoord, screenSize) < 1.1) {
+        depth = smoothCenterDepth;
+    }
+    texBuffer6 = floatBitsToUint(depth);
 }
 
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:36 */

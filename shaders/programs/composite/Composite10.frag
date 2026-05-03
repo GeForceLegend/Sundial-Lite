@@ -21,8 +21,6 @@ layout(location = 1) out vec4 texBuffer4;
 layout(location = 2) out vec4 texBuffer7;
 
 in vec2 texcoord;
-in float prevExposure;
-in float smoothCenterDepth;
 
 #define MOTION_BLUR_STRENGTH 1.0 // [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.5 6.0 6.5 7.0 7.5 8.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0]
 #define MOTION_BLUR_QUALITY 5 // [2 3 4 5 6 7 8 9 10]
@@ -82,6 +80,7 @@ float getAvgBrightness() {
     totalBrightness = pow(totalBrightness / totalWeight, AVERAGE_EXPOSURE_TENDENCY);
     float currBrightness = totalBrightness * 600.0;
 
+    float prevExposure = uintBitsToFloat(texelFetch(colortex6, ivec2(0), 0).x);
     float averageBrightness = mix(prevExposure, currBrightness, clamp(frameTime * (step(currBrightness, prevExposure) * 2.0 + 2.0) + float(prevExposure == 0.0), 0.0, 1.0));
     return averageBrightness;
 }
@@ -103,26 +102,21 @@ vec3 motionBlur(vec2 currCoord, vec2 velocity) {
 }
 
 void main() {
-    vec3 currColor = textureLod(colortex3, texcoord, 0.0).rgb;
+    ivec2 texel = ivec2(gl_FragCoord.st);
+    vec3 currColor = texelFetch(colortex3, texel, 0).rgb;
 
     texBuffer4 = vec4(calculateBloomBase(texcoord) * 6.0, 1.0);
     texBuffer3 = vec4(currColor, 1.0);
     #ifdef MOTION_BLUR
-        vec2 velocity = textureLod(colortex5, texcoord, 0.0).xy;
+        vec2 velocity = texelFetch(colortex5, texel, 0).xy;
         vec3 motionBlurColor = motionBlur(texcoord, velocity);
         texBuffer3.rgb = mix(currColor, motionBlurColor, vec3(clamp(length(velocity * screenSize) * 0.3, 0.0, 1.0)));
     #endif
     texBuffer3.rgb *= 6.0;
 
-    texBuffer7 = vec4(pow(currColor * 0.01, vec3(1.0 / 2.2)), textureLod(depthtex0, texcoord, 0.0).r) * 10.0;
-    #ifdef LOD
-        texBuffer7.w += getLodDepthWater(texcoord) * float(texBuffer7.w == 1.0);
-    #endif
+    texBuffer7 = vec4(pow(currColor * 0.01, vec3(1.0 / 2.2)) * 10.0, uintBitsToFloat(texelFetch(colortex6, texel, 0).x));
     if (dot(texcoord, screenSize) < 1.1) {
         texBuffer7.w = getAvgBrightness();
-    }
-    if (dot(1.0 - texcoord, screenSize) < 1.1) {
-        texBuffer7.w = smoothCenterDepth;
     }
 }
 
