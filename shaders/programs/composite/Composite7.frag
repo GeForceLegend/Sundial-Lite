@@ -100,9 +100,10 @@ float getClosestDepth(vec2 coord) {
 vec3 calculateVelocity(vec3 coord, ivec2 texel, float materialID, float parallaxOffset) {
     vec3 view = coord;
     vec3 geoNormal = decodeNormal(texelFetch(colortex1, texel, 0).zw);
-    if (materialID == MAT_HAND) {
+    float handDepth = view.z / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+    if (materialID == MAT_HAND && abs(handDepth - 0.5) < 0.5) {
+        view.z = handDepth;
         view = view * 2.0 - 1.0;
-        view.z /= MC_HAND_DEPTH;
         view = projectionToViewPos(view);
         #ifndef TEMPORAL_IGNORE_HAND_ANIMATION
             view += view * parallaxOffset / max(dot(geoNormal, -view), 1e-5);

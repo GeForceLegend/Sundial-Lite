@@ -133,8 +133,9 @@ void main() {
     gbufferData.parallaxOffset *= PARALLAX_DEPTH * 0.2;
 
     bool isHand = gbufferData.materialID == MAT_HAND;
-    if (isHand) {
-        gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+    float handDepth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+    if (isHand && abs(handDepth - 0.5) < 0.5) {
+        gbufferData.depth = handDepth;
     }
     vec3 viewPos = screenToViewPos(texcoord, gbufferData.depth);
     viewPos += viewPos * gbufferData.parallaxOffset / max(1e-5, dot(viewPos, -gbufferData.geoNormal));

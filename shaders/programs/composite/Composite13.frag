@@ -37,6 +37,9 @@ const int colortex17Format = RGBA16_SNORM;
 const int colortex18Format = RGBA16;
 */
 
+const bool colortex1Clear = false;
+const bool colortex2Clear = false;
+const bool colortex3Clear = false;
 const bool colortex5Clear = false;
 const bool colortex6Clear = false;
 const bool colortex7Clear = false;

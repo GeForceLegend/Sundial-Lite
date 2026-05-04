@@ -290,8 +290,9 @@ void main() {
         } else
     #endif
     {
-        if (gbufferData.materialID == MAT_HAND) {
-            gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+        float handDepth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+        if (gbufferData.materialID == MAT_HAND && abs(handDepth - 0.5) < 0.5) {
+            gbufferData.depth = handDepth;
         }
         float depthWithHand = gbufferData.depth - 1e-7;
         vec3 viewDirection = vec3(texcoord * 2.0 - 1.0, gbufferProjectionInverse[3].z);
