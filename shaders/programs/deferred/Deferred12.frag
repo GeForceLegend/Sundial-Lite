@@ -382,7 +382,6 @@ void main() {
         gbufferData.depth -= isHand;
         viewPos = screenToViewPos(texcoord, gbufferData.depth - 1e-7);
     }
-    viewPos += gbufferData.geoNormal * 3e-3;
     vec4 currData = vec4(0.0);
     vec4 colorData = texelFetch(colortex3, texel, 0);
     if (abs(gbufferData.depth) < 1.0) {
@@ -401,6 +400,7 @@ void main() {
             gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
         #endif
 
+        viewPos += gbufferData.geoNormal * 3e-3;
         currData = screenSpaceVisibiliyBitmask(viewPos, gbufferData.normal, texcoord, viewLengthInv, isOriginNotHand);
         vec4 prevData = texelFetch(colortex5, texel, 0);
         float blendWeight = clamp(1.0 / colorData.w, 0.0, 1.0);

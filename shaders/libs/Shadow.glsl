@@ -48,8 +48,8 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
     float basicSunlight = (1.0 - sqrt(weatherStrength)) * 9.5 * SUNLIGHT_BRIGHTNESS;
 
     void singleSampleShadow(
-        vec3 worldPos, vec3 geoNormal, float NdotL, float smoothness,
-        float porosity, float skyLight, inout vec3 shadow, inout vec3 subsurfaceScattering
+        vec3 worldPos, vec3 geoNormal, float NdotL, float smoothness, float porosity,
+        float skyLight, inout vec3 shadow, inout vec3 subsurfaceScattering
     ) {
         shadow *= basicSunlight;
         subsurfaceScattering *= basicSunlight * clamp(SUBSERFACE_SCATTERING_STRENTGH * 1e+10, 0.0, 1.0);
