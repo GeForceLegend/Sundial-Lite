@@ -57,9 +57,7 @@ vec3 clipToEllipse(vec3 avgColor, vec3 variance, vec3 prevColor) {
     return avgColor + colorDiff;
 }
 
-void resolverAABB(in vec2 coord, out vec3 avgColor, out vec3 variance, float varianceScale, vec3 centerColor) {
-    ivec2 texel = ivec2(gl_FragCoord.st);
-
+void resolverAABB(ivec2 texel, out vec3 avgColor, out vec3 variance, float varianceScale, vec3 centerColor) {
     vec3 m1 = vec3(0.0);
     vec3 m2 = vec3(0.0);
 
@@ -87,8 +85,7 @@ void resolverAABB(in vec2 coord, out vec3 avgColor, out vec3 variance, float var
     variance = maxColor - minColor;
 }
 
-vec3 getCurrColorNeighborhood(vec3 currColor) {
-    ivec2 texel = ivec2(gl_FragCoord.st);
+vec3 getCurrColorNeighborhood(ivec2 texel, vec3 currColor) {
     vec3 colorAccum = currColor;
     for (int i = -1; i < 2; i += 2) {
         for (int j = -1; j < 2; j += 2) {
@@ -126,7 +123,7 @@ vec3 catmullRomFilter(vec2 prevCoord) {
     return prevColor.rgb / prevColor.w;
 }
 
-vec3 temporalAntiAliasing(vec2 coord, vec2 velocity, vec3 currentColor, float blendWeight) {
+vec3 temporalAntiAliasing(vec2 coord, ivec2 texel, vec2 velocity, vec3 currentColor, float blendWeight) {
     vec3 antiAliasing;
     if (blendWeight > 0.01) {
         vec2 reprojectCoord = coord + velocity;
@@ -135,7 +132,7 @@ vec3 temporalAntiAliasing(vec2 coord, vec2 velocity, vec3 currentColor, float bl
 
         vec3 avgColor;
         vec3 variance;
-        resolverAABB(coord.st, avgColor, variance, 2.0, currentColor);
+        resolverAABB(texel, avgColor, variance, 2.0, currentColor);
 
         previousColor = clipToEllipse(avgColor, variance, previousColor);
 
@@ -143,7 +140,7 @@ vec3 temporalAntiAliasing(vec2 coord, vec2 velocity, vec3 currentColor, float bl
         antiAliasing = YCoCg_RGB(antiAliasing) * 10.0;
     }
     else {
-        antiAliasing = getCurrColorNeighborhood(currentColor);
+        antiAliasing = getCurrColorNeighborhood(texel, currentColor);
     }
 
     return antiAliasing;
@@ -155,11 +152,11 @@ void main() {
     vec3 solidColor = texelFetch(colortex3, texel, 0).rgb;
 
     #ifdef TAA
-        solidColor = temporalAntiAliasing(texcoord, velocity.st, solidColor, velocity.w);
+        solidColor = temporalAntiAliasing(texcoord, texel, velocity.st, solidColor, velocity.w);
     #endif
     texBuffer3 = vec4(pow(clamp(solidColor * 0.1, 0.0, 1.0), vec3(2.2)) * 100.0, 1.0);
 
-    float depth = texelFetch(depthtex0, texel, 0).x;
+    float depth = textureLod(depthtex0, texcoord, 0.0).x;
     #ifdef LOD
         depth += getLodDepthWater(texcoord) * float(depth == 1.0);
     #endif
