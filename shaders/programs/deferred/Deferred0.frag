@@ -24,6 +24,7 @@ layout(location = 2) out uint texBuffer6;
 
 in vec2 texcoord;
 in vec2 prevHandAnimation;
+in vec2 temporalHandRotation;
 
 uniform vec2 prevTaaOffset;
 
@@ -165,15 +166,7 @@ void main() {
         if (texel.x > 1) {
             gbufferData.depth = texel.x > 2 ? prevHandAnimation.y : prevHandAnimation.x;
         } else {
-            float prevHandAnimation = uintBitsToFloat(texelFetch(colortex6, texel, 0).x);
-            float currHandAnimation;
-            if (texel.x == 0) {
-                currHandAnimation = atan(gbufferModelView[0].x, -gbufferModelView[2].x);
-                currHandAnimation += float(abs(currHandAnimation - prevHandAnimation) > PI) * signMul(2.0 * PI, prevHandAnimation);
-            } else {
-                currHandAnimation = asin(clamp(gbufferModelView[1].z, -1.0, 1.0));
-            }
-            gbufferData.depth = mix(currHandAnimation, prevHandAnimation, exp2(-20.0 * frameTime));
+            gbufferData.depth = texel.x == 0 ? temporalHandRotation.x : temporalHandRotation.y;
             gbufferData.depth = mod(gbufferData.depth + PI, 2.0 * PI) - PI;
         }
     }
