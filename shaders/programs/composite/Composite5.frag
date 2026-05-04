@@ -243,15 +243,11 @@ void main() {
         #ifdef SHADOW_AND_SKY
             float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);
             if (NdotL > 0.0) {
-                float shadowLightFactor = 1.0;
-                #ifdef LIGHT_LEAKING_FIX
-                    shadowLightFactor = clamp(gbufferData.lightmap.y * 10.0, 0.0, 1.0);
-                #endif
                 vec3 shadow = vec3(1.0);
                 vec3 subsurfaceScattering = vec3(float(gbufferData.porosity > 64.5 / 255.0));
                 singleSampleShadow(
-                    waterWorldPos, mat3(gbufferModelViewInverse) * gbufferData.geoNormal, NdotL, shadowLightFactor,
-                    gbufferData.smoothness, gbufferData.porosity, gbufferData.lightmap.y, shadow, subsurfaceScattering
+                    waterWorldPos, mat3(gbufferModelViewInverse) * gbufferData.geoNormal, NdotL, gbufferData.smoothness,
+                    gbufferData.porosity, gbufferData.lightmap.y, shadow, subsurfaceScattering
                 );
                 shadow *= (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle + sunlightSpecular(
                     waterWorldDir, shadowDirection, worldNormal, gbufferData.smoothness * 0.995, NdotL, LdotH, f0, vec3(1.0)

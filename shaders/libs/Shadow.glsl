@@ -48,7 +48,7 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
     float basicSunlight = (1.0 - sqrt(weatherStrength)) * 9.5 * SUNLIGHT_BRIGHTNESS;
 
     void singleSampleShadow(
-        vec3 worldPos, vec3 geoNormal, float NdotL, float lightFactor, float smoothness,
+        vec3 worldPos, vec3 geoNormal, float NdotL, float smoothness,
         float porosity, float skyLight, inout vec3 shadow, inout vec3 subsurfaceScattering
     ) {
         shadow *= basicSunlight;
@@ -94,6 +94,10 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
                 #endif
 
                 vec3 waterShadowCoord = shadowCoord - vec3(0.0, 0.5, 0.0);
+                float lightFactor = 1.0;
+                #ifdef LIGHT_LEAKING_FIX
+                    lightFactor = clamp(skyLight * 10.0 + isEyeInWater, 0.0, 1.0);
+                #endif
                 vec3 caustic = waterCaustic(waterShadowCoord, worldPos, shadowDirection) * lightFactor;
                 shadow *= caustic;
                 subsurfaceScattering *= caustic;
