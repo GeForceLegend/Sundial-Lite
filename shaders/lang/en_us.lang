@@ -372,7 +372,7 @@ option.TEMPORAL_IGNORE_HAND_ANIMATION.comment=Ignore hand animation of view bobb
 
 # Experimental
 option.AUTHOR=Author
-option.AUTHOR.comment=https://afdian.net/a/geforcelegend. https://space.bilibili.com/129209703
+option.AUTHOR.comment=https://afdian.net/a/geforcelegend. https://space.bilibili.com/129209703. Sundial Lite enables ALL effect by default. Disable or lower some option if you want better performance
 option.GLOWING_OVERLAY=Glowing entities overlay
 option.GLOWING_OVERLAY.comment=Let glowing entities rendering above others. Have serious artifact with DoF
 option.UNDERGROUND_MODE=Underground mode
