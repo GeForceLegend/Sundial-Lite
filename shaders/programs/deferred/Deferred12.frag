@@ -234,8 +234,8 @@ vec3 Transform_Vz0Qz0(vec2 v, vec4 q)
     return vec3(v, 0.0) + 2.0 * (b * q.yxw);
 }
 
-vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord, float viewLengthInv, float isOriginNotHand) {
-    vec3 viewDir = -viewLengthInv * originViewPos;
+vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord, float isOriginNotHand) {
+    vec3 viewDir = -normalize(originViewPos);
     vec4 Q_toV = GetQuaternion(viewDir);
     vec4 Q_fromV = Q_toV * vec4(vec3(-1.0), 1.0);
     vec3 normalVVS = Transform_Qz0(normal, Q_fromV);
@@ -401,7 +401,7 @@ void main() {
         #endif
 
         viewPos += gbufferData.geoNormal * 3e-3;
-        currData = screenSpaceVisibiliyBitmask(viewPos, gbufferData.normal, texcoord, viewLengthInv, isOriginNotHand);
+        currData = screenSpaceVisibiliyBitmask(viewPos, gbufferData.normal, texcoord, isOriginNotHand);
         vec4 prevData = texelFetch(colortex5, texel, 0);
         float blendWeight = clamp(1.0 / colorData.w, 0.0, 1.0);
         currData = mix(prevData, currData, blendWeight);
