@@ -208,7 +208,8 @@ void main() {
             fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
         }
         float parallaxScale = ENTITY_TEXTURE_RESOLUTION / max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y);
-        vec2 pixelScale = albedoTexSize * textureScale * parallaxScale;
+        textureScale *= parallaxScale;
+        vec2 pixelScale = albedoTexSize * textureScale;
         vec2 quadSize = 1.0 / fixedCoordRange.zw;
         vec3 anisotropicParam = anisotropicOffsetLod(albedoTexSize, albedoTexelSize, texGradX, texGradY, quadSize);
         #if (defined ENTITY_PARALLAX && defined PARALLAX) || ANISOTROPIC_FILTERING_QUALITY > 0
@@ -216,14 +217,12 @@ void main() {
                 #ifdef PARALLAX
                     float parallaxOffset = 0.0;
                     vec3 parallaxTexNormal = vec3(0.0, 0.0, 1.0);
-                    vec3 textureViewer = -viewDir * tbnMatrix;
-                    textureViewer.xy *= textureScale * parallaxScale;
                     #ifdef VOXEL_PARALLAX
                         texcoord = perPixelParallax(
-                            texcoord, viewPos.xyz, tbnMatrix, textureScale * parallaxScale, albedoTexSize, albedoTexelSize, fixedCoordRange, parallaxTexNormal, parallaxOffset
+                            texcoord, viewPos.xyz, tbnMatrix, textureScale, albedoTexSize, albedoTexelSize, fixedCoordRange, parallaxTexNormal, parallaxOffset
                         );
                     #else
-                        texcoord = calculateParallax(texcoord, viewPos.xyz, tbnMatrix, textureScale * parallaxScale, fixedCoordRange, quadSize, albedoTexSize, albedoTexelSize, parallaxOffset);
+                        texcoord = calculateParallax(texcoord, viewPos.xyz, tbnMatrix, textureScale, fixedCoordRange, quadSize, albedoTexSize, albedoTexelSize, parallaxOffset);
                     #endif
                     rawData.parallaxOffset = clamp(parallaxOffset * parallaxScale, 0.0, 1.0);
                 #endif
