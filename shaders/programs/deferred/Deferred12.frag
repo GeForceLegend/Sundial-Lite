@@ -385,9 +385,8 @@ void main() {
     vec4 currData = vec4(0.0);
     vec4 colorData = texelFetch(colortex3, texel, 0);
     if (abs(gbufferData.depth) < 1.0) {
-        float viewLengthInv = inversesqrt(dot(viewPos, viewPos));
         // Merge some vec3s into floats to save registers
-        float NdotV = clamp(dot(viewPos, -gbufferData.normal) * viewLengthInv, 0.0, 1.0);
+        float NdotV = clamp(dot(viewPos, -gbufferData.normal) * inversesqrt(dot(viewPos, viewPos)), 0.0, 1.0);
         vec3 plantSkyNormal = mat3(gbufferModelViewInverse) * gbufferData.normal;
         if (gbufferData.materialID == MAT_GRASS) {
             plantSkyNormal = vec3(0.0, 1.0, 0.0);
