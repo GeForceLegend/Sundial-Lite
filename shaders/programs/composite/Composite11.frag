@@ -41,7 +41,7 @@ vec3 sampleBloomX(vec2 coord) {
             sampleTexel0.x = min(maxTexelX, sampleTexel0.x + 1);
             sampleTexel1.x = max(minTexelX, sampleTexel1.x - 1);
             totalColor += (texelFetch(colortex4, sampleTexel0, 0).rgb + texelFetch(colortex4, sampleTexel1, 0).rgb) * weights[i];
-         }
+        }
         result = totalColor;
     }
     return result;
