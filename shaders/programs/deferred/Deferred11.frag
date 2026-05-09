@@ -309,7 +309,7 @@ void main() {
         depthWithHand = depthWithParallax - float(depthWithParallax > 1.0);
         viewPos = viewDirection / (gbufferProjectionInverse[2].w * (depthWithHand * 2.0 - 1.0) + gbufferProjectionInverse[3].w);
     }
-    float blendedFrames = texelFetch(colortex3, texel, 0).w;
+    float blendedFrames = gbufferData.albedo.w * 255.0;
     texBuffer6 = packF8D24(blendedFrames, gbufferData.depth);
     if (texel.y < 1 && texel.x < 4) {
         texBuffer6 = floatBitsToUint(depthWithParallax);

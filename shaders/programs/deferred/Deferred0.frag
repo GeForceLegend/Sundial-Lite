@@ -18,7 +18,7 @@
 
 #define VB_MAX_BLEDED_FRAMES 20 // [4 5 6 7 8 10 12 14 16 20 24 28 32 36 40 48 56 64 72 80 96 112 128]
 
-layout(location = 0) out vec4 texBuffer3;
+layout(location = 0) out vec4 texBuffer0;
 layout(location = 1) out vec4 texBuffer5;
 layout(location = 2) out uint texBuffer6;
 
@@ -131,23 +131,21 @@ vec4 prevVisibilityBitmask(vec2 prevCoord, vec3 prevWorldPos, vec3 geoNormal, in
 void main() {
     ivec2 texel = ivec2 (gl_FragCoord.st);
     GbufferData gbufferData = getGbufferData(texel, texcoord);
-    gbufferData.parallaxOffset *= PARALLAX_DEPTH * 0.2;
-
-    bool isHand = gbufferData.materialID == MAT_HAND;
-    float handDepth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
-    if (isHand && abs(handDepth - 0.5) < 0.5) {
-        gbufferData.depth = handDepth;
-    }
-    vec3 viewPos = screenToViewPos(texcoord, gbufferData.depth);
-    viewPos += viewPos * gbufferData.parallaxOffset / max(1e-5, dot(viewPos, -gbufferData.geoNormal));
-    gbufferData.depth = viewToScreenDepth(-viewPos.z);
-
     #ifdef LOD
         gbufferData.depth -= float(gbufferData.depth == 1.0) * (1.0 + getLodDepthSolidDeferred(texcoord));
     #endif
     vec4 prevData = vec4(0.0);
     float prevFrames = 0.0;
     if (abs(gbufferData.depth) < 0.999999) {
+        bool isHand = gbufferData.materialID == MAT_HAND;
+        float handDepth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
+        if (isHand && abs(handDepth - 0.5) < 0.5) {
+            gbufferData.depth = handDepth;
+        }
+        vec3 viewPos = screenToViewPos(texcoord, gbufferData.depth);
+        gbufferData.parallaxOffset *= PARALLAX_DEPTH * 0.2;
+        viewPos += viewPos * gbufferData.parallaxOffset / max(1e-5, dot(viewPos, -gbufferData.geoNormal));
+        gbufferData.depth = viewToScreenDepth(-viewPos.z);
         ivec2 texel = ivec2 (gl_FragCoord.st);
         #ifdef LOD
             if (gbufferData.depth < 0.0) {
@@ -170,9 +168,9 @@ void main() {
             gbufferData.depth = mod(gbufferData.depth + PI, 2.0 * PI) - PI;
         }
     }
-    texBuffer3 = vec4(0.0, 0.0, 0.0, prevFrames + 1.0);
+    texBuffer0 = vec4(texelFetch(colortex0, texel, 0).rgb, clamp(prevFrames / 255.0 + 1.0 / 255.0, 0.0, 1.0));
     texBuffer5 = prevData;
     texBuffer6 = floatBitsToUint(gbufferData.depth);
 }
 
-/* DRAWBUFFERS:356 */
+/* DRAWBUFFERS:056 */

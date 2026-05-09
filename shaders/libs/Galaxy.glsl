@@ -28,7 +28,7 @@ vec2 toSpherical(vec3 p) {
 }
 
 float endStars(vec3 rd) {
-  vec2 sp = toSpherical(rd.xzy);
+    vec2 sp = toSpherical(rd.xzy);
     float col = 0.0;
 
     const float m = LAYERS;
