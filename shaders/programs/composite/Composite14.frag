@@ -62,8 +62,8 @@ vec3 sampleBloom(vec2 coord, float level, vec2 minRange, vec2 maxRange) {
     float basicOffset = 1.0 - 2.0 * expLevel;
     vec2 centerCoord = coord * expLevel + vec2(basicOffset);
 
-    vec2 maxTexel = (maxRange + 0.5) * texelSize;
-    vec2 minTexel = (minRange + 0.5) * texelSize;
+    vec2 maxTexel = maxRange * texelSize - 0.5 * texelSize;
+    vec2 minTexel = minRange * texelSize + 0.5 * texelSize;
 
     centerCoord = clamp(centerCoord, minTexel, maxTexel);
 
@@ -73,34 +73,27 @@ vec3 sampleBloom(vec2 coord, float level, vec2 minRange, vec2 maxRange) {
 
 vec3 calculateBloom(vec2 coord) {
     vec3 totalBloom = vec3(0.0);
-    vec2 maxRange = bloomMipEdge(1.0);
-    vec2 ceilMinRange = vec2(0.0);
-    vec2 floorMaxRange = floor(maxRange);
-    totalBloom += sampleBloom(coord, 1.0, ceilMinRange, floorMaxRange) * 0.92;
-    ceilMinRange = floorMaxRange + clamp((maxRange - floorMaxRange) * 1e+20, 0.0, 1.0);
-    maxRange = bloomMipEdge(2.0);
-    floorMaxRange = floor(maxRange);
-    totalBloom += sampleBloom(coord, 2.0, ceilMinRange, floorMaxRange) * 0.8464;
-    ceilMinRange = floorMaxRange + clamp((maxRange - floorMaxRange) * 1e+20, 0.0, 1.0);
-    maxRange = bloomMipEdge(3.0);
-    floorMaxRange = floor(maxRange);
-    totalBloom += sampleBloom(coord, 3.0, ceilMinRange, floorMaxRange) * 0.778688;
-    ceilMinRange = floorMaxRange + clamp((maxRange - floorMaxRange) * 1e+20, 0.0, 1.0);
-    maxRange = bloomMipEdge(4.0);
-    floorMaxRange = floor(maxRange);
-    totalBloom += sampleBloom(coord, 4.0, ceilMinRange, floorMaxRange) * 0.716393;
-    ceilMinRange = floorMaxRange + clamp((maxRange - floorMaxRange) * 1e+20, 0.0, 1.0);
-    maxRange = bloomMipEdge(5.0);
-    floorMaxRange = floor(maxRange);
-    totalBloom += sampleBloom(coord, 5.0, ceilMinRange, floorMaxRange) * 0.659081;
-    ceilMinRange = floorMaxRange + clamp((maxRange - floorMaxRange) * 1e+20, 0.0, 1.0);
-    maxRange = bloomMipEdge(6.0);
-    floorMaxRange = floor(maxRange);
-    totalBloom += sampleBloom(coord, 6.0, ceilMinRange, floorMaxRange) * 0.606355;
-    ceilMinRange = floorMaxRange + clamp((maxRange - floorMaxRange) * 1e+20, 0.0, 1.0);
-    maxRange = bloomMipEdge(7.0);
-    floorMaxRange = floor(maxRange);
-    totalBloom += sampleBloom(coord, 7.0, ceilMinRange, floorMaxRange) * 0.557847;
+    vec2 maxRange = round(bloomMipEdge(1.0));
+    vec2 minRange = vec2(0.0);
+    totalBloom += sampleBloom(coord, 1.0, minRange, maxRange) * 0.92;
+    minRange = maxRange;
+    maxRange = round(bloomMipEdge(2.0));
+    totalBloom += sampleBloom(coord, 2.0, minRange, maxRange) * 0.8464;
+    minRange = maxRange;
+    maxRange = round(bloomMipEdge(3.0));
+    totalBloom += sampleBloom(coord, 3.0, minRange, maxRange) * 0.778688;
+    minRange = maxRange;
+    maxRange = round(bloomMipEdge(4.0));
+    totalBloom += sampleBloom(coord, 4.0, minRange, maxRange) * 0.716393;
+    minRange = maxRange;
+    maxRange = round(bloomMipEdge(5.0));
+    totalBloom += sampleBloom(coord, 5.0, minRange, maxRange) * 0.659081;
+    minRange = maxRange;
+    maxRange = round(bloomMipEdge(6.0));
+    totalBloom += sampleBloom(coord, 6.0, minRange, maxRange) * 0.606355;
+    minRange = maxRange;
+    maxRange = round(bloomMipEdge(7.0));
+    totalBloom += sampleBloom(coord, 7.0, minRange, maxRange) * 0.557847;
     return pow(totalBloom * (1.0 / 5.084764), vec3(2.2));
 }
 
