@@ -192,7 +192,7 @@ void main() {
         #ifdef ENTITIES
             else {
                 useTexAlbedo = abs(albedoData.w - 0.5) > 0.499;
-                albedoData.w = useTexAlbedo ? albedoData.w : 1.0;
+                albedoData.w = clamp(albedoData.w + float(!useTexAlbedo), 0.0, 1.0);
             }
         #endif
         #ifdef PARTICLE

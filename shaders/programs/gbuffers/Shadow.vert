@@ -97,13 +97,14 @@ void main() {
         #endif
 
         shadowOffset = vec2(0.0, 0.0);
-        float isWater = float(mc_Entity.x == 8192);
-        shadowOffset.y = -isWater;
-        if (mc_Entity.x == 8192) {
+        bool isWater = mc_Entity.x == 8192 || (mc_Entity.x == 8194 && gl_Color.b - gl_Color.r > 0.1);
+        if (isWater) {
             color.rgb = worldPos;
-            color.a = 0.98 - pow(1.0 - clamp(dot(shadowModelViewInverse[2].xyz, worldNormal), 0.0, 1.0), 5.0) * 0.98;
+            color.a = 0.98 - pow(1.0 - clamp(abs(dot(shadowModelViewInverse[2].xyz, worldNormal)), 0.0, 1.0), 5.0) * 0.98;
         }
-        float isTransparent = float(abs(textureLod(gtexture, mc_midTexCoord.st + 1e-6, 0.0).w - 0.5) + 1e-4 < 0.49) * (1.0 - isWater);
+        float isWaterF = float(isWater);
+        shadowOffset.y = -isWaterF;
+        float isTransparent = float(abs(textureLod(gtexture, mc_midTexCoord.st + 1e-6, 0.0).w - 0.5) + 1e-4 < 0.49) * (1.0 - isWaterF);
         shadowOffset.x = -isTransparent;
 
         gl_Position = gl_ProjectionMatrix * viewPos;
