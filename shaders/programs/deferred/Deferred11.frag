@@ -319,7 +319,6 @@ void main() {
     vec4 finalColor = vec4(vec3(0.0), blendedFrames);
     if (abs(gbufferData.depth) < 1.0) {
         worldPos += gbufferModelViewInverse[3].xyz;
-        vec3 viewDir = normalize(viewPosNoPOM);
         vec3 worldGeoNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.geoNormal);
 
         finalColor.rgb += gbufferData.emissive * PBR_BRIGHTNESS * PI;
@@ -334,6 +333,8 @@ void main() {
                 gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
             #endif
             f0 = mix(f0, gbufferData.albedo.rgb, gbufferData.metalness);
+            float viewLength = inversesqrt(dot(viewPos, viewPos));
+            vec3 viewDir = viewPos * viewLength;
             float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
             vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, f0, f82);
 
@@ -342,7 +343,6 @@ void main() {
             vec3 shadowDiffuse = gbufferData.albedo.rgb * diffuseAbsorption;
             vec3 shadowSpecular = sunlightSpecular(viewDir, viewShadowDirection, gbufferData.normal, gbufferData.smoothness * 0.995, NdotL, NdotV, f0, f82);
             vec2 noise = blueNoiseTemporal(texcoord).xy;
-            float viewLength = inversesqrt(dot(viewPos, viewPos));
             #ifdef SCREEN_SPACE_SHADOW
                 shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, gbufferData.materialID);
             #endif

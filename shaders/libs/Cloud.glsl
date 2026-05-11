@@ -22,10 +22,10 @@ vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, 
     float topIntersection = (CLOUD_BLOCKY_TOP_HEIGHT - worldHeight) / worldDir.y;
     float bottomIntersection = (CLOUD_BLOCKY_HEIGHT - worldHeight) / worldDir.y;
 
-    float intersection = topIntersection * bottomIntersection > 0.0 ? min(topIntersection, bottomIntersection) : 0.0;
+    float intersection = max(-clamp(topIntersection * bottomIntersection, 0.0, 1.0), min(topIntersection, bottomIntersection));
     vec4 result = vec4(baseColor, 0.0);
     backDepth -= intersection * step(1e-5, backDepth);
-    if (intersection > 0.0 && 0.0 <= backDepth) {
+    if (intersection >= 0.0 && 0.0 <= backDepth) {
         vec2 wind = frameTimeCounter * CLOUD_SPEED * vec2(4.0, 2.0);
         vec2 cloudOffset = worldPos.xz + intersection * worldDir.xz;
         vec3 cloudPos = vec3(

@@ -186,8 +186,11 @@ vec3 hardcodedMetal(float metalness) {
 vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, float smoothness, float NdotL, float NdotV, vec3 f0, vec3 f82) {
     float LdotV = dot(-viewDir, lightDir);
     float LdotH2 = LdotV * 0.5 + 0.5;
-    float LdotHInv = inversesqrt(LdotH2);
-    float LdotH = clamp(LdotH2 * LdotHInv, 0.0, 1.0);
+    if (f0.x < 0.0) {
+        f0 = vec3(0.02);
+        LdotH2 = 1.777777 * LdotH2 - 0.777777;
+    }
+    float LdotH = sqrt(clamp(LdotH2, 0.0, 1.0));
 
     float roughness = pow2(1.0 - smoothness);
     vec3 reflectDir = viewDir + 2.0 * NdotV * normal;
@@ -195,10 +198,6 @@ vec3 sunlightSpecular(vec3 viewDir, vec3 lightDir, vec3 normal, float smoothness
 
     float D = clamp(distribution(NdotH2, roughness) / 300.0, 0.0, 1.0) * 300.0;
     float V = geometry(NdotV, NdotL, roughness);
-    if (f0.x < 0.0) {
-        f0 = vec3(0.02);
-        LdotH = sqrt(clamp(1.777777 * LdotH * LdotH - 0.777777, 0.0, 1.0));
-    }
     vec3 F = F_AdobeF82(f0, f82, LdotH);
     return D * V * F;
 }
