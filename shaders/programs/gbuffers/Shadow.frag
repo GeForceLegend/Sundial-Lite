@@ -59,7 +59,7 @@ float waterCaustic(vec3 mcPos, vec3 lightDir) {
             dist = min(dist, dot(offset, offset));
         }
 
-        causticStrength = dist * sqrt(dist) * (3.0 - 2.0 * dist) * 0.9 + 0.1;
+        causticStrength = clamp(dist * sqrt(dist) * (3.0 - 2.0 * dist) * 0.9 + 0.1, 0.0, 1.0);
     #endif
 
     return causticStrength;
@@ -91,7 +91,7 @@ void main() {
             mcPos.y += 128.0;
             float floorMcHeight = floor(mcPos.y / 2.0);
             float caustic = waterCaustic(mcPos, shadowDirection);
-            albedo = vec4(caustic, mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, color.a);
+            albedo = vec4(sqrt(caustic * color.a), mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, 0.5);
         }
 
         vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
