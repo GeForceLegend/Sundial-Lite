@@ -199,13 +199,11 @@ vec2 SamplePartialSliceDir(vec3 vvsN, float rnd01)
     return dir0;
 }
 
-vec2 SliceRelCDF_Cos(vec2 x, float angN, float t01, float t1)
+vec2 SliceRelCDF_Cos(vec2 x, float angN)
 {
     vec2 phi = x * PI * 2.0 - PI;
 
-    vec2 t0 = -cos(angN - phi) - phi * sin(angN);
-
-    return t0 * t1 + t01;
+    return -cos(angN - phi) - phi * sin(angN);
 }
 
 // transform v by unit quaternion q.xy0s
@@ -288,6 +286,8 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
             // partial slice re-mapping constants
             float w0_remap_mul = 32.0 / (1.0 - w0);
             float w0_remap_add = -w0 * w0_remap_mul + 64.0;
+            w0_remap_add += w0_remap_mul * t01;
+            w0_remap_mul *= t1;
 
             uint occBits = 0u;
             float stepSize = exp2(stepScale * noise.y);
@@ -333,7 +333,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
                     vec2 hor01 = clamp((horAng + angN) / PI + 0.5, 0.0, 1.0);
 
                     // map to slice relative distribution
-                    hor01 = SliceRelCDF_Cos(hor01, angN, t01, t1);
+                    hor01 = SliceRelCDF_Cos(hor01, angN);
 
                     // partial slice re-mapping
                     hor01 = hor01 * w0_remap_mul + w0_remap_add;
