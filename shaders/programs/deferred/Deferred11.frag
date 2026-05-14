@@ -62,7 +62,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             normalOffset.z *= 0.1;
 
             vec3 basicShadowCoordNoDistort = sssShadowCoord + normalOffset;
-            sssShadowCoord -= normalOffset;
+            sssShadowCoord = distortShadowCoord(sssShadowCoord - normalOffset);
             float clipLengthInv = inversesqrt(dot(basicShadowCoordNoDistort.xy, basicShadowCoordNoDistort.xy));
             float distortFactor = clipLengthInv * log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0);
             vec3 basicShadowCoord = basicShadowCoordNoDistort;
@@ -111,7 +111,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 float sampleRadius = noise.y * 1.0 / PCSS_SAMPLES + 1e-6;
                 bool needSubsurfaceScattering = porosity > 64.5 / 255.0;
 
-                float sssRadius = 1.0 + 1.0 / filterRadius;
+                float sssRadius = (0.25 + 0.25 / filterRadius) * distortFactor;
                 float transparentShadow = 1e-6;
                 vec4 transparentShadowColor = vec4(0.0, 0.0, 0.0, 1e-6);
                 float opticalDepth = 0.0;
@@ -126,7 +126,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                     }
 
                     if (needSubsurfaceScattering) {
-                        vec3 sssSampleCoord = distortShadowCoord(sssShadowCoord + vec3(sampleOffset.st * sssRadius, 0.0));
+                        vec3 sssSampleCoord = sssShadowCoord + vec3(sampleOffset.st * sssRadius, 0.0);
                         float shadowDepth = textureLod(shadowtex1, sssSampleCoord.st, 0.0).r;
                         opticalDepth += clamp(sssSampleCoord.z - shadowDepth + 1e-4, 0.0, 1.0);
                     }
