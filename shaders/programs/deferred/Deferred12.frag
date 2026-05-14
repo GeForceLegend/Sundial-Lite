@@ -89,7 +89,7 @@ float ACos_Approx(float x)
 {
     float u = ACosPoly(abs(x)) * sqrt(1.0 - abs(x));
 
-    return x >= 0.0 ? u : PI - u;
+    return x < 0.0 ? PI - u : u;
 }
 
 float ACos(float x)
@@ -205,7 +205,7 @@ vec2 SliceRelCDF_Cos(vec2 x, float angN, float t01, float t1)
 
     vec2 t0 = -cos(angN - phi) - phi * sin(angN);
 
-    return mix(x, t0 * t1 + t01, step(abs(x - 0.5), vec2(0.5)));
+    return t0 * t1 + t01;
 }
 
 // transform v by unit quaternion q.xy0s
