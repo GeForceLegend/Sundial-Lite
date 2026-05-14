@@ -277,7 +277,7 @@ void main() {
         weight = max(NdotV, curveStart) - weight;
         rawData.normal = viewDir * weight + edgeNormal * max(0.0, inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight)));
     }
-    rawData.lightmap = 
+    rawData.lightmap =
         clamp(rawData.lightmap + blueNoiseTemporal(gl_FragCoord.st * texelSize).xy * 2.0 / 255.0 - 1.0 / 255.0, 0.0, 1.0) *
         clamp(rawData.lightmap * 500.0, 0.0, 1.0);
 

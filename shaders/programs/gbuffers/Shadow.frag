@@ -83,7 +83,7 @@ void main() {
             float ao;
             vec4 overlayColor;
             clrwl_computeFragment(albedo, albedo, lmcoord, ao, overlayColor);
-	        albedo.rgb = mix(albedo.rgb, overlayColor.rgb, overlayColor.a);
+            albedo.rgb = mix(albedo.rgb, overlayColor.rgb, overlayColor.a);
         #endif
 
         if (shadowOffset.y < -0.5) {

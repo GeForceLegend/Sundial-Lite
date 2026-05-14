@@ -152,7 +152,7 @@ void main() {
     #ifdef END_PORTAL
         if (blockEntityId == 8193) {
             vec3 worldDir = -mat3(gbufferModelViewInverse) * viewDir;
-	        vec3 worldDirAbs = abs(worldDir);
+            vec3 worldDirAbs = abs(worldDir);
             vec3 samplePartAbs = step(vec3(max(worldDirAbs.x, max(worldDirAbs.y, worldDirAbs.z))), worldDirAbs);
             vec3 samplePart = samplePartAbs * signI(worldDir);
             float intersection = 1.0 / dot(samplePartAbs, worldDirAbs);

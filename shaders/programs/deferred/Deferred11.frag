@@ -172,7 +172,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         }
     }
 
-    float screenSpaceShadow(vec3 viewPos, float NdotL, float viewLength, float porosity, vec2 noise, float materialID) {
+    float screenSpaceShadow(vec3 viewPos, float NdotL, float viewLength, float porosity, vec2 noise, float handOffset) {
         vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos, -viewPos.z);
         originProjPos.z += gbufferProjection[3].z;
         originProjPos.xy += gbufferProjection[2].xy * viewPos.z;
@@ -221,7 +221,6 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec4 sampleCoord = originCoord + noise.x * stepSize;
         sampleCoord.zw -= 2e-7;
 
-        float handOffset = float(materialID == MAT_HAND);
         float maximumThickness = 0.0005 * viewLength + 0.03 * handOffset;
         float maximumThicknessLod = 0.5 * viewLength;
         sampleCoord.zw -= vec2(maximumThickness, maximumThicknessLod);
@@ -294,9 +293,8 @@ void main() {
         } else
     #endif
     {
-        float handDepth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
-        if (gbufferData.materialID == MAT_HAND && abs(handDepth - 0.5) < 0.5) {
-            gbufferData.depth = handDepth;
+        if (depthWithParallax > 1.0) {
+            gbufferData.depth = gbufferData.depth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
         }
         float depthWithHand = gbufferData.depth - 1e-7;
         vec3 viewDirection = vec3(texcoord * 2.0 - 1.0, gbufferProjectionInverse[3].z);
@@ -344,7 +342,7 @@ void main() {
             vec3 shadowSpecular = sunlightSpecular(viewDir, viewShadowDirection, gbufferData.normal, gbufferData.smoothness * 0.995, NdotL, NdotV, f0, f82);
             vec2 noise = blueNoiseTemporal(texcoord).xy;
             #ifdef SCREEN_SPACE_SHADOW
-                shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, gbufferData.materialID);
+                shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, float(depthWithParallax > 1.0));
             #endif
             #ifdef CLOUD_SHADOW
                 shadow *= cloudShadow(worldPos, shadowDirection);

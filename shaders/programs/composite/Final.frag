@@ -65,10 +65,10 @@ vec3 FidelityFX_RCAS(sampler2D colortex, vec2 coord, vec3 colorE, vec2 pixelSize
     //  d e f
     //    h
     // Input and output might not be same size in Optifine, so we should use textureLod()
-	vec3 colorB = textureLod(colortex, coord + vec2( 0.0, -1.0) * pixelSize, 0.0).rgb;
-	vec3 colorD = textureLod(colortex, coord + vec2(-1.0,  0.0) * pixelSize, 0.0).rgb;
-	vec3 colorF = textureLod(colortex, coord + vec2( 1.0,  0.0) * pixelSize, 0.0).rgb;
-	vec3 colorH = textureLod(colortex, coord + vec2( 0.0,  1.0) * pixelSize, 0.0).rgb;
+    vec3 colorB = textureLod(colortex, coord + vec2( 0.0, -1.0) * pixelSize, 0.0).rgb;
+    vec3 colorD = textureLod(colortex, coord + vec2(-1.0,  0.0) * pixelSize, 0.0).rgb;
+    vec3 colorF = textureLod(colortex, coord + vec2( 1.0,  0.0) * pixelSize, 0.0).rgb;
+    vec3 colorH = textureLod(colortex, coord + vec2( 0.0,  1.0) * pixelSize, 0.0).rgb;
     // Luma times 2.
     float lumaB = luma2(colorB);
     float lumaD = luma2(colorD);

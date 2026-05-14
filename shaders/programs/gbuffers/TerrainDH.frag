@@ -38,12 +38,12 @@ void main() {
 
     GbufferData rawData;
 
-	vec4 albedo = vec4(color, 1.0);
+    vec4 albedo = vec4(color, 1.0);
     vec3 mcPos = worldPos + cameraPosition;
-	ivec3 pixelPos = ivec3(floor(mcPos * 16.0 + 1e-3));
-	ivec2 texel = (pixelPos.xz + 17 * pixelPos.y) & 63;
-	float noise = texelFetch(noisetex, texel, 0).r;
-	albedo.rgb = pow(albedo.rgb, vec3(noise * 0.3 + 0.85));
+    ivec3 pixelPos = ivec3(floor(mcPos * 16.0 + 1e-3));
+    ivec2 texel = (pixelPos.xz + 17 * pixelPos.y) & 63;
+    float noise = texelFetch(noisetex, texel, 0).r;
+    albedo.rgb = pow(albedo.rgb, vec3(noise * 0.3 + 0.85));
 
     vec3 dPosDX = dFdx(viewPos);
     vec3 dPosDY = dFdy(viewPos);

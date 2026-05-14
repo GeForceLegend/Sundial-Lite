@@ -88,7 +88,7 @@ float ACosPoly(float x)
 float ACos_Approx(float x)
 {
     float u = ACosPoly(abs(x)) * sqrt(1.0 - abs(x));
-			
+
     return x >= 0.0 ? u : PI - u;
 }
 
@@ -104,7 +104,7 @@ vec2 ACos(vec2 x)
 
 float ASin01_Approx(float x)// x: [0,1]
 {
-	return 1.5707963267948966 - ACosPoly(x) * sqrt(1.0 - x);
+    return 1.5707963267948966 - ACosPoly(x) * sqrt(1.0 - x);
 }
 
 vec4 GetQuaternion(vec3 to)
@@ -122,8 +122,8 @@ vec4 GetQuaternion(vec3 to)
 
 vec2 cmul(vec2 c0, vec2 c1)
 {
-	return vec2(c0.x * c1.x - c0.y * c1.y,
-		        c0.y * c1.x + c0.x * c1.y);
+    return vec2(c0.x * c1.x - c0.y * c1.y,
+                c0.y * c1.x + c0.x * c1.y);
 }
 
 float SamplePartialSlice(float x, float sin_thVN)
