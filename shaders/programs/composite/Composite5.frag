@@ -256,7 +256,7 @@ void main() {
                 #ifdef CLOUD_SHADOW
                     shadow *= cloudShadow(waterWorldPos, shadowDirection);
                 #endif
-                shadow *= sunColor;
+                shadow *= sunColor * basicSunlight;
                 solidColor.rgb += shadow;
             }
         #endif
@@ -367,12 +367,8 @@ void main() {
                             sampleShadowCoord.xy += vec2(-0.5, 0.5);
                             float transparentShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 0.0);
                             if (transparentShadowStrength < 1.0) {
-                                vec4 transparentShadowColor = textureLod(shadowcolor0, sampleShadowCoord.st, 0.0);
-                                transparentShadowColor.rgb = pow(
-                                    transparentShadowColor.rgb * (1.0 - 0.5 * pow2(transparentShadowColor.w)),
-                                    vec3(sqrt(transparentShadowColor.w * 2.2 * 2.2 * 1.5))
-                                );
-                                singleLight *= mix(transparentShadowColor.rgb, vec3(1.0), vec3(transparentShadowStrength));
+                                vec3 transparentShadowColor = pow2(textureLod(shadowcolor0, sampleShadowCoord.st, 0.0).rgb);
+                                singleLight *= mix(transparentShadowColor, vec3(1.0), vec3(transparentShadowStrength));
                             }
                         #endif
                     }

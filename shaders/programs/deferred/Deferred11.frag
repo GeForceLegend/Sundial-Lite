@@ -53,8 +53,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec3 worldPos, vec3 worldGeoNormal, float NdotL, float viewLength, float smoothness,
         float porosity, float skyLight, vec2 noise, inout vec3 shadow, inout vec3 subsurfaceScattering
     ) {
-        shadow *= basicSunlight;
-        subsurfaceScattering *= basicSunlight * clamp(SUBSERFACE_SCATTERING_STRENTGH * 1e+10, 0.0, 1.0);
+        subsurfaceScattering *= clamp(SUBSERFACE_SCATTERING_STRENTGH * 1e+10, 0.0, 1.0);
         if (weatherStrength < 0.999) {
             vec3 sssShadowCoord = worldPosToShadowCoordNoDistort(worldPos);
             float normalOffsetLen = (viewLength * 2e-3 + 2e-2) * (1.0 + sqrt(1.0 - NdotL));
@@ -113,7 +112,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
                 float sssRadius = (0.25 + 0.25 / filterRadius) * distortFactor;
                 float transparentShadow = 1e-6;
-                vec4 transparentShadowColor = vec4(0.0, 0.0, 0.0, 1e-6);
+                vec3 transparentShadowColor = vec3(0.0);
                 float opticalDepth = 0.0;
                 float solidShadow = 0.0;
                 for (int i = 0; i < PCSS_SAMPLES; i++) {
@@ -138,7 +137,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                         float sampleTransparentShadow = textureLod(shadowtex0, sampleShadowCoord, 0.0);
                         if (sampleTransparentShadow < 1.0) {
                             sampleTransparentShadow = 1.0 - sampleTransparentShadow;
-                            vec4 sampleTransparentColor = textureLod(shadowcolor0, sampleShadowCoord.st, 0.0);
+                            vec3 sampleTransparentColor = textureLod(shadowcolor0, sampleShadowCoord.st, 0.0).rgb;
                             transparentShadow += sampleTransparentShadow;
                             transparentShadowColor += sampleTransparentColor * sampleTransparentShadow;
                         }
@@ -147,13 +146,10 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 #ifdef TRANSPARENT_SHADOW
                     transparentShadowColor /= transparentShadow;
                     transparentShadow /= PCSS_SAMPLES;
-                    transparentShadowColor.rgb = pow(
-                        transparentShadowColor.rgb * (1.0 - 0.5 * pow2(transparentShadowColor.w)),
-                        vec3(sqrt(transparentShadowColor.w * 2.2 * 2.2 * 1.5))
-                    );
-                    transparentShadowColor.rgb = mix(vec3(1.0), transparentShadowColor.rgb, vec3(transparentShadow));
-                    shadow *= transparentShadowColor.rgb;
-                    subsurfaceScattering *= transparentShadowColor.rgb;
+                    transparentShadowColor *= transparentShadowColor;
+                    transparentShadowColor = mix(vec3(1.0), transparentShadowColor, vec3(transparentShadow));
+                    shadow *= transparentShadowColor;
+                    subsurfaceScattering *= transparentShadowColor;
                 #endif
 
                 solidShadow *= normalFactor / PCSS_SAMPLES;
@@ -336,7 +332,7 @@ void main() {
             float NdotV = clamp(dot(viewDir, -gbufferData.normal), 0.0, 1.0);
             vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, f0, f82);
 
-            vec3 shadow = sunColor;
+            vec3 shadow = sunColor * basicSunlight;
             float NdotL = clamp(dot(gbufferData.normal, viewShadowDirection), 0.0, 1.0);
             vec3 shadowDiffuse = gbufferData.albedo.rgb * diffuseAbsorption;
             vec3 shadowSpecular = sunlightSpecular(viewDir, viewShadowDirection, gbufferData.normal, gbufferData.smoothness * 0.995, NdotL, NdotV, f0, f82);

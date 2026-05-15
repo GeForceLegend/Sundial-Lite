@@ -53,8 +53,7 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
         vec3 worldPos, vec3 geoNormal, float NdotL, float smoothness, float porosity,
         float skyLight, inout vec3 shadow, inout vec3 subsurfaceScattering
     ) {
-        shadow *= basicSunlight;
-        subsurfaceScattering *= basicSunlight * clamp(SUBSERFACE_SCATTERING_STRENTGH * 1e+10, 0.0, 1.0);
+        subsurfaceScattering *= clamp(SUBSERFACE_SCATTERING_STRENTGH * 1e+10, 0.0, 1.0);
         if (weatherStrength < 0.999) {
             vec3 sssShadowCoord = worldPosToShadowCoordNoDistort(worldPos);
             float normalFactor = clamp(pow(NdotL, pow2(1.0 - min(0.3, smoothness))), 0.0, 1.0);
@@ -84,15 +83,11 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 
                 #ifdef TRANSPARENT_SHADOW
                     vec3 transparentShadowCoord = shadowCoord - vec3(0.5, 0.0, 0.0);
-                    vec4 transparentShadowColor = textureLod(shadowcolor0, transparentShadowCoord.st, 0.0);
-                    transparentShadowColor.rgb = pow(
-                        transparentShadowColor.rgb * (1.0 - 0.5 * pow2(transparentShadowColor.w)),
-                        vec3(sqrt(transparentShadowColor.w * 2.2 * 2.2 * 1.5))
-                    );
+                    vec3 transparentShadowColor = pow2(textureLod(shadowcolor0, transparentShadowCoord.st, 0.0).rgb);
                     float transparentShadowStrength = textureLod(shadowtex0, transparentShadowCoord, 0.0);
-                    transparentShadowColor.rgb = mix(transparentShadowColor.rgb, vec3(1.0), vec3(transparentShadowStrength));
-                    shadow *= transparentShadowColor.rgb;
-                    subsurfaceScattering *= transparentShadowColor.rgb;
+                    transparentShadowColor = mix(transparentShadowColor, vec3(1.0), vec3(transparentShadowStrength));
+                    shadow *= transparentShadowColor;
+                    subsurfaceScattering *= transparentShadowColor;
                 #endif
 
                 vec3 waterShadowCoord = shadowCoord - vec3(0.0, 0.5, 0.0);
