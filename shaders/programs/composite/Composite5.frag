@@ -341,7 +341,7 @@ void main() {
                 absorptionBeta *= stepLength * 1.44269502;
                 vec3 rayAbsorption = exp2(-absorptionBeta * (noise + VL_SAMPLES)) * basicWeight * 0.02;
                 #ifdef LIGHT_LEAKING_FIX
-                    rayAbsorption *= pow(eyeBrightnessSmooth.y / 240.0 + 1e-4, exp(-0.5 * stepLength));
+                    rayAbsorption *= pow(clamp(eyeBrightnessSmooth.y / 240.0 + 1e-4 + float(isEyeInWater == 1), 0.0, 1.0), exp(-0.5 * stepLength));
                 #endif
                 vec3 stepAbsorption = exp2(absorptionBeta);
                 vec3 skyScattering = (sunColor * SUNLIGHT_BRIGHTNESS * 2.0 + skyColorUp) * eyeBrightnessSmooth.y / 1000.0;
