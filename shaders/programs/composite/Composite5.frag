@@ -302,7 +302,6 @@ void main() {
     }
 
     #ifdef SHADOW_AND_SKY
-        vec3 volumetricLight = vec3(0.0);
         #ifdef VOLUMETRIC_LIGHT
             if (isEyeInWater < 2) {
                 float basicWeight = 1.0;
@@ -331,20 +330,20 @@ void main() {
                     maxAllowedDistance = lodRenderDistance() * 1.01;
                 #endif
                 maxAllowedDistance = (maxAllowedDistance + 32.0) * inversesqrt(max(waterWorldDir.y * waterWorldDir.y, 0.5));
-                maxAllowedDistance = min(maxAllowedDistance, 5000.0 * exp(-6.0 * length(absorptionBeta)));
+                maxAllowedDistance = min(maxAllowedDistance, min(64.0 * inversesqrt(dot(absorptionBeta, absorptionBeta) + 1e-6), 5000.0 * exp(-6.0 * length(absorptionBeta))));
 
                 float targetLength = min(maxAllowedDistance, waterViewDepthNoLimit);
                 float stepLength = targetLength / VL_SAMPLES;
                 vec3 stepSize = waterWorldDir * stepLength;
-                vec3 samplePos = gbufferModelViewInverse[3].xyz + stepSize * noise;
+                vec3 samplePos = gbufferModelViewInverse[3].xyz + stepSize * (noise + VL_SAMPLES - 1.0);
 
                 basicWeight *= stepLength;
                 absorptionBeta *= stepLength * 1.44269502;
-                vec3 rayAbsorption = exp2(-absorptionBeta * noise) * basicWeight * 0.02;
+                vec3 rayAbsorption = exp2(-absorptionBeta * (noise + VL_SAMPLES)) * basicWeight * 0.02;
                 #ifdef LIGHT_LEAKING_FIX
                     rayAbsorption *= pow(eyeBrightnessSmooth.y / 240.0 + 1e-4, exp(-0.5 * stepLength));
                 #endif
-                vec3 stepAbsorption = exp2(-absorptionBeta);
+                vec3 stepAbsorption = exp2(absorptionBeta);
                 vec3 skyScattering = (sunColor * SUNLIGHT_BRIGHTNESS * 2.0 + skyColorUp) * eyeBrightnessSmooth.y / 1000.0;
                 stepLength *= -0.01 * 1.44269502 / max(1e-5, basicWeight);
 
@@ -380,21 +379,18 @@ void main() {
                     #else
                         singleLight *= airScattering;
                     #endif
-                    singleLight *= rayAbsorption;
                     #ifdef VOLUMETRIC_FOG
                         float volumetricFogAbsorption = exp2(stepLength * sampleVolumetricFogDensity);
-                        rayAbsorption *= volumetricFogAbsorption;
                         solidColor.rgb *= volumetricFogAbsorption;
                     #endif
                     rayAbsorption *= stepAbsorption;
-                    volumetricLight += singleLight;
-                    samplePos += stepSize;
+                    solidColor.rgb += singleLight * rayAbsorption;
+                    samplePos -= stepSize;
                 }
             }
         #endif
 
         float weatherData = reflectionData.w;
-        solidColor.rgb += volumetricLight;
 
         weatherData = weatherData * 2.5 - 1.5;
         float weatherLightData = abs(weatherData);
