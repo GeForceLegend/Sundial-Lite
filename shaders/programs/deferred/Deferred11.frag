@@ -335,7 +335,7 @@ void main() {
             vec3 shadow = sunColor * basicSunlight;
             float NdotL = clamp(dot(gbufferData.normal, viewShadowDirection), 0.0, 1.0);
             vec3 shadowDiffuse = gbufferData.albedo.rgb * diffuseAbsorption;
-            vec3 shadowSpecular = sunlightSpecular(viewDir, viewShadowDirection, gbufferData.normal, gbufferData.smoothness * 0.995, NdotL, NdotV, f0, f82);
+            vec3 shadowSpecular = sunlightSpecular(viewDir, viewShadowDirection, gbufferData.normal, gbufferData.smoothness * 0.995, NdotL, NdotV, f0, f82) * airAbsorption(11.4 * gbufferData.smoothness);
             vec2 noise = blueNoiseTemporal(texcoord).xy;
             #ifdef SCREEN_SPACE_SHADOW
                 shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, float(depthWithParallax > 1.0));

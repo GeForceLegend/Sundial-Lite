@@ -251,7 +251,7 @@ void main() {
                 );
                 shadow *= (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle + sunlightSpecular(
                     waterWorldDir, shadowDirection, worldNormal, gbufferData.smoothness * 0.995, NdotL, LdotH, f0, vec3(1.0)
-                );
+                ) * airAbsorption(11.4 * gbufferData.smoothness);
                 shadow += subsurfaceScattering * (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle;
                 #ifdef CLOUD_SHADOW
                     shadow *= cloudShadow(waterWorldPos, shadowDirection);

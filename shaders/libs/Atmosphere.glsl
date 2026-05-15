@@ -225,6 +225,13 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
     return result;
 }
 
+float blindnessFactor = max(darknessFactor * 0.5, blindness);
+vec3 waterAbsorptionBeta = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B) + blindnessFactor;
+float lavaAbsorptionBeta = 1.0 * LAVA_FOG_DENSITY + blindnessFactor;
+float snowAbsorptionBeta = 2.0 * SNOW_FOG_DENSITY + blindnessFactor;
+float netherAbsorptionBeta = 0.01 * NETHER_FOG_DENSITY + blindnessFactor;
+float endAbsorptionBeta = 0.01 * END_FOG_DENSITY + blindnessFactor;
+
 vec3 solidAtmosphereScattering(vec3 color, vec3 worldDir, vec3 skyColor, float worldDepth, float skyLight) {
     float playerHeight = max(cameraPosition.y + WORLD_BASIC_HEIGHT + earthRadius, 300.0 + earthRadius);
     vec3 sunLightColor;
@@ -244,13 +251,6 @@ vec3 solidAtmosphereScattering(vec3 color, vec3 worldDir, vec3 skyColor, float w
     vec3 absorption = exp2(-opticalDepth.x * rayleighBeta - opticalDepth.y * rainyMieBeta);
     return mix(scatteringColor, color, absorption);
 }
-
-float blindnessFactor = max(darknessFactor * 0.5, blindness);
-vec3 waterAbsorptionBeta = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B) + blindnessFactor;
-float lavaAbsorptionBeta = 1.0 * LAVA_FOG_DENSITY + blindnessFactor;
-float snowAbsorptionBeta = 2.0 * SNOW_FOG_DENSITY + blindnessFactor;
-float netherAbsorptionBeta = 0.01 * NETHER_FOG_DENSITY + blindnessFactor;
-float endAbsorptionBeta = 0.01 * END_FOG_DENSITY + blindnessFactor;
 
 float airAbsorption(float depth) {
     return exp(-blindnessFactor * depth);
