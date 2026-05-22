@@ -113,7 +113,7 @@ vec3 directionDistribution(vec2 noise, vec3 normal, vec3 viewDir, float roughnes
     return direction;
 }
 
-vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, float firstWeight) {
+vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, float firstWeight, float materialID) {
     vec3 viewPos;
     #ifdef LOD
         if (depth > 1.0) {
@@ -172,7 +172,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
         sampleCoord.zw -= 2e-7;
 
         bool hitSky = true;
-        float minimumThichness = max(0.001 * originProjScale, abs(stepSize.z));
+        float minimumThichness = max(0.001 * originProjScale, abs(stepSize.z)) + 0.03 * float(materialID == MAT_HAND);
         float minimumThichnessLod = max(0.01 * originProjScale, abs(stepSize.w));
         vec2 offset =
             vec2(minimumThichness, minimumThichnessLod) -
@@ -346,7 +346,7 @@ void main() {
 
             if (reflectionStrength > 1e-5) {
                 f0 = signI(f0) * mix(abs(f0), pow(texelFetch(colortex0, texel, 0).rgb, vec3(2.2)), smoothMetalness.y);
-                reflectionColor = reflection(texel, smoothMetalness.x, waterDepth, f0, f82, reflectionStrength);
+                reflectionColor = reflection(texel, smoothMetalness.x, waterDepth, f0, f82, reflectionStrength, materialParallax.x);
             }
         }
     #endif
