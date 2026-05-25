@@ -61,16 +61,16 @@ in vec2 texcoord;
     const vec3 skyColorUp = vec3(0.0);
 #endif
 
-#ifdef THE_END
-    #include "/libs/Galaxy.glsl"
-#endif
-
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/Atmosphere.glsl"
 #include "/libs/Cloud.glsl"
 #include "/libs/GbufferData.glsl"
 #include "/libs/Shadow.glsl"
+
+#ifdef THE_END
+    #include "/libs/Galaxy.glsl"
+#endif
 
 float volumetricFogDensity(vec3 position) {
     position += cameraPosition;

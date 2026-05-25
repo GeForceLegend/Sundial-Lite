@@ -1,59 +1,33 @@
-// License CC0: Stars and galaxy
-// Bit of sunday tinkering lead to stars and a galaxy
-// Didn't turn out as I envisioned but it turned out to something
-// that I liked so sharing it.
-// https://www.shadertoy.com/view/stBcW1
-
-// Controls how many layers of stars
-#define LAYERS            2.0
-
-// Original source: License: MIT OR CC-BY-NC-4.0, author: mercury, found: https://mercury.sexy/hg_sdf/
-// Replaced by a new version from GeForceLegend.
-vec2 mod2(inout vec2 p, vec2 size) {
-    vec2 c = floor(p / size + 0.5);
-    p = p - c * size;
-    return c;
-}
-
-// License: Unknown, author: Unknown, found: don't remember
+// Hash from https://www.shadertoy.com/view/43jSRR
+// The MIT License
+// Copyright © 2024 Giorgi Azmaipharashvili
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// For copy/paste
 vec2 hash2(vec2 p) {
-    p = vec2(dot (p, vec2 (127.1, 311.7)), dot (p, vec2 (269.5, 183.3)));
-    return fract(sin(p)*43758.5453123);
+    uvec2 u = floatBitsToUint(p * vec2(141421356, 2718281828));
+    return vec2((u ^ u.yx) * uvec2(1618033988, 2718281828)) / float(~0u);
 }
 
-vec2 toSpherical(vec3 p) {
-    float t   = acos(p.z);
-    float ph  = atan(p.y, p.x);
-    return vec2(t, ph);
-}
+// Octahedron random star by GeForceLegend
+float endStars(vec3 direction) {
+    vec2 samplePos = encodeNormal(direction) * 0.5 + 0.5;
+    float starColor = 0.0;
+    float sampleSize = floor(1300.0 * END_GALAXY_AMOUNT);
+    vec2 startTexel = floor(samplePos * sampleSize - 0.5);
 
-float endStars(vec3 rd) {
-    vec2 sp = toSpherical(rd.xzy);
-    float col = 0.0;
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            vec2 sampleTexel = startTexel + vec2(i, j);
+            sampleTexel = abs(sampleTexel - sampleSize * vec2(greaterThanEqual(floatBitsToUint(sampleTexel.yx), floatBitsToUint(vec2(sampleSize)))));
+            vec2 noise = hash2(sampleTexel / sampleSize).xy;
 
-    const float m = LAYERS;
+            vec3 sampleDirection = decodeNormal((sampleTexel + 0.5) / sampleSize * 2.0 - 1.0);
+            float angle = dot(sampleDirection, direction);
 
-    for (float i = 0.0; i < m; ++i) {
-        vec2 pp = sp+0.5*i;
-        float s = i/(m-END_GALAXY_AMOUNT);
-        vec2 dim  = vec2(mix(0.05, 0.003, s)*3.1415926);
-        vec2 np = mod2(pp, dim);
-        vec2 h = hash2(np+127.0+i);
-        vec2 o = -1.0+2.0*h;
-        float y = sin(sp.x);
-        pp += o*dim*0.5;
-        pp.y *= y;
-        float l = length(pp);
-
-        float h1 = fract(h.x*1667.0);
-        float h2 = fract(h.x*1887.0);
-        float h3 = fract(h.x*2997.0);
-
-        float scol = mix(8.0*h2, 0.25*h2*h2, s);
-
-        float ccol = col + exp(-(6000.0/mix(2.0, 0.25, s))*max(l-0.001, 0.0))*scol;
-        col = h3 < y ? ccol : col;
+            float starBrightness = clamp(mix(-1000000.0 * (0.3 + 0.7 * noise.y), 1.0,  angle), 0.0, 1.0);
+            starColor += starBrightness * float(noise.x < 0.01 * pow2(abs(sampleDirection.x) + abs(sampleDirection.y) + abs(sampleDirection.z)));
+        }
     }
 
-    return 5.0 * col * END_GALAXY_BRIGHTNESS;
+    return starColor * END_GALAXY_BRIGHTNESS;
 }

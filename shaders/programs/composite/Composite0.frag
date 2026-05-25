@@ -36,15 +36,15 @@ in vec2 texcoord;
     const vec3 skyColorUp = vec3(0.0);
 #endif
 
-#ifdef THE_END
-    #include "/libs/Galaxy.glsl"
-#endif
-
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/Atmosphere.glsl"
 #include "/libs/Cloud.glsl"
 #include "/libs/GbufferData.glsl"
+
+#ifdef THE_END
+    #include "/libs/Galaxy.glsl"
+#endif
 
 vec3 reflectionWeight(vec3 viewDir, vec3 lightDir, vec3 f0, vec3 f82) {
     float LdotH2 = clamp(dot(-viewDir, lightDir) * 0.5 + 0.5, 0.0, 1.0);
