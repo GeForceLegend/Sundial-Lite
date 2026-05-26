@@ -17,11 +17,15 @@ float endStars(vec3 direction) {
 
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
-            vec2 sampleTexel = startTexel + vec2(i, j);
-            sampleTexel = abs(sampleTexel - sampleSize * vec2(greaterThanEqual(floatBitsToUint(sampleTexel.yx), floatBitsToUint(vec2(sampleSize)))));
+            vec2 sampleTexel = startTexel + vec2(i, j) + 0.5;
+            bvec2 repeat = lessThan(floatBitsToUint(sampleTexel), floatBitsToUint(vec2(sampleSize)));
+            if (repeat.x != repeat.y) {
+                sampleTexel = -sampleTexel;
+            }
+            sampleTexel = mod(sampleTexel, sampleSize);
             vec2 noise = hash2(sampleTexel / sampleSize).xy;
 
-            vec3 sampleDirection = decodeNormal((sampleTexel + 0.5) / sampleSize * 2.0 - 1.0);
+            vec3 sampleDirection = decodeNormal(sampleTexel / sampleSize * 2.0 - 1.0);
             float angle = dot(sampleDirection, direction);
 
             float starBrightness = clamp(mix(-1000000.0 * (0.3 + 0.7 * noise.y), 1.0,  angle), 0.0, 1.0);
