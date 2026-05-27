@@ -13,11 +13,11 @@ float endStars(vec3 direction) {
     vec2 samplePos = encodeNormal(direction) * 0.5 + 0.5;
     float starColor = 0.0;
     float sampleSize = floor(1300.0 * END_GALAXY_AMOUNT);
-    vec2 startTexel = floor(samplePos * sampleSize - 0.5);
+    vec2 startTexel = floor(samplePos * sampleSize - 0.5) + 0.5;
 
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
-            vec2 sampleTexel = startTexel + vec2(i, j) + 0.5;
+            vec2 sampleTexel = startTexel + vec2(i, j);
             bvec2 repeat = lessThan(floatBitsToUint(sampleTexel), floatBitsToUint(vec2(sampleSize)));
             if (repeat.x != repeat.y) {
                 sampleTexel = -sampleTexel;

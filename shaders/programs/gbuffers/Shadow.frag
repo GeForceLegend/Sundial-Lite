@@ -41,7 +41,7 @@ float waterCaustic(vec3 mcPos, vec3 lightDir) {
 
     #ifdef WATER_CAUSTIC
         vec3 causticPos = mcPos + vec3(1.0, 0.0, 0.5) * frameTimeCounter * WATER_WAVE_SPEED;
-        vec2 causticCoord = causticPos.xz;
+        vec2 causticCoord = causticPos.xz + causticPos.y;
 
         vec3 position = vec3(causticCoord, frameTimeCounter);
 
