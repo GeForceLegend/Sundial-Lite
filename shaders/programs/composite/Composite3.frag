@@ -65,26 +65,26 @@ void main() {
 
                     vec3 accumulation = originData.rgb;
                     float weightAccumulation = 1.0;
+                    vec2 centerTexelCoord = texel + 0.5;
 
                     for (int i = -REFLECTION_FILTER; i < REFLECTION_FILTER + 1; i++) {
                         for (int j = -REFLECTION_FILTER; j < REFLECTION_FILTER + 1; j++) {
-                            ivec2 sampleTexel = ivec2(texel + 0.5 + vec2(i, j) * coordOffset);
-                            if (abs(i) + abs(j) > 0.5 && max(abs(sampleTexel.x / screenSize.x - 0.5), abs(sampleTexel.y / screenSize.y - 0.5)) < 0.5) {
-                                vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
-                                float sampleReflectionDepth = sampleData.w;
-                                float sampleSmoothness = unpack2x8Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
+                            vec2 sampleTexelCoord = centerTexelCoord + vec2(i, j) * coordOffset;
+                            ivec2 sampleTexel = ivec2(sampleTexelCoord);
+                            vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
+                            float sampleReflectionDepth = sampleData.w;
+                            vec3 sampleNormal = getNormalTexel(sampleTexel);
+                            float sampleSmoothness = unpack2x8Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
 
-                                vec3 sampleNormal = getNormalTexel(sampleTexel);
-
-                                float weight =
-                                    exp2(
-                                        roughnessInv * log2(max(dot(originNormal, sampleNormal), 1e-6)) +
-                                        100.0 * log2(1.0 - abs(roughness - pow2(1.0 - sampleSmoothness))) -
-                                        1.44269502 * abs(originReflectionDepth - sampleReflectionDepth) / (max(originReflectionDepth, sampleReflectionDepth) + 0.2) * originSmoothness
-                                    ) *
-                                    step(sampleSmoothness, 0.9975);
-                                weight = clamp(weight, 0.0, 1.0);
-
+                            float weight =
+                                exp2(
+                                    roughnessInv * log2(max(dot(originNormal, sampleNormal), 1e-6)) +
+                                    100.0 * log2(1.0 - abs(roughness - pow2(1.0 - sampleSmoothness))) -
+                                    1.44269502 * abs(originReflectionDepth - sampleReflectionDepth) / (max(originReflectionDepth, sampleReflectionDepth) + 0.2) * originSmoothness
+                                ) *
+                                step(0.0025, sampleSmoothness);
+                            weight = clamp(weight, 0.0, 1.0);
+                            if (abs(i) != -abs(j) && all(lessThan(floatBitsToUint(sampleTexelCoord * texelSize), floatBitsToUint(vec2(1.0))))) {
                                 accumulation += sampleData.rgb * weight;
                                 weightAccumulation += weight;
                             }

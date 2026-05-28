@@ -16,7 +16,8 @@ vec4 reflectionFilter(vec4 originData, ivec2 centerTexel, float offset, bool use
 
     for (int i = -REFLECTION_FILTER; i < REFLECTION_FILTER + 1; i++) {
         for (int j = -REFLECTION_FILTER; j < REFLECTION_FILTER + 1; j++) {
-            ivec2 sampleTexel = ivec2(centerTexelCoord + vec2(i, j) * coordOffset);
+            vec2 sampleTexelCoord = centerTexelCoord + vec2(i, j) * coordOffset;
+            ivec2 sampleTexel = ivec2(sampleTexelCoord);
             vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
             float sampleReflectionDepth = sampleData.w;
             vec3 sampleNormal = getNormalTexel(sampleTexel);
@@ -30,7 +31,7 @@ vec4 reflectionFilter(vec4 originData, ivec2 centerTexel, float offset, bool use
                 ) *
                 step(0.0025, sampleSmoothness);
             weight = clamp(weight, 0.0, 1.0);
-            if (abs(i) != -abs(j) && all(lessThan(sampleTexel * texelSize - 0.5, vec2(0.5)))) {
+            if (abs(i) != -abs(j) && all(lessThan(floatBitsToUint(sampleTexelCoord * texelSize), floatBitsToUint(vec2(1.0))))) {
                 accumulation += sampleData.rgb * weight;
                 weightAccumulation += weight;
             }
