@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Bloom stage 3: blur in y axis; Chromatic dispersion
+//  Bloom stage 3: blur in y axis
 //
 
 layout(location = 0) out vec4 texBuffer4;

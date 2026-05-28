@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  TAA stage 2: sample and blend
+//  TAA stage 2: sample and blend; Moving previous exposure and smooth center depth to let colortex7 flipped without info lost
 //
 
 layout(location = 0) out vec4 texBuffer3;
