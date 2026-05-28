@@ -404,7 +404,11 @@ void main() {
         currData = mix(prevData, currData, blendWeight);
 
         vec3 lightColor = vec3(BASIC_LIGHT);
-        lightColor += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
+        #ifdef MOD_NIGHT_VISION_COMPAT
+            lightColor += pow(texelFetch(colortex4, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
+        #else
+            lightColor += nightVision * NIGHT_VISION_BRIGHTNESS;
+        #endif
         const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
         vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * commonLightColor;
         lightColor += blockLight;

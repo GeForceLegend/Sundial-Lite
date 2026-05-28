@@ -367,6 +367,8 @@ option.MOD_WATER_DETECTION=Mod water detection
 option.MOD_WATER_DETECTION.comment=Assuming all transparent block with vertex color to be water. May cause unexpected faces to be water
 option.MOD_PLANT_DETECTION=Mod plant detection
 option.MOD_PLANT_DETECTION.comment=Assuming all slope not hardcoded to be plant. May cause unexpected faces to be plant
+option.MOD_NIGHT_VISION_COMPAT=Mod night vision compat
+option.MOD_NIGHT_VISION_COMPAT.comment=Using light texture sample with 0 sky and block light level as night vision strength. Compatible with mods that does not use vanilla night vision, but may break on certain Optifine versions
 option.TEMPORAL_IGNORE_HAND_ANIMATION=Temporal ignore hand animation
 option.TEMPORAL_IGNORE_HAND_ANIMATION.comment=Ignore hand animation of view bobbing in temporal. Might improve visual quality on mod held item with custom animation
 

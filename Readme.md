@@ -49,4 +49,4 @@ As a compartion to the full version, it does not use voxelization and world spac
 - As a deferred-rendering shaders, it does not work well on mods that use transparent objects without writing to depth, and can only see the closest transparent objects, like you cannot see water behind stained glass blocks
 - Due to terrain culling in shadow and render distance limit, sometimes you may see sunlight leaks in caves and buildings, this is not that resolvable on shader side
 - Minecraft 26.1's rendering order is very bad, causing some overlay designed to decorate solid object are rendering with transparent obejcts, causing enchantment glint, horse marking, banner pattern, spider/enderman eyes and so on cannot rendered correctly on deferred-rendering shaders, and very expensive to resolve on shader side
-
+- Certain versions of Optifine (like 1.21.2 to 1.21.8 J6 Pre15) cannot use vanilla light texture in deferred pipeline correctly, disable `Mod support > Mod night vision compat` can fix it on those versions
