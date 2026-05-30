@@ -71,7 +71,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevViewPos, vec3 geoNormal, out
     float prevSampleDepth = prevFramesDepth.y + float(prevFramesDepth.y == 0.0);
 
     vec2 sampleCoord = sampleTexelCoord * texelSize;
-    isPrevValid = float(all(lessThan(floatBitsToUint(sampleCoord), floatBitsToUint(vec2(1.0)))));
+    isPrevValid = float(all(lessThan(floatBitsToUint(sampleCoord), uvec2(0x3F800000u))));
     #ifdef TAA
         sampleCoord -= prevTaaOffset;
     #endif

@@ -180,7 +180,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
             float sampleDepth = uintBitsToFloat(textureLod(colortex6, sampleCoord.st, 0.0).x);
             sampleDepth -= float(sampleDepth > 1.0);
-            bool hitCheck = sampleCoord.z > sampleDepth && sampleDepth < 1.0;
+            bool hitCheck = sampleCoord.z > sampleDepth && floatBitsToUint(sampleDepth) < 0x3F800000u;
             #ifdef LOD
                 hitCheck = hitCheck || (sampleDepth < 0.0 && sampleCoord.w > -sampleDepth);
             #endif
@@ -199,7 +199,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
                     stepScale *= 0.5;
                 }
 
-                bool hitTerrain = abs(refinementCoord.z - sampleDepth - offset.x) < minimumThichness && sampleDepth < 1.0 && dot(stepSize.st, refinementCoord.st - originCoord) > 0.0;
+                bool hitTerrain = abs(refinementCoord.z - sampleDepth - offset.x) < minimumThichness && floatBitsToUint(sampleDepth) < 0x3F800000u && dot(stepSize.st, refinementCoord.st - originCoord) > 0.0;
                 #ifdef LOD
                     hitTerrain = hitTerrain || (abs(sampleDepth + 0.5) < 0.5 && abs(refinementCoord.w + sampleDepth - offset.y) < minimumThichnessLod);
                 #endif
@@ -209,7 +209,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
                     break;
                 }
             }
-            if (clamp(sampleCoord.st, 0.0, 1.0) != sampleCoord.st || sampleCoord.z < 0.0) break;
+            if (any(greaterThan(floatBitsToUint(sampleCoord.st), uvec2(0x3F800000u))) || sampleCoord.z < 0.0) break;
             sampleCoord += stepSize;
         }
         rayDir = mat3(gbufferModelViewInverse) * rayDir;
