@@ -329,11 +329,13 @@ void main() {
                 }
 
                 float noise = bayer64Temporal(gl_FragCoord.xy);
-                float maxAllowedDistance = far;
+                float maxHorizonalRange = far + 32.0;
+                float maxVerticalRange = min(far, max(cameraPosition.y + 64.0, 320.0 - cameraPosition.y) * 2.0) + 32.0;
                 #ifdef LOD
-                    maxAllowedDistance = lodRenderDistance() * 1.01;
+                    maxHorizonalRange = lodRenderDistance() * 1.1;
                 #endif
-                maxAllowedDistance = (maxAllowedDistance + 32.0) * inversesqrt(max(waterWorldDir.y * waterWorldDir.y, 0.5));
+                float waterWorldDirY2 = waterWorldDir.y * waterWorldDir.y;
+                float maxAllowedDistance = maxHorizonalRange * maxVerticalRange * inversesqrt(pow2(maxHorizonalRange) * waterWorldDirY2 + pow2(maxVerticalRange) * (1.0 - waterWorldDirY2));
                 maxAllowedDistance = min(maxAllowedDistance, min(64.0 * inversesqrt(dot(absorptionBeta, absorptionBeta) + 1e-6), 5000.0 * exp(-6.0 * length(absorptionBeta))));
 
                 float targetLength = min(maxAllowedDistance, waterViewDepthNoLimit);
@@ -350,35 +352,30 @@ void main() {
                 vec3 stepAbsorption = exp2(absorptionBeta);
                 vec3 skyScattering = (sunColor * SUNLIGHT_BRIGHTNESS * 2.0 + skyColorUp) * eyeBrightnessSmooth.y / 1000.0;
                 stepLength *= -0.01 * 1.44269502 / max(1e-5, basicWeight);
-                bool insideShadowRange = true;
 
                 for (int i = 0; i < VL_SAMPLES; i++) {
                     vec3 singleLight = vec3(1.0);
                     #ifdef CLOUD_SHADOW
                         singleLight *= cloudShadow(samplePos, shadowDirection);
                     #endif
-                    if (insideShadowRange) {
-                        vec3 sampleShadowCoord = worldPosToShadowCoord(samplePos);
-                        if (all(lessThan(
-                            abs(sampleShadowCoord - vec3(vec2(0.75), 0.5)),
-                            vec3(vec2(0.25), 0.5))
-                        )) {
-                            float solidShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 0.0);
-                            singleLight *= vec3(solidShadowStrength);
-                            sampleShadowCoord.y -= 0.5;
-                            vec3 caustic = waterCaustic(sampleShadowCoord, samplePos, shadowDirection);
-                            singleLight *= caustic;
-                            #ifdef TRANSPARENT_SHADOW
-                                sampleShadowCoord.xy += vec2(-0.5, 0.5);
-                                float transparentShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 0.0);
-                                if (transparentShadowStrength < 1.0) {
-                                    vec3 transparentShadowColor = pow2(textureLod(shadowcolor0, sampleShadowCoord.st, 0.0).rgb);
-                                    singleLight *= mix(transparentShadowColor, vec3(1.0), vec3(transparentShadowStrength));
-                                }
-                            #endif
-                        } else {
-                            insideShadowRange = false;
-                        }
+                    vec3 sampleShadowCoord = worldPosToShadowCoord(samplePos);
+                    if (all(lessThan(
+                        abs(sampleShadowCoord - vec3(vec2(0.75), 0.5)),
+                        vec3(vec2(0.25), 0.5))
+                    )) {
+                        float solidShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 0.0);
+                        singleLight *= vec3(solidShadowStrength);
+                        sampleShadowCoord.y -= 0.5;
+                        vec3 caustic = waterCaustic(sampleShadowCoord, samplePos, shadowDirection);
+                        singleLight *= caustic;
+                        #ifdef TRANSPARENT_SHADOW
+                            sampleShadowCoord.xy += vec2(-0.5, 0.5);
+                            float transparentShadowStrength = textureLod(shadowtex0, sampleShadowCoord, 0.0);
+                            if (transparentShadowStrength < 1.0) {
+                                vec3 transparentShadowColor = pow2(textureLod(shadowcolor0, sampleShadowCoord.st, 0.0).rgb);
+                                singleLight *= mix(transparentShadowColor, vec3(1.0), vec3(transparentShadowStrength));
+                            }
+                        #endif
                     }
                     singleLight *= sunColor * SUNLIGHT_BRIGHTNESS;
                     #ifdef VOLUMETRIC_FOG
