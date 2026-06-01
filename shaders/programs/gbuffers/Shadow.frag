@@ -87,7 +87,7 @@ void main() {
         #endif
 
         vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
-        if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || fwidth(shadowOffset.x) > 0.0 || albedo.w < alphaTestRef) discard;
+        if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || fwidth(shadowOffset.x) > 0.0 || albedo.w < max(0.01, alphaTestRef)) discard;
 
         if (shadowOffset.y < -0.5) {
             vec3 mcPos = color.xyz + cameraPosition;
