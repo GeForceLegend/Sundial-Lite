@@ -337,10 +337,12 @@ void main() {
                     diffuseWeight = 1.0 - (1.0 - diffuseWeight) * sqrt(clamp(smoothMetalness.x - (1.0 - smoothMetalness.x) * (1.0 - 0.6666 * smoothMetalness.y), 0.0, 1.0));
                 #endif
                 reflectionStrength = 1.0 - diffuseWeight;
-                waterDepth = uintBitsToFloat(texelFetch(colortex6, texel, 0).x);
-                waterDepth -= float(waterDepth > 1.0);
-                if (waterDepth < 0.0) {
-                    waterDepth = 1.0 - waterDepth;
+                if (texel.y > 1 || texel.x > 4) {
+                    waterDepth = uintBitsToFloat(texelFetch(colortex6, texel, 0).x);
+                    waterDepth -= float(waterDepth > 1.0);
+                    if (waterDepth < 0.0) {
+                        waterDepth = 1.0 - waterDepth;
+                    }
                 }
             }
 
