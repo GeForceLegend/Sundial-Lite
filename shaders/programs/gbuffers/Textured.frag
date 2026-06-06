@@ -204,7 +204,7 @@ void main() {
         vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
         vec2 albedoTexelSize = 1.0 / albedoTexSize;
         vec4 fixedCoordRange = coordRange;
-        if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-6) {
+        if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-5) {
             fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
         }
         float parallaxScale = ENTITY_TEXTURE_RESOLUTION / max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y);
