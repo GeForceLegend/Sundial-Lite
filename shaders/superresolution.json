@@ -39,7 +39,7 @@
                 },
                 "internal_format": "rgba16f",
                 "hdr": true,
-                "auto_exposure": false,
+                "auto_exposure": true,
                 "motion_jittered": false
             }
         }
