@@ -108,7 +108,11 @@ void main() {
     texBuffer4 = vec4(calculateBloomBase(texcoord) * 6.0, 1.0);
     texBuffer3 = vec4(currColor, 1.0);
     #ifdef MOTION_BLUR
-        vec2 velocity = texelFetch(colortex5, texel, 0).xy;
+        ivec2 velocityTexel = texel;
+        #if SR_ENABLE
+            velocityTexel = ivec2(gl_FragCoord.st * SR_RENDER_SCALE_FACTOR);
+        #endif
+        vec2 velocity = texelFetch(colortex5, velocityTexel, 0).xy;
         #if SR_ENABLE
             velocity *= SR_RENDER_SCALE_FACTOR;
         #endif
