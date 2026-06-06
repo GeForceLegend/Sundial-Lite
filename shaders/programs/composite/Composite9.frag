@@ -154,7 +154,7 @@ void main() {
     #if SR_ENABLE
         velocity.st *= SR_RENDER_SCALE_FACTOR;
     #endif
-    #ifdef TAA
+    #if defined TAA && !(SR_ENABLE && SR_ALGO_SUPPORTS_JITTER)
         solidColor = temporalAntiAliasing(texcoord, texel, velocity.st, solidColor, velocity.w);
     #endif
     texBuffer3 = vec4(pow(clamp(solidColor * 0.1, 0.0, 1.0), vec3(2.2)) * 100.0, 1.0);
