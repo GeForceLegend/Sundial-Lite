@@ -172,8 +172,9 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
 
         float noise = blueNoiseTemporal(texcoord).x + 0.1;
         vec4 stepSize = (targetCoord - sampleCoord) / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
-        stepSize *= texelSize.y * inversesqrt(min(texelSize.y * texelSize.y, dot(stepSize, stepSize)));
-        sampleCoord += noise * stepSize;
+        float stepSizeLengthInv = texelSize.y * inversesqrt(dot(stepSize.xy, stepSize.xy));
+        sampleCoord += max(noise, stepSizeLengthInv) * stepSize;
+        stepSize *= max(1.0, stepSizeLengthInv);
         sampleCoord.zw -= 2e-7;
 
         bool hitSky = true;
