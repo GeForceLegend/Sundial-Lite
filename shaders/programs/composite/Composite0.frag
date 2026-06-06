@@ -172,6 +172,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
 
         float noise = blueNoiseTemporal(texcoord).x + 0.1;
         vec4 stepSize = (targetCoord - sampleCoord) / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
+        stepSize *= inversesqrt(min(texelSize.y, dot(stepSize, stepSize)));
         sampleCoord += noise * stepSize;
         sampleCoord.zw -= 2e-7;
 
@@ -207,7 +208,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
                 #ifdef LOD
                     hitTerrain = hitTerrain || (abs(sampleDepth + 0.5) < 0.5 && abs(refinementCoord.w + sampleDepth - offset.y) < minimumThichnessLod);
                 #endif
-                if (hitTerrain && clamp(refinementCoord.st, 0.0, 1.0) == refinementCoord.st) {
+                if (hitTerrain && all(lessThan(floatBitsToUint(refinementCoord.st), uvec2(floatBitsToUint(screenEdge))))) {
                     sampleCoord = refinementCoord;
                     hitSky = false;
                     break;
