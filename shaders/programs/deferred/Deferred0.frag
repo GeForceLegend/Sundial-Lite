@@ -33,7 +33,7 @@ in vec2 temporalHandRotation;
 
 #if SR_ENABLE && SR_ALGO_SUPPORTS_JITTER
     uniform vec2 SRPreviousJitterOffset;
-    vec2 prevTaaOffset = SRPreviousJitterOffset * texelSize;
+    vec2 prevTaaOffset = SRPreviousJitterOffset * texelSize * vec2(1.0, -1.0);
 #else
     uniform vec2 prevTaaOffset;
 #endif

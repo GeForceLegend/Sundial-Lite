@@ -67,7 +67,7 @@ uniform mat4 gbufferPreviousProjection;
 
 #if SR_ENABLE && SR_ALGO_SUPPORTS_JITTER
     uniform vec2 SRJitterOffset;
-    vec2 taaOffset = SRJitterOffset * texelSize * 2.0;
+    vec2 taaOffset = SRJitterOffset * texelSize * 2.0 * vec2(1.0, -1.0);
 #else
     uniform vec2 taaOffset;
 #endif
