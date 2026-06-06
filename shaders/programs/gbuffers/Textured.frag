@@ -247,6 +247,7 @@ void main() {
             vec4 overlayColor;
             clrwl_computeFragment(albedoData, albedoData, rawData.lightmap, ao, overlayColor);
             albedoData.rgb = mix(albedoData.rgb, overlayColor.rgb, overlayColor.a);
+            rawData.lightmap = clamp(rawData.lightmap * 16.0 / 15.0 - 0.5 / 15.0, 0.0, 1.0);
         #endif
 
         if (albedoData.w < max(0.001, alphaTestRef)) discard;
