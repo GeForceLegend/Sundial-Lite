@@ -157,6 +157,10 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
         vec4 targetProjPos = originProjPos + projDirection * traceLength;
         float targetProjScale = 0.5 / targetProjPos.w;
         vec4 targetCoord = vec4(targetProjPos.xyz * targetProjScale + 0.5, 0.0);
+        #if SR_ENABLE
+            sampleCoord.st *= SR_RENDER_SCALE_FACTOR;
+            targetCoord.st *= SR_RENDER_SCALE_FACTOR;
+        #endif
 
         #ifdef LOD
             projDirection.z = rayDir.z * projLod()[2].z;

@@ -26,12 +26,17 @@ in vec2 texcoord;
 in vec2 prevHandAnimation;
 in vec2 temporalHandRotation;
 
-uniform vec2 prevTaaOffset;
-
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
+
+#if SR_ENABLE && SR_ALGO_SUPPORTS_JITTER
+    uniform vec2 SRPreviousJitterOffset;
+    vec2 prevTaaOffset = SRPreviousJitterOffset * texelSize;
+#else
+    uniform vec2 prevTaaOffset;
+#endif
 
 vec2 getPrevCoord(out vec3 prevViewPos, vec3 viewPos, vec3 worldGeoNormal, float parallaxOffset, float materialID) {
     vec3 prevScreenPos;

@@ -46,6 +46,9 @@ vec3 calculateBloomBase(vec2 coord) {
         vec2 lodSize = screenSize * uintBitsToFloat(levelU.x);
         vec2 lodSizeFloor = floor(lodSize);
         centerCoord = (centerCoord - 1.0) * lodSizeFloor / (lodSizeFloor + 0.5 * clamp(1.0 - (lodSize - lodSizeFloor) * 1e+5, 0.0, 1.0)) + 1.0;
+        #if SR_ENABLE
+            centerCoord *= SR_RENDER_SCALE_FACTOR;
+        #endif
 
         vec3 bloomColor = textureLod(colortex3, centerCoord, lod).rgb * 4.0;
         bloomColor += textureLod(colortex3, centerCoord + vec2(-1.0, 1.0) * bloomTexel, lod).rgb;
@@ -109,6 +112,9 @@ void main() {
     texBuffer3 = vec4(currColor, 1.0);
     #ifdef MOTION_BLUR
         vec2 velocity = texelFetch(colortex5, texel, 0).xy;
+        #if SR_ENABLE
+            velocity *= SR_RENDER_SCALE_FACTOR;
+        #endif
         vec3 motionBlurColor = motionBlur(texcoord, velocity);
         texBuffer3.rgb = mix(currColor, motionBlurColor, vec3(clamp(length(velocity * screenSize) * 0.3, 0.0, 1.0)));
     #endif

@@ -157,6 +157,9 @@ void main() {
     coordSize = ceil(midCoord + coordToCenter) * albedoTexelSize - minCoord;
     coordRange = vec4(minCoord, coordSize);
 
+    #if SR_ENABLE
+        gl_Position.xy = gl_Position.xy * SR_RENDER_SCALE_FACTOR + (SR_RENDER_SCALE_FACTOR - 1.0) * gl_Position.w;
+    #endif
 
     #ifdef TAA
         gl_Position.xy += taaOffset * gl_Position.w;

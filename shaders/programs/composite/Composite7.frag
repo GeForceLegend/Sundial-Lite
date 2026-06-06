@@ -236,10 +236,17 @@ void main() {
         float depthDiffFactor = getDepthConfidenceFactor(closest, velocity);
 
         blendWeight *= 0.95 - min(0.7, 4.0 * pow(dot(velocity.xy, velocity.xy), 0.25)) * step(closest.z, 0.999999);
-        blendWeight *= float(all(lessThan(floatBitsToUint(closest.st + velocity.st), uvec2(0x3F800000u))));
+        float edge = 1.0;
+        #if SR_ENABLE
+            edge = SR_RENDER_SCALE_FACTOR;
+        #endif
+        blendWeight *= float(all(lessThan(floatBitsToUint(closest.st + velocity.st), uvec2(floatBitsToUint(edge)))));
         blendWeight *= depthDiffFactor;
     #endif
 
+    #if SR_ENABLE
+        velocity.st *= SR_UPSCALE_RATIO;
+    #endif
     texBuffer5 = vec4(velocity.st, 0.0, blendWeight);
 }
 

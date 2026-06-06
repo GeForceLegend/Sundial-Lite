@@ -16,7 +16,6 @@ uniform float weatherStrength;
 uniform float frameTimeCounter;
 uniform ivec2 atlasSize;
 uniform ivec2 eyeBrightnessSmooth;
-uniform vec2 taaOffset;
 uniform vec2 texelSize;
 uniform vec2 screenSize;
 uniform vec3 fogColor;
@@ -65,6 +64,13 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferPreviousModelView;
 uniform mat4 gbufferPreviousProjection;
+
+#if SR_ENABLE && SR_ALGO_SUPPORTS_JITTER
+    uniform vec2 SRJitterOffset;
+    vec2 taaOffset = SRJitterOffset * texelSize * 2.0;
+#else
+    uniform vec2 taaOffset;
+#endif
 
 #ifdef DISTANT_HORIZONS
     uniform sampler2D dhDepthTex0;

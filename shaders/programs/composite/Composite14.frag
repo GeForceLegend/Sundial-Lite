@@ -247,6 +247,9 @@ void main() {
         textureLod(colortex3, sampleCoord * (1.0 - CHROMATIC_DISPERSION_G) + vec2(0.5) * CHROMATIC_DISPERSION_G, 0.0).g,
         textureLod(colortex3, sampleCoord * (1.0 - CHROMATIC_DISPERSION_B) + vec2(0.5) * CHROMATIC_DISPERSION_B, 0.0).b
     );
+    #if SR_ENABLE
+        finalColor *= 8.0;
+    #endif
 
     vec3 bloomColor = calculateBloom(sampleCoord);
     float screenDepth = textureLod(depthtex0, sampleCoord, 0.0).x;

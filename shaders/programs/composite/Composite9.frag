@@ -151,6 +151,9 @@ void main() {
     vec4 velocity = texelFetch(colortex5, texel, 0);
     vec3 solidColor = texelFetch(colortex3, texel, 0).rgb;
 
+    #if SR_ENABLE
+        velocity.st *= SR_RENDER_SCALE_FACTOR;
+    #endif
     #ifdef TAA
         solidColor = temporalAntiAliasing(texcoord, texel, velocity.st, solidColor, velocity.w);
     #endif

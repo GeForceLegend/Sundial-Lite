@@ -50,7 +50,11 @@ vec3 sampleBloomX(vec2 coord) {
 vec3 smoothMotionBlur(vec2 coord) {
     vec3 totalColor = textureLod(colortex3, coord, 0.0).rgb;
     #ifdef MOTION_BLUR
-        vec2 velocity = textureLod(colortex5, coord, 0.0).xy;
+        vec2 velocityCoord = coord;
+        #if SR_ENABLE
+            velocityCoord *= SR_RENDER_SCALE_FACTOR;
+        #endif
+        vec2 velocity = textureLod(colortex5, velocityCoord, 0.0).xy;
         vec2 screenVelocity = velocity * screenSize;
         if (dot(screenVelocity, screenVelocity) > 1.0) {
             float screenScale = max(screenSize.x, screenSize.y);
