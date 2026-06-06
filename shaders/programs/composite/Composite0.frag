@@ -213,7 +213,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
                     break;
                 }
             }
-            if (any(greaterThan(floatBitsToUint(sampleCoord.st), uvec2(0x3F800000u))) || sampleCoord.z < 0.0) break;
+            if (any(greaterThan(floatBitsToUint(sampleCoord.st), uvec2(floatBitsToUint(screenEdge)))) || sampleCoord.z < 0.0) break;
             sampleCoord += stepSize;
         }
         rayDir = mat3(gbufferModelViewInverse) * rayDir;

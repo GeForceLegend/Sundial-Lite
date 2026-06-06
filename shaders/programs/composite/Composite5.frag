@@ -151,11 +151,7 @@ void main() {
             );
             vec2 refractionOffset = (refractDirection.xy - viewPos.xy / viewPos.z * refractDirection.z + roughness * randomOffset) * refractionStrength;
             refractionOffset.x *= screenSize.y * texelSize.x;
-            float edge = 1.0;
-            #if SR_ENABLE
-                edge = SR_RENDER_SCALE_FACTOR;
-            #endif
-            vec2 screenEdgeIntersection = mix(texcoord, edge - texcoord, clamp(refractionOffset * 1e+20, 0.0, 1.0)) / abs(refractionOffset);
+            vec2 screenEdgeIntersection = mix(texcoord, screenEdge - texcoord, clamp(refractionOffset * 1e+20, 0.0, 1.0)) / abs(refractionOffset);
             float screenEdgeLength = min(screenEdgeIntersection.x, screenEdgeIntersection.y);
             if (screenEdgeLength < 1.0 / (1.0 - REFRACTION_EDGE_FADE)) {
                 refractionOffset *= screenEdgeLength + pow2(REFRACTION_EDGE_FADE * screenEdgeLength) / (-1.0 + (1.0 - 2.0 * REFRACTION_EDGE_FADE) * screenEdgeLength);

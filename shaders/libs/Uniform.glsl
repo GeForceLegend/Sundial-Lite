@@ -95,6 +95,11 @@ uniform mat4 gbufferPreviousProjection;
 #endif
 
 const float PI = 3.1415926535897;
+#if SR_ENABLE
+    const float screenEdge = SR_RENDER_SCALE_FACTOR;
+#else
+    const float screenEdge = 1.0;
+#endif
 
 #ifdef SETTINGS
     float nightBrightness = mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);

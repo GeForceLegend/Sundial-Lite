@@ -314,7 +314,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
                 #endif
                 sampleViewPos.xy = vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * sampleViewPos.xy + gbufferProjectionInverse[3].xy;
 
-                if (any(greaterThan(abs(sampleCoord - 0.5), vec2(0.5)))) {
+                if (any(greaterThan(floatBitsToUint(sampleCoord), uvec2(floatBitsToUint(screenEdge))))) {
                     break;
                 }
                 if (abs(sampleDepth) != 1.0) {

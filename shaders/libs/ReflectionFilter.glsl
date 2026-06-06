@@ -31,7 +31,7 @@ vec4 reflectionFilter(vec4 originData, ivec2 centerTexel, float offset, bool use
                 ) *
                 step(0.0025, sampleSmoothness);
             weight = clamp(weight, 0.0, 1.0);
-            if (abs(i) != -abs(j) && all(lessThan(floatBitsToUint(sampleTexelCoord * texelSize), uvec2(0x3F800000u)))) {
+            if (abs(i) != -abs(j) && all(lessThan(floatBitsToUint(sampleTexelCoord * texelSize), uvec2(floatBitsToUint(screenEdge))))) {
                 accumulation += sampleData.rgb * weight;
                 weightAccumulation += weight;
             }
