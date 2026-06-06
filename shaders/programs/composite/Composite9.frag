@@ -157,6 +157,11 @@ void main() {
     #if defined TAA && !(SR_ENABLE && SR_ALGO_SUPPORTS_JITTER)
         solidColor = temporalAntiAliasing(texcoord, texel, velocity.st, solidColor, velocity.w);
     #endif
+    #if SR_ENABLE
+        if (any(lessThan(vec2(SR_RENDER_SCALE_FACTOR), texcoord))) {
+            solidColor = vec3(0.0);
+        }
+    #endif
     texBuffer3 = vec4(pow(clamp(solidColor * 0.1, 0.0, 1.0), vec3(2.2)) * 100.0, 1.0);
 
     float depth = textureLod(depthtex0, texcoord, 0.0).x;
