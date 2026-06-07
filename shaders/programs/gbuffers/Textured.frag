@@ -26,8 +26,9 @@ layout(location = 2) out vec4 gbufferData2;
 
 in vec4 color;
 in vec4 texlmcoord;
-in vec4 coordRange;
 in vec3 viewPos;
+
+noperspective in vec4 coordRange;
 
 #define ENTITY_TEXTURE_RESOLUTION 16 // [4 8 16 32 64 128 256 512 1024 2048 4096 8192]
 
@@ -204,7 +205,7 @@ void main() {
         vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
         vec2 albedoTexelSize = 1.0 / albedoTexSize;
         vec4 fixedCoordRange = coordRange;
-        if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-5) {
+        if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-7) {
             fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
         }
         float parallaxScale = ENTITY_TEXTURE_RESOLUTION / max(textureScale.x * albedoTexSize.x, textureScale.y * albedoTexSize.y);

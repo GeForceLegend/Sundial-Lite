@@ -25,8 +25,8 @@ layout(location = 2) out vec4 gbufferData2;
 in vec4 texlmcoord;
 in vec3 color;
 in vec3 viewPos;
-in vec4 coordRange;
 
+noperspective in vec4 coordRange;
 flat in int material;
 
 #include "/settings/GlobalSettings.glsl"
@@ -67,7 +67,7 @@ void main() {
     vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
     vec2 albedoTexelSize = 1.0 / albedoTexSize;
     vec4 fixedCoordRange = coordRange;
-    if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-5) {
+    if (fwidth(coordRange.x) + fwidth(coordRange.y) > 1e-7) {
         fixedCoordRange = vec4(0.0, 0.0, 1.0, 1.0);
     }
     vec2 pixelScale = albedoTexSize * textureScale;
