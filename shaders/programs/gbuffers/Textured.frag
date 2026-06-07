@@ -127,6 +127,10 @@ void main() {
     vec2 texcoord = texlmcoord.st;
     vec2 texGradX = dFdx(texcoord);
     vec2 texGradY = dFdy(texcoord);
+    #if SR_ENABLE
+        texGradX *= SR_RENDER_SCALE_FACTOR;
+        texGradY *= SR_RENDER_SCALE_FACTOR;
+    #endif
     vec2 textureScale;
     #if MC_VERSION >= 11300
         mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, textureScale);

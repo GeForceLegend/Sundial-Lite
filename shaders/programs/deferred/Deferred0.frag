@@ -92,7 +92,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevViewPos, vec3 geoNormal, out
 
     vec3 positionDiff = prevSampleViewPos - prevViewPos;
     float positionDistance = abs(dot(positionDiff, geoNormal)) / (dot(prevSampleViewPos, prevSampleViewPos) + 2.0) * 5000.0;
-    isPrevValid *= clamp(1.0 - positionDistance, 0.0, 1.0) * step(prevSampleDepth, 0.999999);
+    isPrevValid *= clamp(1.0 - positionDistance, 0.0, 1.0) * step(abs(prevSampleDepth), 0.999999);
 
     return vec4(prevSampleData);
 }

@@ -97,8 +97,10 @@ uniform mat4 gbufferPreviousProjection;
 const float PI = 3.1415926535897;
 #if SR_ENABLE
     const float screenEdge = SR_RENDER_SCALE_FACTOR;
+    const float mipBias = log2(SR_RENDER_SCALE_FACTOR);
 #else
     const float screenEdge = 1.0;
+    const float mipBias = 0.0;
 #endif
 
 #ifdef SETTINGS

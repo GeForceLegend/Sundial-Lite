@@ -55,6 +55,9 @@ vec3 smoothMotionBlur(vec2 coord) {
             velocityCoord *= SR_RENDER_SCALE_FACTOR;
         #endif
         vec2 velocity = textureLod(colortex5, velocityCoord, 0.0).xy;
+        #if SR_ENABLE
+            velocity *= SR_RENDER_SCALE_FACTOR;
+        #endif
         vec2 screenVelocity = velocity * screenSize;
         if (dot(screenVelocity, screenVelocity) > 1.0) {
             float screenScale = max(screenSize.x, screenSize.y);

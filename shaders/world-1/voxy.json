@@ -1,8 +1,8 @@
 {
     "version": 1,
     "uniforms": [
-        "frameCounter",
         "far",
+        "frameCounter",
         "rainStrength",
         "rainyStrength",
         "weatherStrength",
@@ -21,7 +21,16 @@
         "vxProjInv",
         "vxProjPrev",
         "vxRenderDistance"
+    #if SR_ENABLE
+        ,"SRJitterOffset"
     ],
+    "renderScale":[SR_RENDER_SCALE_FACTOR],
+    "useViewportDims": true,
+    "taaOffset": "{return SRJitterOffset * texelSize * 2.0 * vec2(1.0, -1.0);}",
+    #else
+    ],
+    "taaOffset": "{return taaOffsetVX;}",
+    #endif
     "samplers": {
         "gtexture": "sampler2D",
         "normals": "sampler2D",
@@ -36,7 +45,6 @@
         "-1": "off"
     },
     "excludeLodsFromVanillaDepth": true,
-    "taaOffset": "{return taaOffsetVX;}",
     "opaqueDrawBuffers": [0, 1, 2],
     "translucentDrawBuffers": [16, 17, 18]
 }
