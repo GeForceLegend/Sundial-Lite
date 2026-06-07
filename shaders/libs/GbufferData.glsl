@@ -46,6 +46,9 @@
             return textureLod(dhDepthTex1, coord, 0.0).x;
         #endif
         #ifdef VOXY
+            #if SR_ENABLE
+                coord *= SR_UPSCALE_RATIO;
+            #endif
             return textureLod(vxDepthTexOpaque, coord, 0.0).x;
         #endif
         return textureLod(depthtex1, coord, 0.0).x;
@@ -56,6 +59,9 @@
             return textureLod(dhDepthTex0, coord, 0.0).x;
         #endif
         #ifdef VOXY
+            #if SR_ENABLE
+                coord *= SR_UPSCALE_RATIO;
+            #endif
             return textureLod(vxDepthTexOpaque, coord, 0.0).x;
         #endif
         return textureLod(depthtex0, coord, 0.0).x;
@@ -66,6 +72,9 @@
             return textureLod(dhDepthTex0, coord, 0.0).x;
         #endif
         #ifdef VOXY
+            #if SR_ENABLE
+                coord *= SR_UPSCALE_RATIO;
+            #endif
             return textureLod(vxDepthTexTrans, coord, 0.0).x;
         #endif
         return textureLod(depthtex0, coord, 0.0).x;
