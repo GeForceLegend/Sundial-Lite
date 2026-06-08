@@ -164,7 +164,7 @@ void main() {
             #endif
             if (waterDepth < targetSolidDepth) {
                 solidDepth = targetSolidDepth;
-                solidColor.rgb = textureLod(colortex3, refractionTarget, 0.0).rgb;
+                solidColor.rgb = texelFetch(colortex3, ivec2(refractionTarget * screenSize), 0).rgb;
                 vec3 viewPos;
                 #ifdef LOD
                     if (solidDepth > 1.0) {
