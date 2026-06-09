@@ -128,8 +128,8 @@ void main() {
     vec2 texGradX = dFdx(texcoord);
     vec2 texGradY = dFdy(texcoord);
     #if SR_ENABLE
-        texGradX *= SR_RENDER_SCALE_FACTOR;
-        texGradY *= SR_RENDER_SCALE_FACTOR;
+        texGradX *= renderScale.x;
+        texGradY *= renderScale.y;
     #endif
     vec2 textureScale;
     #if MC_VERSION >= 11300
