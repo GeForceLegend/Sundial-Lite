@@ -96,10 +96,12 @@ uniform mat4 gbufferPreviousProjection;
 
 const float PI = 3.1415926535897;
 #if SR_ENABLE
-    const float screenEdge = SR_RENDER_SCALE_FACTOR;
+    vec2 renderScale = floor(SR_RENDER_SCALE_FACTOR * screenSize) * texelSize;
+    vec2 upscaleRatio = screenSize / floor(SR_RENDER_SCALE_FACTOR * screenSize);
+    vec2 screenEdge = renderScale;
     const float mipBias = log2(SR_RENDER_SCALE_FACTOR);
 #else
-    const float screenEdge = 1.0;
+    const vec2 screenEdge = vec2(1.0);
     const float mipBias = 0.0;
 #endif
 

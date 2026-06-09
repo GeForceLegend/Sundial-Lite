@@ -152,13 +152,13 @@ void main() {
     vec3 solidColor = texelFetch(colortex3, texel, 0).rgb;
 
     #if SR_ENABLE
-        velocity.st *= SR_RENDER_SCALE_FACTOR;
+        velocity.st *= renderScale;
     #endif
     #if defined TAA && !(SR_ENABLE && SR_ALGO_SUPPORTS_JITTER)
         solidColor = temporalAntiAliasing(texcoord, texel, velocity.st, solidColor, velocity.w);
     #endif
     #if SR_ENABLE
-        if (any(lessThan(vec2(SR_RENDER_SCALE_FACTOR), texcoord))) {
+        if (any(lessThan(vec2(renderScale), texcoord))) {
             solidColor = vec3(0.0);
         }
     #endif

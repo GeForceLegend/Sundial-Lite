@@ -203,9 +203,9 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
         targetCoord = originCoord + stepSize * SCREEN_SPACE_SHADOW_SAMPLES;
         #if SR_ENABLE
-            originCoord.st *= SR_RENDER_SCALE_FACTOR;
-            targetCoord.st *= SR_RENDER_SCALE_FACTOR;
-            stepSize.st *= SR_RENDER_SCALE_FACTOR;
+            originCoord.st *= renderScale;
+            targetCoord.st *= renderScale;
+            stepSize.st *= renderScale;
         #endif
         vec3 targetViewPos = screenToViewPos(targetCoord.xy, targetCoord.z);
         #ifdef LOD
@@ -304,7 +304,7 @@ void main() {
             viewDirection.xy -= taaOffset;
         #endif
         #if SR_ENABLE
-            viewDirection.xy = viewDirection.xy * SR_UPSCALE_RATIO + SR_UPSCALE_RATIO - 1.0;
+            viewDirection.xy = viewDirection.xy * upscaleRatio + upscaleRatio - 1.0;
         #endif
         viewDirection.xy = vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * viewDirection.xy + gbufferProjectionInverse[3].xy;
         depthWithHand = depthWithHand * 2.0 - 1.0;

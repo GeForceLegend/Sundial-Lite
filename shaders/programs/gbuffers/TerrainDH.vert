@@ -49,7 +49,7 @@ void main() {
     }
 
     #if SR_ENABLE
-        gl_Position.xy = gl_Position.xy * SR_RENDER_SCALE_FACTOR + (SR_RENDER_SCALE_FACTOR - 1.0) * gl_Position.w;
+        gl_Position.xy = gl_Position.xy * renderScale + (renderScale - 1.0) * gl_Position.w;
     #endif
 
     #ifdef TAA

@@ -47,7 +47,7 @@ out vec2 texcoord;
 void main() {
     vec2 offset = vec2(-float(gl_VertexID & 2), float(min(gl_VertexID, 1) << 1)) + vec2(1.0, -1.0);
     #if SR_ENABLE && !defined AFTER_SR
-        offset *= SR_RENDER_SCALE_FACTOR;
+        offset *= renderScale;
     #endif
     texcoord = offset;
     gl_Position = vec4(offset * 2.0 - 1.0, 0.0, 1.0);
@@ -60,7 +60,7 @@ void main() {
         float prevCenterDepth = texelFetch(colortex7, ivec2(screenSize - 0.5), 0).w;
         vec2 screenCenter = vec2(0.5);
         #if SR_ENABLE
-            screenCenter *= SR_RENDER_SCALE_FACTOR;
+            screenCenter *= renderScale;
         #endif
         #if DOF_FOCUS_TEXTURE == 0
             float currCenterDepth = textureLod(depthtex0, screenCenter, 0.0).x;

@@ -158,8 +158,8 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
         float targetProjScale = 0.5 / targetProjPos.w;
         vec4 targetCoord = vec4(targetProjPos.xyz * targetProjScale + 0.5, 0.0);
         #if SR_ENABLE
-            sampleCoord.st *= SR_RENDER_SCALE_FACTOR;
-            targetCoord.st *= SR_RENDER_SCALE_FACTOR;
+            sampleCoord.st *= renderScale;
+            targetCoord.st *= renderScale;
         #endif
 
         #ifdef LOD

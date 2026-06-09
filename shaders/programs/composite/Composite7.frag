@@ -244,7 +244,7 @@ void main() {
     #endif
 
     #if SR_ENABLE
-        velocity.st *= SR_UPSCALE_RATIO;
+        velocity.st *= upscaleRatio;
     #endif
     texBuffer5 = vec4(velocity.st, 0.0, blendWeight);
 }

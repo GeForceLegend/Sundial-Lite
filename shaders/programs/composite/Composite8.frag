@@ -69,7 +69,7 @@ void main() {
         float sampleRadius = radius * inversesqrt(radius);
         vec2 sampleCoord = texcoord + texelSize * sampleRadius * angle;
         #if SR_ENABLE
-            sampleCoord = min(sampleCoord, SR_RENDER_SCALE_FACTOR - texelSize * 0.5);
+            sampleCoord = min(sampleCoord, renderScale - texelSize * 0.5);
         #endif
         vec4 sampleData = textureLod(colortex3, sampleCoord, 0.0);
         vec3 sampleColor = sampleData.rgb;

@@ -52,11 +52,11 @@ vec3 smoothMotionBlur(vec2 coord) {
     #ifdef MOTION_BLUR
         vec2 velocityCoord = coord;
         #if SR_ENABLE
-            velocityCoord *= SR_RENDER_SCALE_FACTOR;
+            velocityCoord *= renderScale;
         #endif
         vec2 velocity = textureLod(colortex5, velocityCoord, 0.0).xy;
         #if SR_ENABLE
-            velocity *= SR_RENDER_SCALE_FACTOR;
+            velocity *= renderScale;
         #endif
         vec2 screenVelocity = velocity * screenSize;
         if (dot(screenVelocity, screenVelocity) > 1.0) {

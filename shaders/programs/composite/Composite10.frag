@@ -110,11 +110,11 @@ void main() {
     #ifdef MOTION_BLUR
         ivec2 velocityTexel = texel;
         #if SR_ENABLE
-            velocityTexel = ivec2(gl_FragCoord.st * SR_RENDER_SCALE_FACTOR);
+            velocityTexel = ivec2(gl_FragCoord.st * renderScale);
         #endif
         vec2 velocity = texelFetch(colortex5, velocityTexel, 0).xy;
         #if SR_ENABLE
-            velocity *= SR_RENDER_SCALE_FACTOR;
+            velocity *= renderScale;
         #endif
         vec3 motionBlurColor = motionBlur(texcoord, velocity);
         texBuffer3.rgb = mix(currColor, motionBlurColor, vec3(clamp(length(velocity * screenSize) * 0.3, 0.0, 1.0)));

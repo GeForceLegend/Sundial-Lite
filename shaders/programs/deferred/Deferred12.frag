@@ -247,7 +247,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
     float originProjScale = 0.5 / originProjPos.w;
     vec2 originCoord = vec2(originProjPos.xy * originProjScale + 0.5);
     #if SR_ENABLE
-        originCoord *= SR_RENDER_SCALE_FACTOR;
+        originCoord *= renderScale;
     #endif
 
     vec4 totalSamples = vec4(0.0);
@@ -264,7 +264,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
         float targetProjScale = 0.5 / targetProjPos.w;
         vec2 targetCoord = vec2(targetProjPos.xy * targetProjScale + 0.5);
         #if SR_ENABLE
-            targetCoord *= SR_RENDER_SCALE_FACTOR;
+            targetCoord *= renderScale;
         #endif
 
         vec2 sampleRange = (targetCoord - originCoord) * screenSize;
@@ -310,7 +310,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
                     sampleViewPos.xy -= taaOffset;
                 #endif
                 #if SR_ENABLE
-                    sampleViewPos.xy = sampleViewPos.xy * SR_UPSCALE_RATIO + SR_UPSCALE_RATIO - 1.0;
+                    sampleViewPos.xy = sampleViewPos.xy * upscaleRatio + upscaleRatio - 1.0;
                 #endif
                 sampleViewPos.xy = vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * sampleViewPos.xy + gbufferProjectionInverse[3].xy;
 
