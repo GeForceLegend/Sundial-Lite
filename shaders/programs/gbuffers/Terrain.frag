@@ -158,7 +158,7 @@ void main() {
         rawData.emissive += hardcodedEmissive * clamp(1.0 - rawData.emissive * 1e+3, 0.0, 1.0);
     #endif
     bool isCauldronWater = material == 8192;
-    #if MC_VERSION > 12111
+    #if MC_VERSION >= 260100
         isCauldronWater = false;
     #endif
     rawData.smoothness += float(rawData.smoothness < 1e-3 && isCauldronWater);
