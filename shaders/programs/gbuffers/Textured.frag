@@ -127,15 +127,15 @@ void main() {
     vec2 texcoord = texlmcoord.st;
     vec2 texGradX = dFdx(texcoord);
     vec2 texGradY = dFdy(texcoord);
-    #if SR_ENABLE
-        texGradX *= renderScale.x;
-        texGradY *= renderScale.y;
-    #endif
     vec2 textureScale;
     #if MC_VERSION >= 11300
         mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, textureScale);
     #else
         textureScale = calcTextureScale(texGradX, texGradY, viewPos.xyz);
+    #endif
+    #if SR_ENABLE
+        texGradX *= renderScale.x;
+        texGradY *= renderScale.y;
     #endif
     float viewDepthInv = inversesqrt(dot(viewPos.xyz, viewPos.xyz));
     vec3 viewDir = viewPos.xyz * (-viewDepthInv);
