@@ -276,7 +276,7 @@ void main() {
             rawData.porosity = 0.0;
         #endif
 
-        #if (defined EMISSIVE) && (defined HARDCODED_EMISSIVE)
+        #ifdef EMISSIVE
             rawData.emissive += step(rawData.emissive, 1e-3);
         #endif
 
