@@ -1,10 +1,3 @@
-struct Ray {
-    vec3 origin;
-    vec3 direction;
-    vec3 dirInv;
-    vec3 dirSigned;
-};
-
 float pow2(float a) {
     return a * a;
 }
