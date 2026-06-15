@@ -209,13 +209,13 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
                 #ifdef LOD
                     hitTerrain = hitTerrain || (abs(sampleDepth + 0.5) < 0.5 && abs(refinementCoord.w + sampleDepth - offset.y) < minimumThichnessLod);
                 #endif
-                if (hitTerrain && all(lessThan(floatBitsToUint(refinementCoord.st), uvec2(floatBitsToUint(screenEdge))))) {
+                if (hitTerrain && all(lessThan(floatBitsToUint(refinementCoord.st), floatBitsToUint(screenEdge)))) {
                     sampleCoord = refinementCoord;
                     hitSky = false;
                     break;
                 }
             }
-            if (any(greaterThan(floatBitsToUint(sampleCoord.st), uvec2(floatBitsToUint(screenEdge)))) || sampleCoord.z < 0.0) break;
+            if (any(greaterThan(floatBitsToUint(sampleCoord.st), floatBitsToUint(screenEdge))) || sampleCoord.z < 0.0) break;
             sampleCoord += stepSize;
         }
         rayDir = mat3(gbufferModelViewInverse) * rayDir;

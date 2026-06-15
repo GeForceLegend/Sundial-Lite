@@ -227,7 +227,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         sampleCoord.zw -= vec2(maximumThickness, maximumThicknessLod);
 
         for (int i = 0; i < SCREEN_SPACE_SHADOW_SAMPLES; i++) {
-            if (any(greaterThan(floatBitsToUint(sampleCoord.xy), uvec2(floatBitsToUint(screenEdge)))) || shadow < 0.01) {
+            if (any(greaterThan(floatBitsToUint(sampleCoord.xy), floatBitsToUint(screenEdge))) || shadow < 0.01) {
                 break;
             }
             float sampleDepth = uintBitsToFloat(texelFetch(colortex6, ivec2(sampleCoord.st * screenSize), 0).r);
