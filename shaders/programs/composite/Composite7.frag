@@ -60,6 +60,9 @@ float getFarthestPrevDepth(vec2 coord) {
             return textureGather(dhDepthTex0, coord, 0);
         #endif
         #ifdef VOXY
+            #if SR_ENABLE
+                coord *= upscaleRatio;
+            #endif
             return textureGather(vxDepthTexTrans, coord, 0);
         #endif
         return textureGather(depthtex0, coord, 0);
