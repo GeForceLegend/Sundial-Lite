@@ -113,7 +113,7 @@ vec3 directionDistribution(vec2 noise, vec3 normal, vec3 viewDir, float roughnes
     return direction;
 }
 
-vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, float firstWeight, float materialID) {
+vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, float firstWeight, float materialID, float skyLight) {
     vec3 viewPos;
     #ifdef LOD
         if (depth > 1.0) {
@@ -260,7 +260,7 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
                 #endif
                 reflectionColor.rgb = mix(reflectionColor.rgb, planeCloud.rgb, planeCloud.a);
                 #ifdef LIGHT_LEAKING_FIX
-                    reflectionColor.rgb *= clamp(eyeBrightnessSmooth.y / 16.0, 0.0, 1.0);
+                    reflectionColor.rgb *= skyLight;
                 #endif
             #endif
             reflectionColor.w = 114514.0;
@@ -276,19 +276,19 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
             #else
                 #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
                     float atmosphereLength = mix(reflectionColor.w * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 1600.0, float(hitSky));
-                    reflectionColor.rgb = solidAtmosphereScattering(reflectionColor.rgb, rayDir, skyColorUp, atmosphereLength, eyeBrightnessSmooth.y / 240.0);
+                    reflectionColor.rgb = solidAtmosphereScattering(reflectionColor.rgb, rayDir, skyColorUp, atmosphereLength, skyLight);
                 #endif
                 reflectionColor.rgb *= airAbsorption(reflectionColor.w);
             #endif
         }
         else if (isEyeInWater == 1) {
-            reflectionColor.rgb = waterFogTotal(reflectionColor.rgb, rayDir, skyColorUp, reflectionColor.w, eyeBrightnessSmooth.y / 240.0);
+            reflectionColor.rgb = waterFogTotal(reflectionColor.rgb, rayDir, skyColorUp, reflectionColor.w, skyLight);
         }
         else if (isEyeInWater == 2) {
             reflectionColor.rgb = lavaFogTotal(reflectionColor.rgb, reflectionColor.w);
         }
         else if (isEyeInWater == 3) {
-            reflectionColor.rgb = snowFogTotal(reflectionColor.rgb, skyColorUp, reflectionColor.w, eyeBrightnessSmooth.y / 240.0);
+            reflectionColor.rgb = snowFogTotal(reflectionColor.rgb, skyColorUp, reflectionColor.w, skyLight);
         }
         reflectionColor.rgb = max(vec3(0.0), reflectionColor.rgb * brdfWeight);
         reflectionColor.w = min(2.0, reflectionColor.w * step(smoothness, 0.9975) / far);
@@ -310,6 +310,7 @@ void main() {
     #ifdef REFLECTION
         if (waterDepth - float(waterDepth > 1.0) < 1.0) {
             vec4 gbufferData = texelFetch(colortex2, texel, 0);
+            float skyLight = unpack2x8Bit(gbufferData.x).y;
             vec2 smoothMetalness = unpack2x8Bit(gbufferData.y);
             vec2 materialParallax = unpackM3P13(gbufferData.w);
             materialParallax.x = round(materialParallax.x * 7.0);
@@ -348,7 +349,7 @@ void main() {
 
             if (reflectionStrength > 1e-5) {
                 f0 = signI(f0) * mix(abs(f0), pow(texelFetch(colortex0, texel, 0).rgb, vec3(2.2)), smoothMetalness.y);
-                reflectionColor = reflection(texel, smoothMetalness.x, waterDepth, f0, f82, reflectionStrength, materialParallax.x);
+                reflectionColor = reflection(texel, smoothMetalness.x, waterDepth, f0, f82, reflectionStrength, materialParallax.x, skyLight);
             }
         }
     #endif
