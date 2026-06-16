@@ -231,7 +231,7 @@ void main() {
 
         float isTargetParticle = 1.0 - float(isTargetNotParticle);
         vec3 vanillaLight =
-            pow2(gbufferData.lightmap.y) *
+            pow2(1.0 / (0.75 - 0.75 * 0.75 / (1.0 + 0.75) * gbufferData.lightmap.y) - 1.0 / 0.75) *
             (skyColorUp * 0.8 + sunColor * 2.0 * SUNLIGHT_BRIGHTNESS * (1.0 - (0.75 + 0.25 * float(CLOUD_TYPE != 2)) * weatherStrength)) *
             (1.0 - gbufferData.metalness) * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength);
         #ifdef IS_IRIS
