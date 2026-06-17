@@ -244,10 +244,11 @@ vec4 reflection(ivec2 texel, float smoothness, float depth, vec3 f0, vec3 f82, f
         else {
             reflectionColor.rgb = vec3(0.0);
             #ifdef SHADOW_AND_SKY
+                reflectionColor.rgb = renderSun(rayDir, sunDirection, vec3(300.0)) * clamp(smoothness * 20.0 - 18.0, 0.0, 1.0);
                 vec3 worldPos = viewToWorldPos(viewPos);
                 vec4 intersectionData = planetIntersectionData(worldPos, rayDir);
                 vec3 atmosphere;
-                reflectionColor.rgb = singleAtmosphereScattering(vec3(0.0), worldPos, rayDir, sunDirection, intersectionData, skyColorUp, 30.0, atmosphere);
+                reflectionColor.rgb = singleAtmosphereScattering(reflectionColor.rgb, worldPos, rayDir, sunDirection, intersectionData, skyColorUp, 30.0, atmosphere);
                 vec4 planeCloud = vec4(0.0);
                 #ifdef PLANE_CLOUD
                     planeCloud = planeClouds(worldPos, rayDir, sunDirection, skyColorUp, intersectionData.xyz);

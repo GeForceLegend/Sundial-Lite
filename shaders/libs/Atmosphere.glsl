@@ -225,6 +225,25 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
     return result;
 }
 
+vec3 renderSun(vec3 rayDir, vec3 lightDir, vec3 sunLight) {
+    //http://www.physics.hmc.edu/faculty/esin/a101/limbdarkening.pdf
+    float cosAngle = clamp(dot(rayDir, lightDir), 0.0, 1.0);
+    const vec3 u = vec3(1.0, 1.0, 1.0);
+    const vec3 a = vec3(0.397, 0.503, 0.652);
+    float theta = acos(cosAngle);
+    float centerToEdge = (theta / sunRadius);
+
+    vec3 sun = vec3(0.0);
+    if (theta < sunRadius) {
+        vec3 light = sunLight;
+        float mu = 1.0 - centerToEdge * centerToEdge;
+        vec3 factor = vec3(1.0) - u * (vec3(1.0) - pow(vec3(mu), a * 0.5));
+
+        sun = light * factor;
+    }
+    return sun;
+}
+
 float blindnessFactor = max(darknessFactor * 0.5, blindness);
 vec3 waterAbsorptionBeta = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B) + blindnessFactor;
 float lavaAbsorptionBeta = 1.0 * LAVA_FOG_DENSITY + blindnessFactor;
