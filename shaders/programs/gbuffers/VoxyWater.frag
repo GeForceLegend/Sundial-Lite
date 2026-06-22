@@ -103,13 +103,15 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     }
 
     rawData.normal = vec3(0.0, 0.0, 1.0);
-    #if WATER_TYPE == 0
-        if (rawData.materialID == MAT_WATER) {
+    if (rawData.materialID == MAT_WATER) {
+        #if WATER_TYPE == 0
             rawData.albedo.rgb = parameters.tinting.rgb;
             vec3 tangentDir = transpose(tbnMatrix) * viewPos;
             rawData.normal = waterWave(mcPos / 32.0, tangentDir);
-        }
-    #endif
+        #else
+            rawData.albedo.rgb = parameters.sampledColour.rgb;
+        #endif
+    }
     rawData.normal.xy += rippleNormal.xy * wetStrength;
     rawData.normal = normalize(tbnMatrix * rawData.normal);
 
