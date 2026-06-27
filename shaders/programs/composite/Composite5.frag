@@ -355,7 +355,7 @@ void main() {
                 vec3 stepAbsorption = exp2(absorptionBeta);
                 vec3 skyScattering =
                     (skyColorUp * 0.8 + sunColor * 2.0 * SUNLIGHT_BRIGHTNESS * (1.0 - (0.75 + 0.25 * float(CLOUD_TYPE != 2)) * weatherStrength)) *
-                    (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * (1.0 + 5.0 * RF_DENSITY * weatherStrength) * eyeBrightnessSmooth.y / 1000.0;
+                    (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * eyeBrightnessSmooth.y / 1000.0;
                 stepLength *= -0.01 * 1.44269502 / max(1e-5, basicWeight);
 
                 for (int i = 0; i < VL_SAMPLES; i++) {
