@@ -151,8 +151,16 @@ void main() {
     vec4 velocity = texelFetch(colortex5, texel, 0);
     vec3 solidColor = texelFetch(colortex3, texel, 0).rgb;
 
-    #ifdef TAA
+    #if SR_ENABLE
+        velocity.st *= renderScale;
+    #endif
+    #if defined TAA && !(SR_ENABLE && SR_ALGO_SUPPORTS_JITTER)
         solidColor = temporalAntiAliasing(texcoord, texel, velocity.st, solidColor, velocity.w);
+    #endif
+    #if SR_ENABLE
+        if (any(lessThan(vec2(renderScale), texcoord))) {
+            solidColor = vec3(0.0);
+        }
     #endif
     texBuffer3 = vec4(pow(clamp(solidColor * 0.1, 0.0, 1.0), vec3(2.2)) * 100.0, 1.0);
 

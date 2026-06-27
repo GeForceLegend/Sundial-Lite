@@ -249,6 +249,9 @@ void main() {
     );
 
     vec3 bloomColor = calculateBloom(sampleCoord);
+    #if SR_ENABLE
+        sampleCoord *= renderScale;
+    #endif
     float screenDepth = textureLod(depthtex0, sampleCoord, 0.0).x;
     float viewDepth;
     #ifdef LOD

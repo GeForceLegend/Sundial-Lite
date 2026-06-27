@@ -247,6 +247,9 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
     #endif
     float originProjScale = 0.5 / originProjPos.w;
     vec2 originCoord = vec2(originProjPos.xy * originProjScale + 0.5);
+    #if SR_ENABLE
+        originCoord *= renderScale;
+    #endif
 
     vec4 totalSamples = vec4(0.0);
     for (int i = 0; i < VB_TRACE_COUNT; i++) {
@@ -261,6 +264,9 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
         vec4 targetProjPos = originProjPos + projDirection * traceLength;
         float targetProjScale = 0.5 / targetProjPos.w;
         vec2 targetCoord = vec2(targetProjPos.xy * targetProjScale + 0.5);
+        #if SR_ENABLE
+            targetCoord *= renderScale;
+        #endif
 
         vec2 sampleRange = (targetCoord - originCoord) * screenSize;
         float projTraceLength = inversesqrt(dot(sampleRange, sampleRange));
@@ -304,9 +310,12 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
                 #ifdef TAA
                     sampleViewPos.xy -= taaOffset;
                 #endif
+                #if SR_ENABLE
+                    sampleViewPos.xy = sampleViewPos.xy * upscaleRatio + upscaleRatio - 1.0;
+                #endif
                 sampleViewPos.xy = vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * sampleViewPos.xy + gbufferProjectionInverse[3].xy;
 
-                if (any(greaterThan(abs(sampleCoord - 0.5), vec2(0.5)))) {
+                if (any(greaterThan(floatBitsToUint(sampleCoord), floatBitsToUint(screenEdge)))) {
                     break;
                 }
                 if (abs(sampleDepth) != 1.0) {

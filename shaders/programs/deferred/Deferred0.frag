@@ -26,12 +26,17 @@ in vec2 texcoord;
 in vec2 prevHandAnimation;
 in vec2 temporalHandRotation;
 
-uniform vec2 prevTaaOffset;
-
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/GbufferData.glsl"
+
+#if SR_ENABLE && SR_ALGO_SUPPORTS_JITTER
+    uniform vec2 SRPreviousJitterOffset;
+    vec2 prevTaaOffset = SRPreviousJitterOffset * texelSize * vec2(1.0, -1.0);
+#else
+    uniform vec2 prevTaaOffset;
+#endif
 
 vec2 getPrevCoord(out vec3 prevViewPos, vec3 viewPos, vec3 worldGeoNormal, float parallaxOffset, float materialID) {
     vec3 prevScreenPos;
@@ -71,7 +76,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevViewPos, vec3 geoNormal, out
     float prevSampleDepth = prevFramesDepth.y + float(prevFramesDepth.y == 0.0);
 
     vec2 sampleCoord = sampleTexelCoord * texelSize;
-    isPrevValid = float(all(lessThan(floatBitsToUint(sampleCoord), uvec2(0x3F800000u))));
+    isPrevValid = float(all(lessThan(floatBitsToUint(sampleCoord), floatBitsToUint(screenEdge))));
     #ifdef TAA
         sampleCoord -= prevTaaOffset;
     #endif
@@ -87,7 +92,7 @@ vec4 samplePrevData(vec2 sampleTexelCoord, vec3 prevViewPos, vec3 geoNormal, out
 
     vec3 positionDiff = prevSampleViewPos - prevViewPos;
     float positionDistance = abs(dot(positionDiff, geoNormal)) / (dot(prevSampleViewPos, prevSampleViewPos) + 2.0) * 5000.0;
-    isPrevValid *= clamp(1.0 - positionDistance, 0.0, 1.0) * step(prevSampleDepth, 0.999999);
+    isPrevValid *= clamp(1.0 - positionDistance, 0.0, 1.0) * step(abs(prevSampleDepth), 0.999999);
 
     return vec4(prevSampleData);
 }

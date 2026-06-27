@@ -48,6 +48,10 @@ void main() {
         blockData.z = 3.0;
     }
 
+    #if SR_ENABLE
+        gl_Position.xy = gl_Position.xy * renderScale + (renderScale - 1.0) * gl_Position.w;
+    #endif
+
     #ifdef TAA
         gl_Position.xy += taaOffset * gl_Position.w;
     #endif

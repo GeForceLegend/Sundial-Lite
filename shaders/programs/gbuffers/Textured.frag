@@ -134,6 +134,10 @@ void main() {
     #else
         textureScale = calcTextureScale(texGradX, texGradY, viewPos.xyz);
     #endif
+    #if SR_ENABLE
+        texGradX *= renderScale.x;
+        texGradY *= renderScale.y;
+    #endif
     float viewDepthInv = inversesqrt(dot(viewPos.xyz, viewPos.xyz));
     vec3 viewDir = viewPos.xyz * (-viewDepthInv);
 

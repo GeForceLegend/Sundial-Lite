@@ -28,6 +28,11 @@ uniform sampler2D colortex0;
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
 
+#if SR_ENABLE
+    vec2 renderScale = floor(SR_RENDER_SCALE_FACTOR * screenSize) * texelSize;
+    vec2 upscaleRatio = screenSize / floor(SR_RENDER_SCALE_FACTOR * screenSize);
+#endif
+
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/GbufferData.glsl"
 #include "/libs/Common.glsl"

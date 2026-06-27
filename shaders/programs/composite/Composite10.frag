@@ -108,7 +108,14 @@ void main() {
     texBuffer4 = vec4(calculateBloomBase(texcoord) * 6.0, 1.0);
     texBuffer3 = vec4(currColor, 1.0);
     #ifdef MOTION_BLUR
-        vec2 velocity = texelFetch(colortex5, texel, 0).xy;
+        ivec2 velocityTexel = texel;
+        #if SR_ENABLE
+            velocityTexel = ivec2(gl_FragCoord.st * renderScale);
+        #endif
+        vec2 velocity = texelFetch(colortex5, velocityTexel, 0).xy;
+        #if SR_ENABLE
+            velocity *= renderScale;
+        #endif
         vec3 motionBlurColor = motionBlur(texcoord, velocity);
         texBuffer3.rgb = mix(currColor, motionBlurColor, vec3(clamp(length(velocity * screenSize) * 0.3, 0.0, 1.0)));
     #endif

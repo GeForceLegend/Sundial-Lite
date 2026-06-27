@@ -38,7 +38,10 @@ void main() {
     float centerCoCRadius = clamp(abs(centerData.w), 0.0, 1.0);
 
     const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
-    const float strength = 15.0 * MAX_BLUR_RADIUS;
+    float strength = 15.0 * MAX_BLUR_RADIUS;
+    #if SR_ENABLE
+        strength *= SR_RENDER_SCALE_FACTOR;
+    #endif
     vec2 noise = blueNoiseTemporal(texcoord).xy;
     float radius = noise.y / DOF_SAMPLES + 1e-10;
     float noiseAngle = noise.x * PI * 2.0;
@@ -68,6 +71,9 @@ void main() {
     for (int i = 0; i < DOF_SAMPLES; i++) {
         float sampleRadius = radius * inversesqrt(radius);
         vec2 sampleCoord = texcoord + texelSize * sampleRadius * angle;
+        #if SR_ENABLE
+            sampleCoord = min(sampleCoord, renderScale - texelSize * 0.5);
+        #endif
         vec4 sampleData = textureLod(colortex3, sampleCoord, 0.0);
         vec3 sampleColor = sampleData.rgb;
         float sampleDepth = sampleData.w;

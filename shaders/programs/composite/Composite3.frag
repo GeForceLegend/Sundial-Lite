@@ -84,7 +84,7 @@ void main() {
                                 ) *
                                 step(0.0025, sampleSmoothness);
                             weight = clamp(weight, 0.0, 1.0);
-                            if (abs(i) != -abs(j) && all(lessThan(floatBitsToUint(sampleTexelCoord * texelSize), uvec2(0x3F800000u)))) {
+                            if (abs(i) != -abs(j) && all(lessThan(floatBitsToUint(sampleTexelCoord * texelSize), floatBitsToUint(screenEdge)))) {
                                 accumulation += sampleData.rgb * weight;
                                 weightAccumulation += weight;
                             }

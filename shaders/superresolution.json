@@ -1,0 +1,47 @@
+{
+    "schema_version": 1,
+    "profiles": {
+        "*": {
+            "jitter": {
+                "enabled": true
+            },
+            "upscale": {
+                "enabled": true,
+                "trigger": {
+                    "type": "BEFORE",
+                    "pass": "composite10"
+                },
+                "inputs": {
+                    "color": {
+                        "enabled": true,
+                        "src": "autotex3",
+                        "region": [0, 0, -1, -1]
+                    },
+                    "depth": {
+                        "enabled": true,
+                        "src": "depthtex",
+                        "region": [0, 0, -1, -1]
+                    },
+                    "motion_vectors": {
+                        "enabled": true,
+                        "src": "autotex5",
+                        "region": [0, 0, -1, -1]
+                    }
+                },
+                "outputs": {
+                    "upscaled_color": {
+                        "enabled": true,
+                        "target": [
+                            "autotex3"
+                        ],
+                        "region": [0, 0, -2, -2]
+                    }
+                },
+                "internal_format": "rgba16f",
+                "hdr": true,
+                "auto_exposure": true,
+                "motion_jittered": false
+            }
+        }
+    }
+}

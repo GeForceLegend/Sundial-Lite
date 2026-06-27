@@ -201,6 +201,11 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         stepSize *= 0.003 * 12.0 / SCREEN_SPACE_SHADOW_SAMPLES;
 
         targetCoord = originCoord + stepSize * SCREEN_SPACE_SHADOW_SAMPLES;
+        #if SR_ENABLE
+            originCoord.st *= renderScale;
+            targetCoord.st *= renderScale;
+            stepSize.st *= renderScale;
+        #endif
         vec3 targetViewPos = screenToViewPos(targetCoord.xy, targetCoord.z);
         #ifdef LOD
             if (targetCoord.z >= 1.0) {
@@ -221,7 +226,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         sampleCoord.zw -= vec2(maximumThickness, maximumThicknessLod);
 
         for (int i = 0; i < SCREEN_SPACE_SHADOW_SAMPLES; i++) {
-            if (any(greaterThan(abs(sampleCoord.xy - 0.5), vec2(0.5))) || shadow < 0.01) {
+            if (any(greaterThan(floatBitsToUint(sampleCoord.xy), floatBitsToUint(screenEdge))) || shadow < 0.01) {
                 break;
             }
             float sampleDepth = uintBitsToFloat(texelFetch(colortex6, ivec2(sampleCoord.st * screenSize), 0).r);
@@ -277,6 +282,9 @@ void main() {
         vec3 viewDirection = vec3(texcoord * 2.0 - 1.0, gbufferProjectionInverse[3].z);
         #ifdef TAA
             viewDirection.xy -= taaOffset;
+        #endif
+        #if SR_ENABLE
+            viewDirection.xy = viewDirection.xy * upscaleRatio + upscaleRatio - 1.0;
         #endif
         viewDirection.xy = vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * viewDirection.xy + gbufferProjectionInverse[3].xy;
         depthWithHand = depthWithHand * 2.0 - 1.0;

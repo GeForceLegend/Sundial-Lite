@@ -60,6 +60,9 @@ float getFarthestPrevDepth(vec2 coord) {
             return textureGather(dhDepthTex0, coord, 0);
         #endif
         #ifdef VOXY
+            #if SR_ENABLE
+                coord *= upscaleRatio;
+            #endif
             return textureGather(vxDepthTexTrans, coord, 0);
         #endif
         return textureGather(depthtex0, coord, 0);
@@ -196,6 +199,9 @@ void main() {
     #ifdef DEPTH_OF_FIELD
         const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
         float strength = 15.0 * MAX_BLUR_RADIUS;
+        #if SR_ENABLE
+            strength *= SR_RENDER_SCALE_FACTOR;
+        #endif
         vec2 noise = blueNoiseTemporal(texcoord).xy;
         float radius2 = noise.y / COC_SPREAD_SAMPLES;
         float noiseAngle = noise.x * PI * 2.0;
@@ -236,10 +242,16 @@ void main() {
         float depthDiffFactor = getDepthConfidenceFactor(closest, velocity);
 
         blendWeight *= 0.95 - min(0.7, 4.0 * pow(dot(velocity.xy, velocity.xy), 0.25)) * step(closest.z, 0.999999);
-        blendWeight *= float(all(lessThan(floatBitsToUint(closest.st + velocity.st), uvec2(0x3F800000u))));
+        blendWeight *= float(all(lessThan(floatBitsToUint(closest.st + velocity.st), floatBitsToUint(screenEdge))));
         blendWeight *= depthDiffFactor;
+        #if SR_ENABLE
+            blendWeight = 0.0;
+        #endif
     #endif
 
+    #if SR_ENABLE
+        velocity.st *= upscaleRatio;
+    #endif
     texBuffer5 = vec4(velocity.st, 0.0, blendWeight);
 }
 

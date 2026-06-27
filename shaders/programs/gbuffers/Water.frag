@@ -67,7 +67,7 @@ void main() {
     #endif
     GbufferData rawData;
     vec2 texcoord = texlmcoord.st;
-    vec4 albedoData = texture(gtexture, texcoord);
+    vec4 albedoData = texture(gtexture, texcoord, mipBias);
 
     vec2 texGradX = dFdx(texlmcoord.st);
     vec2 texGradY = dFdy(texlmcoord.st);

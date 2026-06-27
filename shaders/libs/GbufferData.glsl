@@ -46,6 +46,9 @@
             return textureLod(dhDepthTex1, coord, 0.0).x;
         #endif
         #ifdef VOXY
+            #if SR_ENABLE
+                coord *= upscaleRatio;
+            #endif
             return textureLod(vxDepthTexOpaque, coord, 0.0).x;
         #endif
         return textureLod(depthtex1, coord, 0.0).x;
@@ -56,6 +59,9 @@
             return textureLod(dhDepthTex0, coord, 0.0).x;
         #endif
         #ifdef VOXY
+            #if SR_ENABLE
+                coord *= upscaleRatio;
+            #endif
             return textureLod(vxDepthTexOpaque, coord, 0.0).x;
         #endif
         return textureLod(depthtex0, coord, 0.0).x;
@@ -66,6 +72,9 @@
             return textureLod(dhDepthTex0, coord, 0.0).x;
         #endif
         #ifdef VOXY
+            #if SR_ENABLE
+                coord *= upscaleRatio;
+            #endif
             return textureLod(vxDepthTexTrans, coord, 0.0).x;
         #endif
         return textureLod(depthtex0, coord, 0.0).x;
@@ -76,6 +85,9 @@
         #ifdef TAA
             projPos.xy -= taaOffset;
         #endif
+        #if SR_ENABLE
+            projPos.xy = projPos.xy * upscaleRatio + upscaleRatio - 1.0;
+        #endif
         vec3 viewDirection = vec3(vec2(projInvLod()[0].x, projInvLod()[1].y) * projPos.xy, projInvLod()[3].z);
         viewDirection.xy += vec2(projInvLod()[3].xy);
         float viewDepth = projInvLod()[2].w * projPos.z + projInvLod()[3].w;
@@ -83,6 +95,9 @@
     }
 
     vec3 projectionToViewPosLod(vec3 projPos) {
+        #if SR_ENABLE
+            projPos.xy = projPos.xy * upscaleRatio + upscaleRatio - 1.0;
+        #endif
         vec3 viewDirection = vec3(vec2(projInvLod()[0].x, projInvLod()[1].y) * projPos.xy, projInvLod()[3].z);
         viewDirection.xy += vec2(projInvLod()[3].xy);
         float viewDepth = projInvLod()[2].w * projPos.z + projInvLod()[3].w;
@@ -90,10 +105,17 @@
     }
 
     vec3 viewToProjectionPosLod(vec3 viewPos) {
-        return -(vec3(projLod()[0].x, projLod()[1].y, projLod()[2].z) * viewPos + projLod()[3].xyz) / viewPos.z;
+        vec3 projPos = -(vec3(projLod()[0].x, projLod()[1].y, projLod()[2].z) * viewPos + projLod()[3].xyz) / viewPos.z;
+        #if SR_ENABLE
+            projPos.xy = projPos.xy * renderScale + renderScale - 1.0;
+        #endif
+        return projPos;
     }
 
     vec3 prevProjectionToViewPosLod(vec3 projPos) {
+        #if SR_ENABLE
+            projPos.xy = projPos.xy * upscaleRatio + upscaleRatio - 1.0;
+        #endif
         projPos.xy += projPrevLod()[2].xy;
         projPos.x /= projPrevLod()[0].x;
         projPos.y /= projPrevLod()[1].y;
@@ -105,7 +127,11 @@
         vec3 projPos = vec3(projPrevLod()[0].x, projPrevLod()[1].y, projPrevLod()[2].z) * viewPos;
         projPos.xy += projPrevLod()[2].xy * viewPos.z;
         projPos.z += projPrevLod()[3].z;
-        return -projPos / viewPos.z;
+        projPos = -projPos / viewPos.z;
+        #if SR_ENABLE
+            projPos.xy = projPos.xy * renderScale + renderScale - 1.0;
+        #endif
+        return projPos;
     }
 
     float screenToViewDepthLod(float depth) {
@@ -340,6 +366,9 @@ vec3 screenToViewPos(vec2 coord, float depth) {
     #ifdef TAA
         projPos.xy -= taaOffset;
     #endif
+    #if SR_ENABLE
+        projPos.xy = projPos.xy * upscaleRatio + upscaleRatio - 1.0;
+    #endif
     vec3 viewDirection = vec3(vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * projPos.xy, gbufferProjectionInverse[3].z);
     viewDirection.xy += gbufferProjectionInverse[3].xy;
     float viewDepth = gbufferProjectionInverse[2].w * projPos.z + gbufferProjectionInverse[3].w;
@@ -347,6 +376,9 @@ vec3 screenToViewPos(vec2 coord, float depth) {
 }
 
 vec3 projectionToViewPos(vec3 projPos) {
+    #if SR_ENABLE
+        projPos.xy = projPos.xy * upscaleRatio + upscaleRatio - 1.0;
+    #endif
     vec3 viewDirection = vec3(vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y) * projPos.xy, gbufferProjectionInverse[3].z);
     viewDirection.xy += gbufferProjectionInverse[3].xy;
     float viewDepth = gbufferProjectionInverse[2].w * projPos.z + gbufferProjectionInverse[3].w;
@@ -357,7 +389,11 @@ vec3 viewToProjectionPos(vec3 viewPos) {
     vec3 projPos = vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos;
     projPos.z += gbufferProjection[3].z;
     projPos.xy += gbufferProjection[2].xy * viewPos.z;
-    return -projPos / viewPos.z;
+    projPos = -projPos / viewPos.z;
+    #if SR_ENABLE
+        projPos.xy = projPos.xy * renderScale + renderScale - 1.0;
+    #endif
+    return projPos;
 }
 
 vec3 viewToWorldPos(vec3 viewPos) {
@@ -369,6 +405,9 @@ vec3 worldToViewPos(vec3 worldPos) {
 }
 
 vec3 prevProjectionToViewPos(vec3 projPos) {
+    #if SR_ENABLE
+        projPos.xy = projPos.xy * upscaleRatio + upscaleRatio - 1.0;
+    #endif
     projPos.xy += gbufferPreviousProjection[2].xy;
     projPos.x /= gbufferPreviousProjection[0].x;
     projPos.y /= gbufferPreviousProjection[1].y;
@@ -380,7 +419,11 @@ vec3 prevViewToProjectionPos(vec3 viewPos) {
     vec3 projPos = vec3(gbufferPreviousProjection[0].x, gbufferPreviousProjection[1].y, gbufferPreviousProjection[2].z) * viewPos;
     projPos.xy += gbufferPreviousProjection[2].xy * viewPos.z;
     projPos.z += gbufferPreviousProjection[3].z;
-    return -projPos / viewPos.z;
+    projPos = -projPos / viewPos.z;
+    #if SR_ENABLE
+        projPos.xy = projPos.xy * renderScale + renderScale - 1.0;
+    #endif
+    return projPos;
 }
 
 vec3 prevViewToWorldPos(vec3 viewPos) {

@@ -63,6 +63,10 @@ void main() {
     vec2 texGradY = dFdy(texlmcoord.st);
     vec2 textureScale;
     mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, textureScale);
+    #if SR_ENABLE
+        texGradX *= renderScale.x;
+        texGradY *= renderScale.y;
+    #endif
 
     vec2 albedoTexSize = vec2(textureSize(gtexture, 0));
     vec2 albedoTexelSize = 1.0 / albedoTexSize;
