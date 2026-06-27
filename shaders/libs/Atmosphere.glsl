@@ -281,7 +281,7 @@ vec3 waterFogAbsorption(float waterDepth) {
 
 vec3 waterFogScattering(vec3 worldDir, vec3 skyColor, float waterDepth, float skyLight) {
     float miePhase = miePhase(worldDir.y, 0.4, 0.16);
-    vec3 scattering = skyLight * miePhase * skyColor * (1.0 - exp(-waterDepth * waterAbsorptionBeta)) * exp(-16.0 * (1.0 - skyLight * 0.8) * waterAbsorptionBeta);
+    vec3 scattering = skyLight * miePhase * skyColor * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * (1.0 - exp(-waterDepth * waterAbsorptionBeta)) * exp(-16.0 * (1.0 - skyLight * 0.8) * waterAbsorptionBeta);
     return scattering;
 }
 
@@ -310,7 +310,7 @@ float snowFogAbsorption(float snowDepth) {
 }
 
 vec3 snowFogScattering(vec3 skyColor, float snowDepth, float skyLight) {
-    vec3 scattering = (skyLight * skyLight * skyLight) * skyColor * (1.0 - exp(-snowDepth * snowAbsorptionBeta));
+    vec3 scattering = (skyLight * skyLight * skyLight) * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * skyColor * (1.0 - exp(-snowDepth * snowAbsorptionBeta));
     return scattering;
 }
 
