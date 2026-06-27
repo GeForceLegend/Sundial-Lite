@@ -23,10 +23,11 @@
         "vxRenderDistance"
     #if SR_ENABLE
         ,"SRJitterOffset"
+        ,"SRScaledViewportSize"
     ],
     "renderScale":[SR_RENDER_SCALE_FACTOR],
     "useViewportDims": true,
-    "taaOffset": "{return SRJitterOffset * texelSize * 2.0 * vec2(1.0, -1.0);}",
+    "taaOffset": "{return SRJitterOffset * 2.0 * vec2(1.0, -1.0) / SRScaledViewportSize;}",
     #else
     ],
     "taaOffset": "{return taaOffsetVX;}",
