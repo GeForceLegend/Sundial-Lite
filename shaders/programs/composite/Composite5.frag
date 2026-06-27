@@ -353,7 +353,9 @@ void main() {
                     rayAbsorption *= pow(clamp(eyeBrightnessSmooth.y / 240.0 + 1e-4 + float(isEyeInWater == 1), 0.0, 1.0), exp(-0.5 * stepLength));
                 #endif
                 vec3 stepAbsorption = exp2(absorptionBeta);
-                vec3 skyScattering = (sunColor * SUNLIGHT_BRIGHTNESS * 2.0 + skyColorUp) * eyeBrightnessSmooth.y / 1000.0;
+                vec3 skyScattering =
+                    (skyColorUp * 0.8 + sunColor * 2.0 * SUNLIGHT_BRIGHTNESS * (1.0 - (0.75 + 0.25 * float(CLOUD_TYPE != 2)) * weatherStrength)) *
+                    (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * (1.0 + 5.0 * RF_DENSITY * weatherStrength) * eyeBrightnessSmooth.y / 1000.0;
                 stepLength *= -0.01 * 1.44269502 / max(1e-5, basicWeight);
 
                 for (int i = 0; i < VL_SAMPLES; i++) {
@@ -380,7 +382,7 @@ void main() {
                             }
                         #endif
                     }
-                    singleLight *= sunColor * SUNLIGHT_BRIGHTNESS;
+                    singleLight *= sunColor * (1.0 - (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * SUNLIGHT_BRIGHTNESS;
                     #ifdef VOLUMETRIC_FOG
                         float sampleVolumetricFogDensity = volumetricFogDensity(samplePos) * volumetricFogScattering;
                         singleLight *= sampleVolumetricFogDensity * 5.0 + airScattering;
