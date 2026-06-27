@@ -62,9 +62,8 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
             NdotL = abs(dot(geoNormal, shadowDirection));
             NdotL = NdotL + (1.0 - NdotL) * clamp(porosity * 255.0 / 191.0 - 64.0 / 191.0, 0.0, 1.0);
             if (any(greaterThan(abs(shadowCoord - vec3(vec2(0.75), 0.5)), vec3(vec2(0.25), 0.5)))) {
-                skyLight = smoothstep(0.8, 0.9, skyLight);
-                shadow *= smoothstep(0.8, 0.9, skyLight) * normalFactor;
-                subsurfaceScattering *= smoothstep(0.8, 0.9, skyLight) * (1.0 - normalFactor) * NdotL * step(64.5 / 255.0, porosity);
+                shadow *= skyLight * normalFactor;
+                subsurfaceScattering *= skyLight * (1.0 - normalFactor) * NdotL * step(64.5 / 255.0, porosity);
             } else {
                 shadowCoord.z -= 4e-5;
                 float sssOffsetZ = sssShadowCoord.z - shadowCoord.z;

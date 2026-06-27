@@ -161,7 +161,6 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 shadow *= solidShadow;
             }
             else {
-                skyLight = smoothstep(0.8, 0.9, skyLight);
                 shadow *= skyLight * normalFactor;
                 subsurfaceScattering *= skyLight * (1.0 - normalFactor) * NdotL * step(64.5 / 255.0, porosity);
             }
