@@ -50,8 +50,8 @@ void main() {
             // basic value to determine how shallow/far away from the shore the water is
             physics_localWaviness = physics_waviness;
             // transform gl_Vertex (since it is the raw mesh, i.e. not transformed yet)
-            float baseWaveHeight = physics_waveHeight(Position.xz, PHYSICS_ITERATIONS_OFFSET, physics_localWaviness, physics_gameTime);
-            float rippleHeight = physics_rippleVertexHeight(Position.xz);
+            float baseWaveHeight = physics_waveHeight(gl_Vertex.xz, PHYSICS_ITERATIONS_OFFSET, physics_localWaviness, physics_gameTime);
+            float rippleHeight = physics_rippleVertexHeight(gl_Vertex.xz);
             // pass this to the fragment shader to fetch the texture there for per fragment normals
             physics_localPosition = vec3(gl_Vertex.x, gl_Vertex.y + baseWaveHeight + rippleHeight, gl_Vertex.z);
         #else

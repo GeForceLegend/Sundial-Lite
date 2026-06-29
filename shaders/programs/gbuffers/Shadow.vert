@@ -27,6 +27,10 @@ layout(location = 10) in vec4 mc_Entity;
 layout(location = 11) in vec4 mc_midTexCoord;
 #endif
 
+#ifdef PHYSICS_OCEAN_V2
+    in float physics_waviness;
+#endif
+
 out vec4 color;
 out vec3 worldNormal;
 out vec2 texcoord;
@@ -47,8 +51,16 @@ void main() {
         worldNormal = normalize(mat3(shadowModelViewInverse) * gl_NormalMatrix * gl_Normal);
         texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;
         #ifdef PHYSICS_OCEAN
-            float physics_localWaviness = texelFetch(physics_waviness, ivec2(gl_Vertex.xz) - physics_textureOffset, 0).r;
-            vec3 physics_localPosition = gl_Vertex.xyz + vec3(0.0, physics_waveHeight(gl_Vertex.xz, PHYSICS_ITERATIONS_OFFSET, physics_localWaviness, physics_gameTime), 0.0);
+            #ifdef PHYSICS_OCEAN_V2
+                // transform gl_Vertex (since it is the raw mesh, i.e. not transformed yet)
+                float baseWaveHeight = physics_waveHeight(gl_Vertex.xz, PHYSICS_ITERATIONS_OFFSET, physics_waviness, physics_gameTime);
+                float rippleHeight = physics_rippleVertexHeight(gl_Vertex.xz);
+                // pass this to the fragment shader to fetch the texture there for per fragment normals
+                vec3 physics_localPosition = vec3(gl_Vertex.x, gl_Vertex.y + baseWaveHeight + rippleHeight, gl_Vertex.z);
+            #else
+                float physics_localWaviness = texelFetch(physics_waviness, ivec2(gl_Vertex.xz) - physics_textureOffset, 0).r;
+                vec3 physics_localPosition = gl_Vertex.xyz + vec3(0.0, physics_waveHeight(gl_Vertex.xz, PHYSICS_ITERATIONS_OFFSET, physics_localWaviness, physics_gameTime), 0.0);
+            #endif
 
             vec4 viewPos = gl_ModelViewMatrix * vec4(physics_localPosition, 1.0);
         #else
