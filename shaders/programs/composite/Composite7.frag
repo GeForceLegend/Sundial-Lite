@@ -197,7 +197,6 @@ void main() {
     float sampleRadius = clamp(abs(centerCoC), 0.0, 1.0);
 
     #ifdef DEPTH_OF_FIELD
-        const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
         float strength = 15.0 * MAX_BLUR_RADIUS;
         #if SR_ENABLE
             strength *= SR_RENDER_SCALE_FACTOR;

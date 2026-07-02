@@ -104,6 +104,7 @@ const float PI = 3.1415926535897;
     const vec2 screenEdge = vec2(1.0);
     const float mipBias = 0.0;
 #endif
+const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
 
 #ifdef SETTINGS
     float nightBrightness = mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);

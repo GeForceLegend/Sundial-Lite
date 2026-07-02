@@ -64,6 +64,15 @@ option.CAULDRON_WAVE.comment=Render water waves for water in cauldron. Requires 
 option.WATER_WAVE_SCALE=Water wave scale
 option.WATER_WAVE_HEIGHT=Water wave height
 option.WATER_WAVE_SPEED=Water wave speed
+option.WATER_WAVE_STEEPNESS=Water wave steepness
+option.WATER_WAVE_LAYERS_SCALE=Water wave octave scale
+option.WATER_WAVE_LAYERS_SCALE.comment=Each wave layer's wavelength scale compared to previous wave layer
+option.WATER_WAVE_LAYERS_FADE=Water wave octave fade
+option.WATER_WAVE_LAYERS_FADE.comment=Each wave layer's height compared to previous wave layer
+option.WATER_WAVE_HEIGHT_LAYERS=Water wave height layers
+option.WATER_WAVE_HEIGHT_LAYERS.comment=Layers of waves used when calculating wave parallax height. High value is not suggested
+option.WATER_WAVE_NORMAL_LAYERS=Water wave normal layers
+option.WATER_WAVE_NORMAL_LAYERS.comment=Layers of waves used when calculating wave normal. Higher value will gain more details at the cost of performance
 # Normal
 option.NORMAL_FORMAT=Normal format
 option.NORMAL_FORMAT.comment=LabPBR uses data of x and y axis to reconstructe z axis. ClassicPBR uses normalize(normal.xyz)

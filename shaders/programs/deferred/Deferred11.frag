@@ -104,7 +104,6 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 shadow *= caustic;
                 subsurfaceScattering *= caustic;
 
-                const mat2 rotation = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
                 noise.x *= PI * 2.0;
                 vec2 sampleAngle = vec2(cos(noise.x), sin(noise.x)) * filterRadius;
                 float sampleRadius = noise.y * 1.0 / PCSS_SAMPLES + 1e-6;
@@ -130,7 +129,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                         opticalDepth += clamp(sssSampleCoord.z - shadowDepth + 1e-4, 0.0, 1.0);
                     }
 
-                    sampleAngle = rotation * sampleAngle;
+                    sampleAngle = goldenRotate * sampleAngle;
                     sampleRadius += 1.0 / PCSS_SAMPLES;
                     #ifdef TRANSPARENT_SHADOW
                         sampleShadowCoord.x -= 0.5;
