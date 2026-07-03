@@ -24,7 +24,7 @@ float waterWaveHeight(vec2 coord) {
     coord *= 30.0;
     float totalHeight = 0.0;
     float currentWeight = 1.0;
-    float speed = 1.5 * frameTimeCounter * WATER_WAVE_SPEED;
+    float speed = 2.0 * frameTimeCounter * WATER_WAVE_SPEED;
     for (int i = 0; i < WATER_WAVE_HEIGHT_LAYERS; i++) {
         coord = goldenRotate * coord;
         totalHeight += currentWeight * gerstnerApproxGeForceLegend(coord - vec2(speed, 0.0));
@@ -63,7 +63,7 @@ vec2 waterWaveNormal(vec2 coord) {
     coord *= 30.0;
     float totalHeight = 0.0;
     float currentWeight = 1.0;
-    float speed = 1.5 * frameTimeCounter * WATER_WAVE_SPEED;
+    float speed = 2.0 * frameTimeCounter * WATER_WAVE_SPEED;
     for (int i = 0; i < WATER_WAVE_NORMAL_LAYERS; i++) {
         coord = goldenRotate * coord;
         totalNormal += normalRotation * currentWeight * gerstnerApproxGeForceLegendDerivative(coord - vec2(speed, 0.0));
