@@ -21,6 +21,7 @@ layout(location = 1) out vec4 gbufferData1;
 layout(location = 2) out vec4 gbufferData2;
 
 const float PI = 3.1415926535897;
+const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323), cos(2.39996323));
 
 vec2 taaOffset = vec2(0.0);
 
@@ -127,7 +128,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     weight = max(NdotV, curveStart) - weight;
     rawData.normal = viewDir * weight + edgeNormal * max(0.0, inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight)));
     float fadeFactor = viewDepthInv * curveStart * gbufferProjection[1].y * screenSize.y;
-    rawData.normal = mix(tbnMatrix[2], rawData.normal, fadeFactor / (fadeFactor + 0.3));
+    rawData.normal = mix(tbnMatrix[2], rawData.normal, fadeFactor / (fadeFactor + 0.1));
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);
 }
