@@ -231,6 +231,12 @@ void main() {
 
         float isTargetParticle = 1.0 - float(isTargetNotParticle);
         vec3 vanillaLight = vec3(0.0);
+        #ifdef SHADOW_AND_SKY
+            vanillaLight +=
+                pow2(1.0 / (0.75 - 0.75 * 0.75 / (1.0 + 0.75) * gbufferData.lightmap.y) - 1.0 / 0.75) *
+                (skyColorUp * 0.8 + sunColor * 2.0 * SUNLIGHT_BRIGHTNESS * (1.0 - (0.75 + 0.25 * float(CLOUD_TYPE != 2)) * weatherStrength)) *
+                (1.0 - gbufferData.metalness) * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength);
+        #endif
         #ifdef IS_IRIS
             float eyeRelatedDistance = length(waterWorldPos + relativeEyePosition);
             gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
@@ -245,10 +251,6 @@ void main() {
         #endif
         solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * (gbufferData.emissive * PBR_BRIGHTNESS * PI + vanillaLight * isTargetParticle);
         #ifdef SHADOW_AND_SKY
-            vanillaLight +=
-                pow2(1.0 / (0.75 - 0.75 * 0.75 / (1.0 + 0.75) * gbufferData.lightmap.y) - 1.0 / 0.75) *
-                (skyColorUp * 0.8 + sunColor * 2.0 * SUNLIGHT_BRIGHTNESS * (1.0 - (0.75 + 0.25 * float(CLOUD_TYPE != 2)) * weatherStrength)) *
-                (1.0 - gbufferData.metalness) * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength);
             float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);
             if (NdotL > 0.0) {
                 vec3 shadow = vec3(1.0);
