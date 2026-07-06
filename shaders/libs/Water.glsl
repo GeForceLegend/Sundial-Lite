@@ -52,8 +52,9 @@ vec2 gerstnerApproxGeForceLegendDerivative(vec2 coord) {
     float noise = mix(a.x, a.y, weight.y);
 
     float x = fract(coord.x * 0.5 / PI + noise * 6.0 * 0.5 / PI) * 2.0 - 1.0;
-    return sin(coordScale * pow(abs(x) + curveOffset2, waveSmoothness) - coordScale * curveOffset1) *
-        signMul(noiseDerv, vec2(x)) / PI * (coordScale * waveSmoothness * pow(abs(x) + curveOffset2, waveSmoothness - 1.0));
+    float power = pow(abs(x) + curveOffset2, waveSmoothness - 1.0);
+    return sin(coordScale * power * (abs(x) + curveOffset2) - coordScale * curveOffset1) *
+        signMul(noiseDerv, vec2(x)) / PI * coordScale * waveSmoothness * power;
 }
 
 vec2 waterWaveNormal(vec2 coord) {
