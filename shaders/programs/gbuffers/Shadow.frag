@@ -117,3 +117,5 @@ void main() {
         discard;
     #endif
 }
+
+/* DRAWBUFFERS:0 */
