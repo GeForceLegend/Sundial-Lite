@@ -60,6 +60,7 @@
             vec2 eyePosition = position + vec2(physics_modelOffsetX, physics_modelOffsetZ);
             return (eyePosition + vec2(physics_rippleRange)) / (physics_rippleRange * 2.0f);
         }
+
         float physics_rippleUvMask(const in vec2 uv) {
             if (uv.x < 0.0f || uv.y < 0.0f || uv.x > 1.0f || uv.y > 1.0f) {
                 return 0.0f;
@@ -67,10 +68,12 @@
             float edge = min(min(uv.x, uv.y), min(1.0f - uv.x, 1.0f - uv.y));
             return smoothstep(0.0f, PHYSICS_RIPPLE_EDGE_FADE, edge);
         }
+
         float physics_rippleSampleRaw(const in vec2 position) {
             vec2 uv = physics_rippleUv(position);
             return texture(physics_ripples, uv).r * physics_rippleUvMask(uv);
         }
+
         float physics_rippleVertexHeight(const in vec2 position) {
             return physics_rippleSampleRaw(position) * PHYSICS_RIPPLE_VERTEX_DISPLACEMENT;
         }
