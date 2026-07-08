@@ -132,6 +132,9 @@ void main() {
 
     float viewDepthInv = inversesqrt(dot(viewPos.xyz, viewPos.xyz));
     #ifdef PHYSICS_OCEAN
+        #ifndef PHYSICS_OCEAN_V2
+            physics_waveData.normal.xz *= 0.5;
+        #endif
         rawData.normal = mat3(gbufferModelView) * (physics_waveData.normal * vec3(0.5, 1.0, 0.5));
         rawData.normal = signI(dot(rawData.normal, rawData.geoNormal)) * rawData.normal;
         #if WATER_TYPE == 0
