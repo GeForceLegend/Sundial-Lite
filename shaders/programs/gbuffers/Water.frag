@@ -130,10 +130,10 @@ void main() {
         rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
     }
 
+    float viewDepthInv = inversesqrt(dot(viewPos.xyz, viewPos.xyz));
     #ifdef PHYSICS_OCEAN
         rawData.normal = mat3(gbufferModelView) * (physics_waveData.normal * vec3(0.5, 1.0, 0.5));
-        rawData.normal = -signI(dot(rawData.normal, viewPos.xyz)) * rawData.normal;
-        rawData.geoNormal = -signI(dot(rawData.geoNormal, viewPos.xyz)) * rawData.geoNormal;
+        rawData.normal = signI(dot(rawData.normal, rawData.geoNormal)) * rawData.normal;
         #if WATER_TYPE == 0
             rawData.albedo.rgb = color.rgb;
         #else
@@ -171,7 +171,6 @@ void main() {
             #endif
         }
 
-        float viewDepthInv = inversesqrt(dot(viewPos.xyz, viewPos.xyz));
         vec3 rippleNormal = vec3(0.0, 0.0, 1.0);
         #ifdef RAIN_RIPPLES
             rippleNormal = rainRippleNormal(mcPos);
@@ -179,17 +178,17 @@ void main() {
         #endif
         rawData.normal.xy += rippleNormal.xy * wetStrength;
         rawData.normal = normalize(tbnMatrix * rawData.normal);
-
-        vec3 viewDir = viewPos.xyz * (-viewDepthInv);
-        float NdotV = dot(rawData.normal, viewDir);
-        vec3 edgeNormal = rawData.normal - viewDir * NdotV;
-        float curveStart = dot(viewDir, rawData.geoNormal);
-        float weight = clamp(curveStart - curveStart * exp(NdotV / curveStart - 1.0), 0.0, 1.0);
-        weight = max(NdotV, curveStart) - weight;
-        rawData.normal = viewDir * weight + edgeNormal * max(0.0, inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight)));
-        float fadeFactor = viewDepthInv * curveStart * gbufferProjection[1].y * screenSize.y;
-        rawData.normal = mix(tbnMatrix[2], rawData.normal, fadeFactor / (fadeFactor + 0.1));
     #endif
+
+    vec3 viewDir = viewPos.xyz * (-viewDepthInv);
+    float NdotV = dot(rawData.normal, viewDir);
+    vec3 edgeNormal = rawData.normal - viewDir * NdotV;
+    float curveStart = dot(viewDir, rawData.geoNormal);
+    float weight = clamp(curveStart - curveStart * exp(NdotV / curveStart - 1.0), 0.0, 1.0);
+    weight = max(NdotV, curveStart) - weight;
+    rawData.normal = viewDir * weight + edgeNormal * max(0.0, inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight)));
+    float fadeFactor = viewDepthInv * curveStart * gbufferProjection[1].y * screenSize.y;
+    rawData.normal = mix(tbnMatrix[2], rawData.normal, fadeFactor / (fadeFactor + 0.1));
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);
 }
