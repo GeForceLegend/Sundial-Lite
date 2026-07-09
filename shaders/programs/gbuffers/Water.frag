@@ -195,7 +195,7 @@ void main() {
     #ifdef PHYSICS_OCEAN
         vec3 worldGeoNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
         rawData.geoNormal = gbufferModelView[1].xyz;
-        rawData.geoNormal.y = signMul(rawData.geoNormal.y, worldGeoNormal.y);
+        rawData.geoNormal *= signI(worldGeoNormal.y);
     #endif
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);
