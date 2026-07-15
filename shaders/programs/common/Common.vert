@@ -85,8 +85,9 @@ void main() {
             float viewCurrCenterDepth = screenToViewDepth(currCenterDepth);
             uint uParallaxOffset = ((uMaterialData << 3) & 0x007FFC00u) | 0x3F800000u;
             float parallaxOffset = uintBitsToFloat(uParallaxOffset) * 8192.0 / 8191.0 - 8192.0 / 8191.0;
-            vec3 geoNormal = getGeoNormalTexel(centerTexel);
-            viewCurrCenterDepth += (parallaxOffset * 0.2 * PARALLAX_DEPTH) / max(1e-5, abs(geoNormal.z));
+            vec2 geoNormalData = texelFetch(colortex1, centerTexel, 0).zw;
+            float geoNormalZ = 1.0 - abs(geoNormalData.x) - abs(geoNormalData.y);
+            viewCurrCenterDepth += (parallaxOffset * 0.2 * PARALLAX_DEPTH) / max(1e-5, abs(geoNormalZ));
             currCenterDepth = viewToScreenDepth(viewCurrCenterDepth);
         #endif
         float fadeFactor = exp(log(0.5) * frameTime * 10.0 / centerDepthHalflife) * float(prevCenterDepth > 0.0);
