@@ -335,10 +335,6 @@ void main() {
             #endif
             vec3 subsurfaceScattering = vec3(float(gbufferData.porosity > 64.5 / 255.0)) * shadow * shadowDiffuse;
             shadow *= shadowDiffuse + shadowSpecular;
-            float shadowLightFactor = 1.0;
-            #ifdef LIGHT_LEAKING_FIX
-                shadowLightFactor = clamp(gbufferData.lightmap.y * 10.0 + isEyeInWater, 0.0, 1.0);
-            #endif
             #ifdef PCSS
                 percentageCloserSoftShadow(
                     worldPos, worldGeoNormal, NdotL, 1.0 / viewLength, gbufferData.smoothness,

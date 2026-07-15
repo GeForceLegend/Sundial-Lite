@@ -20,7 +20,6 @@ layout(location = 0) out uint texBuffer6;
 
 in vec2 texcoord;
 
-// #define PARALLAX_DOF
 #define DOF_DEPTH_TEXTURE depthtex1 // [depthtex0 depthtex1]
 
 #include "/settings/GlobalSettings.glsl"

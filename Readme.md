@@ -43,7 +43,7 @@ Sundial Lite contains most features from the full version and with some extra fe
 - FidelityFX RCAS final sharpening
 - Lots of configurable shader options for above features
 - Correct held object support for SSGI, SSAO, Screen space shadow, reflection, DoF and TAA
-- Compatible with Distant Horizons, Voxy, Colorwheel, Super Resolution and Physics Mod Pro
+- Compatible with Distant Horizons, Voxy, Vivecraft, Colorwheel, Super Resolution and Physics Mod Pro
 
 As a compartion to the full version, it does not use voxelization and world space ray tracing, reducing volumetric light and reflection from computing 2 times to 1 time, losing multiple bounce reflection, but have much better performance and mod compatibility.
 

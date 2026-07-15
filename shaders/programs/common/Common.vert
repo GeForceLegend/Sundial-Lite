@@ -22,10 +22,6 @@ out vec2 texcoord;
     out float prevExposure;
 #endif
 
-#ifdef SMOOTH_CENTER_DEPTH
-    out float smoothCenterDepth;
-#endif
-
 #define DOF_FOCUS_TEXTURE 2 // [0 1 2]
 
 #include "/settings/GlobalSettings.glsl"
@@ -42,6 +38,12 @@ out vec2 texcoord;
     out vec2 temporalHandRotation;
 
     #include "/libs/Common.glsl"
+#endif
+
+#ifdef SMOOTH_CENTER_DEPTH
+    out float smoothCenterDepth;
+
+    #include "/libs/GbufferData.glsl"
 #endif
 
 void main() {
@@ -69,12 +71,13 @@ void main() {
         #else
             float currCenterDepth = textureLod(depthtex2, screenCenter, 0.0).x;
         #endif
-        float materialID = texelFetch(colortex2, ivec2(screenSize * 0.5), 0).a;
-        uint uMaterialID = floatBitsToUint(materialID * 65535.0 / 65536.0 + 65536.5 / 65536.0);
-        uMaterialID = (uMaterialID >> 15) & 0x000000FFu;
+        ivec2 centerTexel = ivec2(screenSize * screenCenter);
+        float materialData = texelFetch(colortex2, centerTexel, 0).a;
+        uint uMaterialData = floatBitsToUint(materialData * 65535.0 / 65536.0 + 65536.5 / 65536.0);
         #if (defined CORRECT_DOF_HAND_DEPTH) && (DOF_FOCUS_TEXTURE != 2)
+            uint uMaterialID = (uMaterialData >> 20) & 0x0000007u;
             float handDepth = currCenterDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
-            if (uMaterialID == 9u && abs(handDepth - 0.5) < 0.5) {
+            if (uMaterialID == 2u && abs(handDepth - 0.5) < 0.5) {
                 currCenterDepth = handDepth;
             }
         #endif
