@@ -81,6 +81,14 @@ void main() {
                 currCenterDepth = handDepth;
             }
         #endif
+        #ifdef PARALLAX_DOF
+            float viewCurrCenterDepth = screenToViewDepth(currCenterDepth);
+            uint uParallaxOffset = ((uMaterialData << 3) & 0x007FFC00u) | 0x3F800000u;
+            float parallaxOffset = uintBitsToFloat(uParallaxOffset) * 8192.0 / 8191.0 - 8192.0 / 8191.0;
+            vec3 geoNormal = getGeoNormalTexel(centerTexel);
+            viewCurrCenterDepth += (parallaxOffset * 0.2 * PARALLAX_DEPTH) / max(1e-5, abs(geoNormal.z));
+            currCenterDepth = viewToScreenDepth(viewCurrCenterDepth);
+        #endif
         float fadeFactor = exp(log(0.5) * frameTime * 10.0 / centerDepthHalflife) * float(prevCenterDepth > 0.0);
         smoothCenterDepth = mix(currCenterDepth, prevCenterDepth, fadeFactor);
     #endif
