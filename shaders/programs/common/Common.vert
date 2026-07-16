@@ -72,7 +72,8 @@ void main() {
             float currCenterDepth = textureLod(depthtex2, screenCenter, 0.0).x;
         #endif
         ivec2 centerTexel = ivec2(screenSize * screenCenter);
-        float materialData = texelFetch(colortex2, centerTexel, 0).a;
+        vec4 centerGbufferData = texelFetch(colortex2, centerTexel, 0);
+        float materialData = centerGbufferData.a;
         uint uMaterialData = floatBitsToUint(materialData * 65535.0 / 65536.0 + 65536.5 / 65536.0);
         #if (defined CORRECT_DOF_HAND_DEPTH) && (DOF_FOCUS_TEXTURE != 2)
             uint uMaterialID = (uMaterialData >> 20) & 0x0000007u;
@@ -85,7 +86,7 @@ void main() {
             float viewCurrCenterDepth = screenToViewDepth(currCenterDepth);
             uint uParallaxOffset = ((uMaterialData << 3) & 0x007FFC00u) | 0x3F800000u;
             float parallaxOffset = uintBitsToFloat(uParallaxOffset) * 8192.0 / 8191.0 - 8192.0 / 8191.0;
-            vec2 geoNormalData = texelFetch(colortex1, centerTexel, 0).zw;
+            vec2 geoNormalData = centerGbufferData.xy * 2.0 - 1.0;
             float geoNormalZ = 1.0 - abs(geoNormalData.x) - abs(geoNormalData.y);
             viewCurrCenterDepth += (parallaxOffset * 0.2 * PARALLAX_DEPTH) / max(1e-5, abs(geoNormalZ));
             currCenterDepth = viewToScreenDepth(viewCurrCenterDepth);

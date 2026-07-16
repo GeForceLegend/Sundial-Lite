@@ -102,7 +102,7 @@ float getClosestDepth(vec2 coord) {
 
 vec3 calculateVelocity(vec3 coord, ivec2 texel, float materialID, float parallaxOffset) {
     vec3 view = coord;
-    vec3 geoNormal = decodeNormal(texelFetch(colortex1, texel, 0).zw);
+    vec3 geoNormal = decodeNormal(texelFetch(colortex2, texel, 0).xy);
     float handDepth = view.z / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
     if (materialID == MAT_HAND && abs(handDepth - 0.5) < 0.5) {
         view.z = handDepth;

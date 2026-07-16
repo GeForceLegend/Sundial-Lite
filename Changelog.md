@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Adjusted rainy volumetric light/fog lighting;
 - Adjusted water/powder snow fog during rain;
 - Try to avoid allocating main/alt shadowcolor1 to reduce VRAM usage;
+- Remapped gbuffer data storage to improve performance on certain effects;
 
 ### Fixed
 

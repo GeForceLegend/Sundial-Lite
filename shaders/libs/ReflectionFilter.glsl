@@ -1,6 +1,7 @@
 vec4 reflectionFilter(vec4 originData, ivec2 centerTexel, float offset, bool useNoise) {
     float originReflectionDepth = originData.w;
-    float originSmoothness = unpack2x8Bit(texelFetch(colortex2, centerTexel, 0).g).x;
+    vec4 originGbufferData = texelFetch(colortex1, centerTexel, 0);
+    float originSmoothness = unpack2x8Bit(originGbufferData.z).x;
     float roughness = pow2(1.0 - originSmoothness);
     float roughnessInv = 100.0 / max(roughness, 1e-5);
     vec2 coordOffset = vec2(4.0 * offset * clamp(roughness * 20.0, 0.0, 1.0) * (1.0 - exp(-originReflectionDepth * 1000.0)));
@@ -8,7 +9,7 @@ vec4 reflectionFilter(vec4 originData, ivec2 centerTexel, float offset, bool use
         coordOffset *= blueNoiseTemporal(texcoord).x + 0.5;
     }
 
-    vec3 originNormal = getNormalTexel(centerTexel);
+    vec3 originNormal = decodeNormal(originGbufferData.xy);
 
     vec3 accumulation = originData.rgb;
     float weightAccumulation = 1.0;
@@ -20,8 +21,9 @@ vec4 reflectionFilter(vec4 originData, ivec2 centerTexel, float offset, bool use
             ivec2 sampleTexel = ivec2(sampleTexelCoord);
             vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
             float sampleReflectionDepth = sampleData.w;
-            vec3 sampleNormal = getNormalTexel(sampleTexel);
-            float sampleSmoothness = unpack2x8Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
+            vec4 sampleGbufferData = texelFetch(colortex1, sampleTexel, 0);
+            vec3 sampleNormal = decodeNormal(sampleGbufferData.xy);
+            float sampleSmoothness = unpack2x8Bit(sampleGbufferData.z).x;
 
             float weight =
                 exp2(

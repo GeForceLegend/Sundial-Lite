@@ -46,8 +46,9 @@ void main() {
     {
         viewPos = screenToViewPos(texcoord, screenDepth);
         #ifdef PARALLAX_DOF
-            float parallaxOffset = clamp(texelFetch(colortex3, texel, 0).w, 0.0, 1.0) * 0.2 * PARALLAX_DEPTH;
-            vec3 normal = getGeoNormalTexel(texel);
+            vec4 gbufferData = texelFetch(colortex2, texel, 0);
+            float parallaxOffset = unpackM3P13(gbufferData.w).y * 0.2 * PARALLAX_DEPTH;
+            vec3 normal = decodeNormal(gbufferData.xy);
             viewPos += viewPos * parallaxOffset / max(1e-5, -dot(viewPos, normal));
         #endif
         viewPos *= (1.0 - 2.0 * float(isHand));

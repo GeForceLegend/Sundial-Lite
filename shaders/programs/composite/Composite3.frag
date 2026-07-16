@@ -37,7 +37,8 @@ void main() {
         #endif
         if (abs(waterDepth) < 1.0) {
             vec4 originData = texelFetch(colortex4, texel, 0);
-            vec2 materialData = unpack2x8Bit(texelFetch(colortex2, texel, 0).g);
+            vec4 originGbufferData = texelFetch(colortex1, texel, 0);
+            vec2 materialData = unpack2x8Bit(originGbufferData.z);
             float smoothness = materialData.x;
             float metalness = materialData.y;
 
@@ -57,7 +58,7 @@ void main() {
                 float originReflectionDepth = originData.w;
                 float originSmoothness = smoothness;
                 if (originSmoothness < 0.9975 && originReflectionDepth > 1e-5) {
-                    vec3 originNormal = getNormalTexel(texel);
+                    vec3 originNormal = decodeNormal(originGbufferData.xy);
                     float roughness = pow2(1.0 - originSmoothness);
                     float roughnessInv = 100.0 / max(roughness, 1e-5);
                     vec2 coordOffset = vec2(4.0 * clamp(roughness * 20.0, 0.0, 1.0) * (1.0 - exp(-sqrt(originReflectionDepth) * 50.0)));
@@ -73,8 +74,9 @@ void main() {
                             ivec2 sampleTexel = ivec2(sampleTexelCoord);
                             vec4 sampleData = texelFetch(colortex4, sampleTexel, 0);
                             float sampleReflectionDepth = sampleData.w;
-                            vec3 sampleNormal = getNormalTexel(sampleTexel);
-                            float sampleSmoothness = unpack2x8Bit(texelFetch(colortex2, sampleTexel, 0).g).x;
+                            vec4 sampleGbufferData = texelFetch(colortex1, sampleTexel, 0);
+                            vec3 sampleNormal = decodeNormal(sampleGbufferData.xy);
+                            float sampleSmoothness = unpack2x8Bit(sampleGbufferData.z).x;
 
                             float weight =
                                 exp2(

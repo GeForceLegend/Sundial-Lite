@@ -188,24 +188,17 @@ vec2 encodeNormal(vec3 normal) {
     float useInv = clamp(normal.z * -1e+10, 0.0, 1.0);
     vec2 normalInv = uintBitsToFloat(floatBitsToUint(vec2(1.0) - abs(normal.yx)) ^ (floatBitsToUint(normal.xy) & 0x80000000u));
     normal.xy = mix(normal.xy, normalInv, vec2(useInv));
+    normal.xy = normal.xy * 0.5 + 0.5;
     return normal.xy;
 }
 
 vec3 decodeNormal(vec2 data) {
+    data = data * 2.0 - 1.0;
     vec3 normal = vec3(data, 1.0 - abs(data.x) - abs(data.y));
     float useInv = clamp(normal.z * -1e+10, 0.0, 1.0);
     vec2 normalInv = uintBitsToFloat(floatBitsToUint(vec2(1.0) - abs(normal.yx)) ^ (floatBitsToUint(normal.xy) & 0x80000000u));
     normal.xy = mix(normal.xy, normalInv, vec2(useInv));
     return normalize(normal);
-}
-
-void decodeNormals(vec4 rawData, inout vec3 normal, inout vec3 geoNormal) {
-    vec2 normalZ = vec2(1.0) - abs(rawData.xz) - abs(rawData.yw);
-    vec2 useInv = clamp(normalZ * -1e+10, vec2(0.0), vec2(1.0));
-    vec4 normalInv = uintBitsToFloat(floatBitsToUint(vec4(1.0) - abs(rawData.yxwz)) ^ (floatBitsToUint(rawData) & 0x80000000u));
-    rawData = mix(rawData, normalInv, vec4(vec2(useInv.x), vec2(useInv.y)));
-    normal = normalize(vec3(rawData.xy, normalZ.x));
-    geoNormal = normalize(vec3(rawData.zw, normalZ.y));
 }
 
 float pack2x8Bit(vec2 x) {
@@ -304,7 +297,7 @@ vec3 getNormalTexel(ivec2 texel) {
 }
 
 vec3 getGeoNormalTexel(ivec2 texel) {
-    vec2 rawData = texelFetch(colortex1, texel, 0).zw;
+    vec2 rawData = texelFetch(colortex2, texel, 0).xy;
     return decodeNormal(rawData);
 }
 
@@ -321,13 +314,16 @@ void packUpGbufferDataSolid(in GbufferData rawData, out vec4 data0, out vec4 dat
     data0 = rawData.albedo;
 
     // colortex1 RGBA16
-    data1 = vec4(encodeNormal(rawData.normal), encodeNormal(rawData.geoNormal));
+    data1 = vec4(
+        encodeNormal(rawData.normal),
+        pack2x8Bit(vec2(rawData.smoothness, rawData.metalness)),
+        pack2x8Bit(vec2(rawData.porosity, rawData.emissive))
+    );
 
     // colortex2 RGBA16
     data2 = vec4(
+        encodeNormal(rawData.geoNormal),
         pack2x8Bit(vec2(rawData.lightmap.x, rawData.lightmap.y)),
-        pack2x8Bit(vec2(rawData.smoothness, rawData.metalness)),
-        pack2x8Bit(vec2(rawData.porosity, rawData.emissive)),
         packM3P13(vec2(rawData.materialID / 7.0, rawData.parallaxOffset))
     );
 }
@@ -337,24 +333,25 @@ GbufferData getGbufferData(ivec2 texel, vec2 coord) {
     vec4 tex1 = texelFetch(colortex1, texel, 0);
     vec4 tex2 = texelFetch(colortex2, texel, 0);
 
-    vec2 unpacked2g = unpack2x8Bit(tex2.g);
-    vec2 unpacked2b = unpack2x8Bit(tex2.b);
-    vec2 unpacked2a = unpackM3P13(tex2.a);
+    vec2 unpacked1z = unpack2x8Bit(tex1.z);
+    vec2 unpacked1w = unpack2x8Bit(tex1.w);
+    vec2 unpacked2w = unpackM3P13(tex2.w);
 
     GbufferData data;
 
     data.albedo = tex0;
     data.albedo.rgb = pow(data.albedo.rgb, vec3(2.2));
-    decodeNormals(tex1, data.normal, data.geoNormal);
-    data.lightmap = unpack2x8Bit(tex2.r);
+    data.normal = decodeNormal(tex1.rg);
+    data.geoNormal = decodeNormal(tex2.rg);
+    data.lightmap = unpack2x8Bit(tex2.z);
 
-    data.smoothness = unpacked2g.x;
-    data.metalness = unpacked2g.y;
-    data.porosity = unpacked2b.x;
-    data.emissive = unpacked2b.y;
+    data.smoothness = unpacked1z.x;
+    data.metalness = unpacked1z.y;
+    data.porosity = unpacked1w.x;
+    data.emissive = unpacked1w.y;
 
-    data.materialID = round(unpacked2a.x * 7.0);
-    data.parallaxOffset = unpacked2a.y;
+    data.materialID = round(unpacked2w.x * 7.0);
+    data.parallaxOffset = unpacked2w.y;
 
     data.depth = textureLod(depthtex1, coord, 0.0).x;
 
