@@ -41,26 +41,6 @@ flat in int materialID;
     in float physics_localWaviness;
 #endif
 
-mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 textureScale) {
-    vec3 dPosDX = dFdx(position);
-    vec3 dPosDY = dFdy(position);
-
-    vec3 normal = cross(dPosDX, dPosDY);
-
-    vec3 tangentHelper = dPosDY * dCoordDX.x - dPosDX * dCoordDY.x;
-    vec3 tangent = cross(tangentHelper, normal) / dot(tangentHelper, tangentHelper);
-
-    vec3 bitangentHelper = dPosDY * dCoordDX.y - dPosDX * dCoordDY.y;
-    vec3 bitangent = cross(bitangentHelper, normal) / dot(bitangentHelper, bitangentHelper);
-
-    float tangentLen = inversesqrt(dot(tangent, tangent));
-    float bitangentLen = inversesqrt(dot(bitangent, bitangent));
-
-    textureScale = vec2(tangentLen, bitangentLen);
-
-    return mat3(tangent * tangentLen, bitangent * bitangentLen, normalize(normal));
-}
-
 void main() {
     #ifdef PHYSICS_OCEAN
         WavePixelData physics_waveData = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
