@@ -114,17 +114,17 @@ void main() {
 
     float wetStrength = 0.0;
     vec3 mcPos = viewToWorldPos(viewPos) + cameraPosition;
+    vec3 worldGeoNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
     if (rainyStrength > 0.0) {
-        vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
         float outdoor = clamp(15.0 * rawData.lightmap.y - 14.0, 0.0, 1.0);
         if (rawData.materialID == MAT_WATER) {
-            wetStrength = outdoor * clamp(abs(worldNormal.y) * 10.0 - 0.1, 0.0, 1.0);
+            wetStrength = outdoor * clamp(abs(worldGeoNormal.y) * 10.0 - 0.1, 0.0, 1.0);
         }
         else {
             #if RAIN_PUDDLE == 1
-                wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
+                wetStrength = (1.0 - rawData.metalness) * clamp(worldGeoNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength;
             #elif RAIN_PUDDLE == 2
-                wetStrength = groundWetStrength(mcPos, worldNormal.y, rawData.metalness, 0.0, outdoor);
+                wetStrength = groundWetStrength(mcPos, worldGeoNormal.y, rawData.metalness, 0.0, outdoor);
             #endif
         }
         rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
@@ -193,7 +193,6 @@ void main() {
     float fadeFactor = viewDepthInv * curveStart * gbufferProjection[1].y * screenSize.y;
     rawData.normal = mix(tbnMatrix[2], rawData.normal, fadeFactor / (fadeFactor + 0.1));
     #ifdef PHYSICS_OCEAN
-        vec3 worldGeoNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
         rawData.geoNormal = gbufferModelView[1].xyz;
         rawData.geoNormal *= signI(worldGeoNormal.y);
     #endif
