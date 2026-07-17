@@ -98,7 +98,7 @@ void main() {
     weight = max(NdotV, curveStart) - weight;
     normal = viewDir * weight + edgeNormal * max(0.0, inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight)));
     float fadeFactor = viewDepthInv * curveStart * gbufferProjection[1].y * screenSize.y;
-    normal = mix(tbnMatrix[2], normal, fadeFactor / (fadeFactor + 0.1));
+    normal = mix(tbnMatrix[2], normal, fadeFactor / (fadeFactor + 0.2));
     rawData.normal = normal;
 
     packUpGbufferDataSolid(rawData, gbufferData0, gbufferData1, gbufferData2);

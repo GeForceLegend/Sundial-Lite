@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Added 26.3 (up to 26.3 snapshot 3) new blocks to needed hardcoded support list;
 - Added physics ocean v2 compat (require Physics Mod Pro v185c or later versions);
 - Added normal clamping to physics ocean wave (already exist on common/DH/Voxy water);
-- Added PARALLAX_DOF support for DoF focus point support (previously it does not run on focus point depth);
+- Added PARALLAX_DOF support for DoF focus point (previously it does not run on focus point depth);
 
 ### Changed
 

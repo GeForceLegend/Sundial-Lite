@@ -171,7 +171,7 @@ void main() {
     weight = max(NdotV, curveStart) - weight;
     rawData.normal = viewDir * weight + edgeNormal * max(0.0, inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight)));
     float fadeFactor = viewDepthInv * curveStart * gbufferProjection[1].y * screenSize.y;
-    rawData.normal = mix(tbnMatrix[2], rawData.normal, fadeFactor / (fadeFactor + 0.1));
+    rawData.normal = mix(tbnMatrix[2], rawData.normal, fadeFactor / (fadeFactor + 0.2));
     #ifdef PHYSICS_OCEAN
         rawData.geoNormal = gbufferModelView[1].xyz;
         rawData.geoNormal *= signI(worldGeoNormal.y);
