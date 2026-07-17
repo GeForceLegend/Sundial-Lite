@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Gbuffer for transparent terrain
+//  Gbuffer for translucent terrain
 //
 
 #if MC_VERSION >= 11700
@@ -32,7 +32,6 @@ flat out int materialID;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
-#include "/libs/Materials.glsl"
 #include "/libs/PhysicsOcean.glsl"
 
 #ifdef PHYSICS_OCEAN

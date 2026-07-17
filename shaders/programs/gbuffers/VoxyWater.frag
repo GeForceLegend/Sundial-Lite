@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Gbuffer for Voxy transparent terrain
+//  Gbuffer for Voxy translucent terrain
 //
 
 layout(location = 0) out vec4 gbufferData0;

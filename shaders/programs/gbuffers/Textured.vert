@@ -46,7 +46,6 @@ uniform sampler2D gaux1;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
-#include "/libs/Materials.glsl"
 #include "/libs/Common.glsl"
 
 void main() {

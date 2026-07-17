@@ -28,7 +28,6 @@ flat out vec3 blockData;
 
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
-#include "/libs/Materials.glsl"
 
 void main() {
     viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
@@ -37,7 +36,7 @@ void main() {
     color = gl_Color.rgb;
     blockData.xy = (gl_TextureMatrix[1] * gl_MultiTexCoord1).st * 16.0 / 15.0 - 0.5 / 15.0;
 
-    blockData.z = MAT_DEFAULT;
+    blockData.z = 0.0;
     if (dhMaterialId == DH_BLOCK_LEAVES) {
         blockData.z = 1.0;
     }

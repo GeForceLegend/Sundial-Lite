@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Gbuffer for Distant Horizons transparent terrain
+//  Gbuffer for Distant Horizons translucent terrain
 //
 
 #extension GL_ARB_gpu_shader5 : enable

@@ -34,7 +34,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 - Fixed anisotropic filter issue on terrain far away caused by interpolation on `coordRange`;
 - Fixed self hit on solid reflection near screen edge;
-- Fixed color interpretation in refraction (#14);
+- Fixed color interpolation in refraction (#14);
 - Fixed voxy water when setting WATER_TYPE to 1 (Vanilla);
 - Fixed sunlight color will contribute to sky lighting on translucent particles in the end;
 - Fixed realistic cloud will ignore hit result of last step;

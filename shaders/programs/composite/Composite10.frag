@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Bloom stage 1: generated mips; Motion blur stage 1: blur scaled with velocity; Average exposure and smooth center depth
+//  Bloom stage 1: generate mips; Motion blur stage 1: blur scaled with velocity; Average exposure and smooth center depth
 //
 
 layout(location = 0) out vec4 texBuffer3;
