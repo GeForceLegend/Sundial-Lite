@@ -34,7 +34,6 @@ layout(location = 11) in vec4 mc_midTexCoord;
 out vec4 color;
 out vec3 worldNormal;
 out vec2 texcoord;
-out vec2 shadowOffset;
 out float distortFixValue;
 
 #include "/settings/GlobalSettings.glsl"
@@ -100,7 +99,7 @@ void main() {
                     worldPos.xz -= (waveNoise.x * vec2(0.1, 0.05) + waveNoise.y * vec2(0.02, 0.02)) * height;
                 }
                 else if ((commonWave & 0x0600) == 0x0200) {
-                    vec3 waveOffset = waveNoise.x * vec3(0.1 , 0.04, 0.07) + waveNoise.y * vec3(0.02, 0.01, 0.02); 
+                    vec3 waveOffset = waveNoise.x * vec3(0.1 , 0.04, 0.07) + waveNoise.y * vec3(0.02, 0.01, 0.02);
                     waveOffset *= clamp(1.0 - abs(gl_Normal) * float(mc_Entity.x == 8210), 0.0, 1.0);
                     worldPos -= waveOffset;
                 }
@@ -108,16 +107,17 @@ void main() {
             viewPos.xyz = mat3(shadowModelView) * worldPos + shadowModelView[3].xyz;
         #endif
 
-        shadowOffset = vec2(0.0, 0.0);
+        vec2 shadowOffset = vec2(0.0, 0.0);
         bool isWater = mc_Entity.x == 8192 || (mc_Entity.x == 8194 && gl_Color.b - gl_Color.r > 0.1);
         if (isWater) {
             color.rgb = worldPos;
-            color.a = 0.98 - pow(1.0 - clamp(abs(dot(shadowModelViewInverse[2].xyz, worldNormal)), 0.0, 1.0), 5.0) * 0.98;
+            color.a = pow(1.0 - clamp(abs(dot(shadowModelViewInverse[2].xyz, worldNormal)), 0.0, 1.0), 5.0) * 0.98 - 1.98;
         }
         float isWaterF = float(isWater);
         shadowOffset.y = -isWaterF;
         float isTransparent = float(abs(textureLod(gtexture, mc_midTexCoord.st + 1e-6, 0.0).w - 0.5) + 1e-4 < 0.49) * (1.0 - isWaterF);
         shadowOffset.x = -isTransparent;
+        color.a *= 1.0 - 2.0 * isTransparent * (1.0 - isWaterF);
 
         gl_Position = gl_ProjectionMatrix * viewPos;
         float clipLengthInv = inversesqrt(dot(gl_Position.xy, gl_Position.xy));
@@ -132,7 +132,6 @@ void main() {
         color = vec4(1.0);
         worldNormal = vec3(0.0);
         texcoord = vec2(0.0);
-        shadowOffset = vec2(0.0);
         gl_Position = vec4(1.1, 1.1, 1.1, 1.0);
     #endif
 }

@@ -21,7 +21,6 @@ layout(location = 0) out vec4 shadowColor0;
 in vec4 color;              // Will become vec4(worldPos, causticsStrength) when rendering water
 in vec3 worldNormal;
 in vec2 texcoord;
-in vec2 shadowOffset;
 in float distortFixValue;
 
 // #define SHADOW_DISTORTION_FIX
@@ -86,6 +85,7 @@ void main() {
             albedo.rgb = mix(albedo.rgb, overlayColor.rgb, overlayColor.a);
         #endif
 
+        vec2 shadowOffset = vec2(-float(abs(color.a + 0.5) <= 0.5), -float(color.a < -1.0)) * 0.5 * realShadowMapResolution;
         vec2 centerTexelOffset = gl_FragCoord.st - realShadowMapResolution * 0.75 - shadowOffset;
         if (any(greaterThan(abs(centerTexelOffset), vec2(realShadowMapResolution * 0.25))) || fwidth(shadowOffset.x) > 0.0 || albedo.w < max(0.01, alphaTestRef)) discard;
 
@@ -94,12 +94,12 @@ void main() {
             mcPos.y += 128.0;
             float floorMcHeight = floor(mcPos.y / 2.0);
             float caustic = waterCaustic(mcPos, shadowDirection);
-            albedo = vec4(sqrt(caustic * color.a), mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, 0.5);
+            albedo = vec4(sqrt(caustic * (-color.a - 1.0)), mcPos.y * 0.5 - floorMcHeight, 1.0 - floorMcHeight / 255.0, 0.5);
         }
         if (shadowOffset.x < -0.5) {
             albedo.rgb = pow(
-                albedo.rgb * (1.0 - 0.5 * pow2(albedo.w)),
-                vec3(sqrt(albedo.w * 2.2 * 2.2 * 1.5))
+                albedo.rgb * color.rgb * (1.0 - 0.5 * pow2(albedo.w)),
+                vec3(sqrt(albedo.w * 2.2 * 2.2 * 1.5 * -color.a))
             );
             albedo = vec4(sqrt(albedo.rgb), 1.0);
         }
