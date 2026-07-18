@@ -39,6 +39,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Fixed sunlight color will contribute to sky lighting on translucent particles in the end;
 - Fixed realistic cloud will ignore hit result of last step;
 - Fixed DoF when DOF_FOCUS_TEXTURE is not depthtex2, CORRECT_DOF_HAND_DEPTH is on, and focusing on held object;
+- Fixed translucent shadow does not consider vertex color;
 
 ## [1.0.0] - 2026-06-02
 
