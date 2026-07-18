@@ -28,7 +28,6 @@ in vec2 texcoord;
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
-#include "/libs/GbufferData.glsl"
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);

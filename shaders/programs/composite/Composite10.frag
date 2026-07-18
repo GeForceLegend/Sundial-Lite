@@ -30,7 +30,6 @@ in vec2 texcoord;
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
-#include "/libs/GbufferData.glsl"
 
 const bool colortex3MipmapEnabled = true;
 
