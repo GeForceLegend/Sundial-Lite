@@ -167,10 +167,10 @@ vec3 AgX(vec3 val) {
     const float max_ev = AGX_EV_MAX;
 
     // Input transform
-    val = agx_mat * (val * 7.0);
+    val = agx_mat * val;
 
     // Log2 space encoding
-    val = clamp(log2(val) / (max_ev - min_ev) - min_ev / (max_ev - min_ev), 0.0, 1.0);
+    val = clamp(log2(val / 0.18) / (max_ev - min_ev) - min_ev / (max_ev - min_ev), 0.0, 1.0);
 
     // Apply sigmoid function approximation
     val = agxDefaultContrastApprox(val);
