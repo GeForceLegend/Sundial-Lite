@@ -77,6 +77,7 @@ vec3 shadowCoordToWorldPos(vec3 shadowCoord) {
 void main() {
     #ifdef SHADOW_AND_SKY
         vec4 albedo = textureLod(gtexture, texcoord, 0.0);
+        albedo *= abs(color);
         #ifdef COLORWHEEL
             vec2 lmcoord;
             float ao;
@@ -98,8 +99,8 @@ void main() {
         }
         if (shadowOffset.x < -0.5) {
             albedo.rgb = pow(
-                albedo.rgb * color.rgb * (1.0 - 0.5 * pow2(albedo.w)),
-                vec3(sqrt(albedo.w * 2.2 * 2.2 * 1.5 * -color.a))
+                albedo.rgb * (1.0 - 0.5 * pow2(albedo.w)),
+                vec3(sqrt(albedo.w * 2.2 * 2.2 * 1.5))
             );
             albedo = vec4(sqrt(albedo.rgb), 1.0);
         }
