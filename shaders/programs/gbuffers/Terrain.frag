@@ -177,12 +177,17 @@ void main() {
         float porosityDarkness = porosity * outdoor * rainyStrength;
         rawData.albedo.rgb = pow(rawData.albedo.rgb, vec3(1.0 + porosityDarkness)) * (1.0 - 0.2 * porosityDarkness);
 
-        vec3 worldNormal = mat3(gbufferModelViewInverse) * rawData.geoNormal;
-        #if RAIN_PUDDLE == 1
-            wetStrength = (1.0 - rawData.metalness) * clamp(worldNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);
-        #elif RAIN_PUDDLE == 2
-            wetStrength = groundWetStrength(worldPos, worldNormal.y, rawData.metalness, porosity, outdoor);
-        #endif
+        vec3 worldGeoNormal = mat3(gbufferModelViewInverse) * tbnMatrix[2];
+        if (isCauldronWater) {
+            wetStrength = outdoor * clamp(abs(worldGeoNormal.y) * 10.0 - 0.1, 0.0, 1.0);
+        }
+        else {
+            #if RAIN_PUDDLE == 1
+                wetStrength = (1.0 - rawData.metalness) * clamp(worldGeoNormal.y * 10.0 - 0.1, 0.0, 1.0) * outdoor * rainyStrength * (1.0 - porosity);
+            #elif RAIN_PUDDLE == 2
+                wetStrength = groundWetStrength(worldPos, worldGeoNormal.y, rawData.metalness, porosity, outdoor);
+            #endif
+        }
         rawData.smoothness += (1.0 - rawData.smoothness) * wetStrength;
 
         #ifdef RAIN_RIPPLES

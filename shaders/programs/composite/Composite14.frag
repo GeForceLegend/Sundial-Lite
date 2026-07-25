@@ -54,7 +54,7 @@ in vec2 texcoord;
 
 vec2 bloomMipEdge(float level) {
     float expLevel = exp2(-level);
-    return screenSize * (1.0 - expLevel);
+    return round(screenSize * (1.0 - expLevel));
 }
 
 vec3 sampleBloom(vec2 coord, float level, vec2 minRange, vec2 maxRange) {
@@ -73,61 +73,28 @@ vec3 sampleBloom(vec2 coord, float level, vec2 minRange, vec2 maxRange) {
 
 vec3 calculateBloom(vec2 coord) {
     vec3 totalBloom = vec3(0.0);
-    vec2 maxRange = round(bloomMipEdge(1.0));
+    vec2 maxRange = bloomMipEdge(1.0);
     vec2 minRange = vec2(0.0);
     totalBloom += sampleBloom(coord, 1.0, minRange, maxRange) * 0.92;
     minRange = maxRange;
-    maxRange = round(bloomMipEdge(2.0));
+    maxRange = bloomMipEdge(2.0);
     totalBloom += sampleBloom(coord, 2.0, minRange, maxRange) * 0.8464;
     minRange = maxRange;
-    maxRange = round(bloomMipEdge(3.0));
+    maxRange = bloomMipEdge(3.0);
     totalBloom += sampleBloom(coord, 3.0, minRange, maxRange) * 0.778688;
     minRange = maxRange;
-    maxRange = round(bloomMipEdge(4.0));
+    maxRange = bloomMipEdge(4.0);
     totalBloom += sampleBloom(coord, 4.0, minRange, maxRange) * 0.716393;
     minRange = maxRange;
-    maxRange = round(bloomMipEdge(5.0));
+    maxRange = bloomMipEdge(5.0);
     totalBloom += sampleBloom(coord, 5.0, minRange, maxRange) * 0.659081;
     minRange = maxRange;
-    maxRange = round(bloomMipEdge(6.0));
+    maxRange = bloomMipEdge(6.0);
     totalBloom += sampleBloom(coord, 6.0, minRange, maxRange) * 0.606355;
     minRange = maxRange;
-    maxRange = round(bloomMipEdge(7.0));
+    maxRange = bloomMipEdge(7.0);
     totalBloom += sampleBloom(coord, 7.0, minRange, maxRange) * 0.557847;
     return pow(totalBloom * (1.0 / 5.084764), vec3(2.2));
-}
-
-// Uchimura 2017, "HDR theory and practice"
-// Math: https://www.desmos.com/calculator/gslcdxvipg
-// Source: https://www.slideshare.net/nikuque/hdr-theory-and-practicce-jp
-vec3 uchimura(vec3 x, float P, float a, float m, float l, float c, float b) {
-    float l0 = ((P - m) * l) / a;
-    float L0 = m - m / a;
-    float L1 = m + (1.0 - m) / a;
-    float S0 = m + l0;
-    float S1 = m + a * l0;
-    float C2 = (a * P) / (P - S1);
-    float CP = -1.44269502 * C2 / P;
-    vec3 w0 = vec3(1.0 - smoothstep(0.0, m, x));
-    vec3 w2 = vec3(step(S0, x));
-    vec3 w1 = vec3(1.0 - w0 - w2);
-    vec3 T = vec3(pow(x, vec3(c)) / pow(m, c - 1.0) + b);
-    vec3 S = vec3(P - (P - S1) / exp2(CP * S0) * exp2(CP * x));
-    vec3 L = vec3(m + a * (x - m));
-    return T * w0 + L * w1 + S * w2;
-}
-
-vec3 uchimura(vec3 x) {
-    const float P = 1.0;  // max display brightness
-    const float a = CONTRAST;  // contrast
-    const float m = 0.22; // linear section start
-    const float l = 0.4;  // linear section length
-    const float c = 1.33 * BLACK_TIGHTNESS;    // black tightness
-    const float b = MINIMUM_BRIGHTNESS; // pedestal
-
-    vec3 color = uchimura(x, P, a, m, l, c, b);
-
-    return pow(color, vec3(1.0 / (2.2 * GAMMA)));
 }
 
 // Shared from https://www.shadertoy.com/view/lsSXW1 by CC BY 3.0
@@ -149,6 +116,39 @@ vec3 colorTemperature() {
         );
     }
     return color;
+}
+
+// Uchimura 2017, "HDR theory and practice"
+// Math: https://www.desmos.com/calculator/gslcdxvipg
+// Source: https://www.slideshare.net/nikuque/hdr-theory-and-practicce-jp
+vec3 uchimura(vec3 x, float P, float a, float m, float l, float c, float b) {
+    float l0 = ((P - m) * l) / a;
+    float L0 = m - m / a;
+    float L1 = m + (1.0 - m) / a;
+    float S0 = m + l0;
+    float S1 = m + a * l0;
+    float C2 = (a * P) / (P - S1);
+    float CP = -1.44269502 * C2 / P;
+    vec3 w0 = vec3(1.0 - smoothstep(0.0, m, x));
+    vec3 w2 = vec3(step(S0, x));
+    vec3 w1 = vec3(1.0 - w0 - w2);
+    vec3 T = vec3(pow(x, vec3(c)) / pow(m, c - 1.0) + b);
+    vec3 S = vec3(P - (P - S1) / exp2(CP * S0) * exp2(CP * x));
+    vec3 L = vec3(m - a * m + a * x);
+    return T * w0 + L * w1 + S * w2;
+}
+
+vec3 uchimura(vec3 x) {
+    const float P = 1.0;  // max display brightness
+    const float a = CONTRAST;  // contrast
+    const float m = 0.22; // linear section start
+    const float l = 0.4;  // linear section length
+    const float c = 1.33 * BLACK_TIGHTNESS;    // black tightness
+    const float b = MINIMUM_BRIGHTNESS; // pedestal
+
+    vec3 color = uchimura(x, P, a, m, l, c, b);
+
+    return pow(color, vec3(1.0 / (2.2 * GAMMA)));
 }
 
 // AgX from https://www.shadertoy.com/view/cd3XWr
