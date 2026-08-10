@@ -386,10 +386,9 @@ float cloudShadowRealistic(vec3 worldPos, vec3 shadowDir) {
 
     float d = sqrt(RdotP2 + pow2(cloudCenterHeight));
     float startIntersection = max(-1.0, -RdotP + signMul(d, cloudCenterHeight - worldPos.y));
-    bool hit = startIntersection > 0.0;
 
     float cloudTransmittance = 1.0;
-    if (hit) {
+    if (startIntersection > 0.0) {
         vec3 wind = CLOUD_REALISTIC_OCTAVE_SCALE * frameTimeCounter * CLOUD_SPEED * vec3(50.0, 0.0, 25.0) * 0.000015 / CLOUD_SCALE * 64.0;
 
         vec3 cloudPos = worldPos + vec3(cameraPosition.x + CLOUD_REALISTIC_OFFSET_X, 0.0, cameraPosition.z + CLOUD_REALISTIC_OFFSET_Z) + shadowDir * startIntersection;

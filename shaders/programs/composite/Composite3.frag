@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Reflection filter stage 2, applying BRDF weight
+//  Reflection filter stage 3, applying BRDF weight
 //
 
 layout(location = 0) out vec4 texBuffer4;

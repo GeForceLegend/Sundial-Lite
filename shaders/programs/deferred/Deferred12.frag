@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Visibility bitmask things; Lighting that don't need calculated in visibility bitmask
+//  Visibility bitmask things; Lighting that don't need to be calculated in visibility bitmask
 //
 
 layout(location = 0) out vec4 texBuffer3;

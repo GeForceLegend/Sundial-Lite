@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-10
+
 ### Added
 
 - Added SuperResolution mod compat;
@@ -17,7 +19,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 
-- Reworked water wave on default WATER_TYPE;
+- Reworked water wave on default WATER_TYPE, and added some customize options for it;
 - Normalized colorwheel light level;
 - Adjusted sky lighting strength to fit some option change during rain;
 - HARDCODED_EMISSIVE now only applies on blocks;
