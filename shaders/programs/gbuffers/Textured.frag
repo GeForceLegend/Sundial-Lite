@@ -109,7 +109,7 @@ void main() {
     vec2 texGradX = dFdx(texcoord);
     vec2 texGradY = dFdy(texcoord);
     vec2 textureScale;
-    #if !defined ENTITY_VERTEX_TBN || !defined ENTITIES
+    #if (!defined ENTITY_VERTEX_TBN || !defined ENTITIES) && (MC_VERSION >= 11300 || !defined HAND)
         mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, textureScale);
     #else
         textureScale = calcTextureScale(texGradX, texGradY, viewPos.xyz);
