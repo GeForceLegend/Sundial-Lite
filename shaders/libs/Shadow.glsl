@@ -1,7 +1,7 @@
 const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
 const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 
-#ifdef SHADOW_AND_SKY
+#if defined SHADOW_AND_SKY || defined END_FLASH
     vec3 worldPosToShadowCoordNoDistort(vec3 worldPos) {
         vec3 shadowCoord = mat3(shadowModelViewProj0, shadowModelViewProj1, shadowModelViewProj2) * worldPos + shadowModelViewProj3;
         shadowCoord.z = shadowCoord.z * 0.1 + 0.5;
@@ -47,7 +47,13 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
         return caustic;
     }
 
-    float basicSunlight = (1.0 - sqrt(weatherStrength)) * 9.5 * SUNLIGHT_BRIGHTNESS;
+    #ifdef SHADOW_AND_SKY
+        float basicSunlight = (1.0 - sqrt(weatherStrength)) * 9.5 * SUNLIGHT_BRIGHTNESS;
+    #elif defined END_FLASH
+        float basicSunlight = 9.5 * SUNLIGHT_BRIGHTNESS;
+    #else
+        float basicSunlight = 0.0;
+    #endif
 
     void singleSampleShadow(
         vec3 worldPos, vec3 geoNormal, float NdotL, float smoothness, float porosity,
@@ -91,7 +97,7 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 
                 vec3 waterShadowCoord = shadowCoord - vec3(0.0, 0.5, 0.0);
                 float lightFactor = 1.0;
-                #ifdef LIGHT_LEAKING_FIX
+                #if defined LIGHT_LEAKING_FIX && !defined END_FLASH
                     lightFactor = clamp(skyLight * 10.0 + isEyeInWater, 0.0, 1.0);
                 #endif
                 vec3 caustic = waterCaustic(waterShadowCoord, worldPos, shadowDirection) * lightFactor;

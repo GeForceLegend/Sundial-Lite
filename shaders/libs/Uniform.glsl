@@ -31,6 +31,8 @@ uniform vec3 shadowModelViewProj2;
 uniform vec3 shadowModelViewProj3;
 uniform vec4 spriteBounds;
 
+uniform float endFlashIntensity;
+
 uniform sampler2D gtexture;
 uniform sampler2D normals;
 uniform sampler2D specular;
@@ -109,4 +111,8 @@ const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323
 #ifdef SETTINGS
     float nightBrightness = mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);
     vec3 sunColor = sunlightColor * clamp(nightBrightness + clamp(sunDirection.y * 1e+5, 0.0, 1.0), 0.0, 1.0);
+#endif
+
+#if defined IS_IRIS && defined THE_END && MC_VERSION >= 12109
+    #define END_FLASH
 #endif

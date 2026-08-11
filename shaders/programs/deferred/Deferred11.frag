@@ -41,7 +41,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 #include "/libs/GbufferData.glsl"
 #include "/libs/Shadow.glsl"
 
-#ifdef SHADOW_AND_SKY
+#if defined SHADOW_AND_SKY || defined END_FLASH
     vec3 shadowSpaceSurfaceOffset(vec3 worldOffsetDir) {
         vec3 offset = mat3(shadowModelViewProj0, shadowModelViewProj1, shadowModelViewProj2) * worldOffsetDir;
         offset *= inversesqrt(max(dot(offset.xy, offset.xy), dot(offset, offset) * 0.09)) * 400.0 / shadowDistance / realShadowMapResolution;
@@ -97,7 +97,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
                 vec3 waterShadowCoord = basicShadowCoord - vec3(0.0, 0.5, 0.0);
                 float lightFactor = 1.0;
-                #ifdef LIGHT_LEAKING_FIX
+                #if defined LIGHT_LEAKING_FIX && !defined END_FLASH
                     lightFactor = clamp(skyLight * 10.0 + isEyeInWater, 0.0, 1.0);
                 #endif
                 vec3 caustic = waterCaustic(waterShadowCoord, worldPos, shadowDirection) * lightFactor;
@@ -306,7 +306,7 @@ void main() {
         finalColor.rgb += gbufferData.emissive * PBR_BRIGHTNESS * PI;
         finalColor.rgb *= gbufferData.albedo.rgb;
 
-        #ifdef SHADOW_AND_SKY
+        #if defined SHADOW_AND_SKY || defined END_FLASH
             vec3 f0 = vec3(0.04);
             vec3 f82 = vec3(1.0);
             #ifdef LABPBR_F0
@@ -321,6 +321,9 @@ void main() {
             vec3 diffuseAbsorption = (1.0 - gbufferData.metalness) * diffuseAbsorptionWeight(NdotV, gbufferData.smoothness, f0, f82);
 
             vec3 shadow = sunColor * basicSunlight;
+            #ifdef END_FLASH
+                shadow = endFlashIntensity * vec3(0.5, 0.2, 0.8) * basicSunlight;
+            #endif
             float NdotL = clamp(dot(gbufferData.normal, viewShadowDirection), 0.0, 1.0);
             vec3 shadowDiffuse = gbufferData.albedo.rgb * diffuseAbsorption;
             vec3 shadowSpecular =
@@ -330,8 +333,10 @@ void main() {
             #ifdef SCREEN_SPACE_SHADOW
                 shadow *= screenSpaceShadow(viewPos, dot(worldGeoNormal, shadowDirection), viewLength, gbufferData.porosity, noise, float(depthWithParallax > 1.0));
             #endif
-            #ifdef CLOUD_SHADOW
-                shadow *= cloudShadow(worldPos, shadowDirection);
+            #ifdef SHADOW_AND_SKY
+                #ifdef CLOUD_SHADOW
+                    shadow *= cloudShadow(worldPos, shadowDirection);
+                #endif
             #endif
             vec3 subsurfaceScattering = vec3(float(gbufferData.porosity > 64.5 / 255.0)) * shadow * shadowDiffuse;
             shadow *= shadowDiffuse + shadowSpecular;

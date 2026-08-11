@@ -45,7 +45,7 @@ const int shadowMapResolution = 2048; // [1024 2048 4096 8192 16384]
 const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 
 void main() {
-    #ifdef SHADOW_AND_SKY
+    #if defined SHADOW_AND_SKY || defined END_FLASH
         color = gl_Color;
         worldNormal = normalize(mat3(shadowModelViewInverse) * gl_NormalMatrix * gl_Normal);
         texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;

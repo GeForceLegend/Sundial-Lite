@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- Added end flash effect on supported Iris versions;
+
 ## [1.1.0] - 2026-08-10
 
 ### Added

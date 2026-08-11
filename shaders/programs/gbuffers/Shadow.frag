@@ -75,7 +75,7 @@ vec3 shadowCoordToWorldPos(vec3 shadowCoord) {
 }
 
 void main() {
-    #ifdef SHADOW_AND_SKY
+    #if defined SHADOW_AND_SKY || defined END_FLASH
         vec4 albedo = textureLod(gtexture, texcoord, 0.0);
         albedo *= abs(color);
         #ifdef COLORWHEEL

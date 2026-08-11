@@ -250,7 +250,7 @@ void main() {
             vanillaLight += nightVision * NIGHT_VISION_BRIGHTNESS;
         #endif
         solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * (gbufferData.emissive * PBR_BRIGHTNESS * PI + vanillaLight * isTargetParticle);
-        #ifdef SHADOW_AND_SKY
+        #if defined SHADOW_AND_SKY || defined END_FLASH
             float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);
             if (NdotL > 0.0) {
                 vec3 shadow = vec3(1.0);
@@ -263,11 +263,17 @@ void main() {
                     waterWorldDir, shadowDirection, worldNormal, gbufferData.smoothness * 0.995, NdotL, LdotH, f0, vec3(1.0)
                 ) * airAbsorption(11.4 * gbufferData.smoothness) * clamp(19.0 - gbufferData.smoothness * 20.0, 0.0, 1.0);
                 shadow += subsurfaceScattering * (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle;
-                #ifdef CLOUD_SHADOW
-                    shadow *= cloudShadow(waterWorldPos, shadowDirection);
+                #ifdef SHADOW_AND_SKY
+                    #ifdef CLOUD_SHADOW
+                        shadow *= cloudShadow(waterWorldPos, shadowDirection);
+                    #endif
+                    shadow *= sunColor;
+                #elif defined END_FLASH
+                    shadow *= endFlashIntensity * vec3(0.5, 0.2, 0.8);
+                #else
+                    shadow = vec3(0.0);
                 #endif
-                shadow *= sunColor * basicSunlight;
-                solidColor.rgb += shadow;
+                solidColor.rgb += shadow * basicSunlight;
             }
         #endif
     }
@@ -311,7 +317,7 @@ void main() {
         solidColor.rgb += snowFogScattering(skyColorUp, waterViewDepth, eyeBrightnessSmooth.y / 240.0);
     }
 
-    #ifdef SHADOW_AND_SKY
+    #if defined SHADOW_AND_SKY || defined END_FLASH
         #ifdef VOLUMETRIC_LIGHT
             if (isEyeInWater < 2) {
                 float basicWeight = 1.0;
@@ -325,13 +331,15 @@ void main() {
                     airScattering *= rayleighPhase(LdotV);
                 }
                 else {
-                    float timeStrength = pow(clamp(1.0 - shadowDirection.y, 0.0, 1.0), 5.0);
-                    float timeVLStrength = (timeStrength * (MORNING_VL_STRENGTH - NOON_VL_STRENGTH) + NOON_VL_STRENGTH);
-                    float heightDensity = clamp(exp(-(cameraPosition.y + WORLD_BASIC_HEIGHT) / 1200.0), 0.0, 1.0);
-                    basicWeight *= timeVLStrength * heightDensity;
-                    airScattering *= miePhase(LdotV, 0.6, 0.36);
+                    #ifdef SHADOW_AND_SKY
+                        float timeStrength = pow(clamp(1.0 - shadowDirection.y, 0.0, 1.0), 5.0);
+                        float timeVLStrength = (timeStrength * (MORNING_VL_STRENGTH - NOON_VL_STRENGTH) + NOON_VL_STRENGTH);
+                        float heightDensity = clamp(exp(-(cameraPosition.y + WORLD_BASIC_HEIGHT) / 1200.0), 0.0, 1.0);
+                        basicWeight *= timeVLStrength * heightDensity;
+                        volumetricFogScattering = heightDensity * VOLUMETRIC_FOG_DENSITY * (timeStrength * (VOLUMETRIC_FOG_MORNING_DENSITY - VOLUMETRIC_FOG_NOON_DENSITY) + VOLUMETRIC_FOG_NOON_DENSITY);
+                    #endif
 
-                    volumetricFogScattering = heightDensity * VOLUMETRIC_FOG_DENSITY * (timeStrength * (VOLUMETRIC_FOG_MORNING_DENSITY - VOLUMETRIC_FOG_NOON_DENSITY) + VOLUMETRIC_FOG_NOON_DENSITY);
+                    airScattering *= miePhase(LdotV, 0.6, 0.36);
                 }
 
                 float noise = bayer64Temporal(gl_FragCoord.xy);
@@ -352,7 +360,7 @@ void main() {
                 basicWeight *= stepLength;
                 absorptionBeta *= stepLength * 1.44269502;
                 vec3 rayAbsorption = exp2(-absorptionBeta * (noise + VL_SAMPLES)) * basicWeight * 0.02;
-                #ifdef LIGHT_LEAKING_FIX
+                #if defined LIGHT_LEAKING_FIX && !defined END_FLASH
                     rayAbsorption *= pow(clamp(eyeBrightnessSmooth.y / 240.0 + 1e-4 + float(isEyeInWater == 1), 0.0, 1.0), exp(-0.5 * stepLength));
                 #endif
                 vec3 stepAbsorption = exp2(absorptionBeta);
@@ -363,8 +371,10 @@ void main() {
 
                 for (int i = 0; i < VL_SAMPLES; i++) {
                     vec3 singleLight = vec3(1.0);
-                    #ifdef CLOUD_SHADOW
-                        singleLight *= cloudShadow(samplePos, shadowDirection);
+                    #ifdef SHADOW_AND_SKY
+                        #ifdef CLOUD_SHADOW
+                            singleLight *= cloudShadow(samplePos, shadowDirection);
+                        #endif
                     #endif
                     vec3 sampleShadowCoord = worldPosToShadowCoord(samplePos);
                     if (all(lessThan(
@@ -385,17 +395,23 @@ void main() {
                             }
                         #endif
                     }
-                    singleLight *= sunColor * (1.0 - (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * SUNLIGHT_BRIGHTNESS;
-                    #ifdef VOLUMETRIC_FOG
+                    #ifdef SHADOW_AND_SKY
+                        singleLight *= sunColor * (1.0 - (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * SUNLIGHT_BRIGHTNESS;
+                    #else
+                        singleLight *= SUNLIGHT_BRIGHTNESS * endFlashIntensity * vec3(0.5, 0.2, 0.8);
+                    #endif
+                    #if defined VOLUMETRIC_FOG && defined SHADOW_AND_SKY
                         float sampleVolumetricFogDensity = volumetricFogDensity(samplePos) * volumetricFogScattering;
                         singleLight *= sampleVolumetricFogDensity * 5.0 + airScattering;
                         singleLight += sampleVolumetricFogDensity * skyScattering;
                     #else
                         singleLight *= airScattering;
                     #endif
-                    #ifdef VOLUMETRIC_FOG
-                        float volumetricFogAbsorption = exp2(stepLength * sampleVolumetricFogDensity);
-                        solidColor.rgb *= volumetricFogAbsorption;
+                    #ifdef SHADOW_AND_SKY
+                        #ifdef VOLUMETRIC_FOG
+                            float volumetricFogAbsorption = exp2(stepLength * sampleVolumetricFogDensity);
+                            solidColor.rgb *= volumetricFogAbsorption;
+                        #endif
                     #endif
                     rayAbsorption *= stepAbsorption;
                     solidColor.rgb += singleLight * rayAbsorption;
