@@ -24,12 +24,6 @@ layout(location = 12) in vec4 mc_midTexCoord;
 layout(location = 11) in vec4 mc_midTexCoord;
 #endif
 
-#if MC_VERSION < 11300
-    layout(location = 12) in vec4 at_tangent;
-
-    out mat3 tbnMatrix;
-#endif
-
 // #define GLOWING_OVERLAY
 
 out vec4 color;
@@ -47,6 +41,18 @@ uniform sampler2D gaux1;
 #include "/settings/GlobalSettings.glsl"
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
+
+#if MC_VERSION < 11300 || defined ENTITY_VERTEX_TBN
+    #if MC_VERSION >= 11700
+        in vec4 at_tangent;
+    #elif MC_VERSION >= 11500
+        layout(location = 13) in vec4 at_tangent;
+    #else
+        layout(location = 12) in vec4 at_tangent;
+    #endif
+
+    out mat3 vertexTbnMatrix;
+#endif
 
 void main() {
     viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
@@ -98,10 +104,10 @@ void main() {
         gl_Position.xy += taaOffset * gl_Position.w;
     #endif
 
-    #if MC_VERSION < 11300
+    #if MC_VERSION < 11300 || defined ENTITY_VERTEX_TBN
         vec3 viewNormal = normalize(gl_NormalMatrix * gl_Normal);
         vec3 tangent = normalize(gl_NormalMatrix * at_tangent.xyz);
         vec3 bitangent = normalize(cross(tangent, viewNormal) * at_tangent.w);
-        tbnMatrix = mat3(tangent, bitangent, viewNormal);
+        vertexTbnMatrix = mat3(tangent, bitangent, viewNormal);
     #endif
 }

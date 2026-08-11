@@ -9,6 +9,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - Added end flash effect on supported Iris versions;
+- Added ENTITY_VERTEX_TBN option, can provide smooth normal look on some mod entities;
+
+### Changed
+
+- Adjusted default water look;
+
+### Fixed
+
+- Fixed particle rendering in 1.12.2 (and maybe 1.8.9);
 
 ## [1.1.0] - 2026-08-10
 

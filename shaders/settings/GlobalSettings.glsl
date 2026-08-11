@@ -27,6 +27,7 @@
             // #define PARALLAX_BASED_NORMAL
             #ifdef PARALLAX_BASED_NORMAL
             #endif
+            // #define ENTITY_VERTEX_TBN
         // Parallax
             #define PARALLAX
             #define SMOOTH_PARALLAX

@@ -88,6 +88,8 @@ option.PARALLAX_BASED_NORMAL=基于视差的法线
 option.PARALLAX_BASED_NORMAL.comment=开启视差后，存在视差深度时，使用基于视差深度生成的法线代替法线纹理采样. 会覆盖平滑法线
 option.SMOOTH_NORMAL=平滑法线
 option.SMOOTH_NORMAL.comment=平滑化法线而非每个纹理像素一个固定值. 存在视差深度时会被基于视差的法线替代
+option.ENTITY_VERTEX_TBN=实体顶点TBN
+option.ENTITY_VERTEX_TBN.comment=在实体上使用顶点TBN而非片元着色器中求导的结果. 可在部分模组实体上呈现较平滑的法线. 在 1.12.2 及 1.8.9 上恒定启用
 # Parallax
 option.PARALLAX=视差
 option.SMOOTH_PARALLAX=平滑视差

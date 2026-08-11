@@ -20,10 +20,6 @@ layout(location = 0) out vec4 gbufferData0;
 layout(location = 1) out vec4 gbufferData1;
 layout(location = 2) out vec4 gbufferData2;
 
-#if MC_VERSION < 11300
-    in mat3 tbnMatrix;
-#endif
-
 in vec4 color;
 in vec4 texlmcoord;
 in vec3 viewPos;
@@ -41,6 +37,10 @@ noperspective in vec4 coordRange;
 #include "/libs/GbufferData.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/Parallax.glsl"
+
+#if MC_VERSION < 11300 || defined ENTITY_VERTEX_TBN
+    in mat3 vertexTbnMatrix;
+#endif
 
 #if defined PARTICLE && defined ENTITY_PARALLAX
     #undef ENTITY_PARALLAX
@@ -109,10 +109,19 @@ void main() {
     vec2 texGradX = dFdx(texcoord);
     vec2 texGradY = dFdy(texcoord);
     vec2 textureScale;
-    #if MC_VERSION >= 11300
+    #if !defined ENTITY_VERTEX_TBN || !defined ENTITIES
         mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, textureScale);
     #else
         textureScale = calcTextureScale(texGradX, texGradY, viewPos.xyz);
+        // Gram-Schmidt process fron learnOpenGL
+        vec3 T = normalize(vertexTbnMatrix[0]);
+        vec3 N = normalize(vertexTbnMatrix[2]);
+        // re-orthogonalize T with respect to N
+        T = normalize(T - dot(T, N) * N);
+        // then retrieve perpendicular vector B with the cross product of T and N
+        vec3 B = cross(T, N);
+
+        mat3 tbnMatrix = mat3(T, B * signI(dot(B, vertexTbnMatrix[1])), N);
     #endif
     #if SR_ENABLE
         texGradX *= renderScale.x;
