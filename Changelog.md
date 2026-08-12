@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - Fixed particle rendering in 1.12.2 (and maybe 1.8.9);
-- Fixed top and bottom face normal of item models using `builtin/generated`;
+- Fixed top and bottom face normal of item models using `builtin/generated` in 1.12.2 (and maybe 1.8.9);
 
 ## [1.1.0] - 2026-08-10
 
