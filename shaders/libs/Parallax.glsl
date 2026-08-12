@@ -69,8 +69,10 @@ mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 texture
     vec3 bitangentHelper = dPosDY * dCoordDX.y - dPosDX * dCoordDY.y;
     vec3 bitangent = cross(bitangentHelper, normal);
 
-    float tangentLen = inversesqrt(dot(tangent, tangent));
-    float bitangentLen = inversesqrt(dot(bitangent, bitangent));
+    float tangentLen = dot(tangent, tangent);
+    tangentLen = inversesqrt(tangentLen + float(tangentLen == 0.0));
+    float bitangentLen = dot(bitangent, bitangent);
+    bitangentLen = inversesqrt(bitangentLen + float(bitangentLen == 0.0));
 
     textureScale = vec2(tangentLen * dot(tangentHelper, tangentHelper), bitangentLen * dot(bitangentHelper, bitangentHelper));
 
