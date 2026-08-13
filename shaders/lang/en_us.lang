@@ -33,6 +33,7 @@ screen.Exposure=Exposure
 screen.DepthOfField=Depth of field
 screen.ChromaticDispersion=Chromatic dispersion
 screen.Sharpening=Sharpening
+screen.TAA=Temporal anti aliasing
 screen.Weather=Weather
 screen.ModSupport=Mod support
 screen.Experimental=Experimental effect
@@ -276,7 +277,6 @@ option.CLOUD_REALISTIC_SHADOWLIGHT_STEPSCALE=Shadow light sample step scale
 option.CLOUD_REALISTIC_FADE_DISTANCE=Realistic cloud fade distance
 
 # PostProcessing
-option.TAA=Temporal anti aliasing
 option.DISTORTION_STRENGTH=Disortion strength
 option.DISTORTION_STRENGTH.comment=Positive value results in barrel distortion. Negative value results in pincushion disortion
 option.BLOOM_INTENSITY=Bloom strength
@@ -357,6 +357,12 @@ option.SHARPENING_DENOISE.comment=Decrease the noise caused by sharpening
 option.SHARPENING_SRENGTH=Sharpening strength
 option.SHARPENING_LIMIT=Sharpening limit
 option.SHARPENING_LIMIT.comment=Limit of change in sharpening, to avoid unnatural result
+# TAA
+option.TAA=Temporal anti aliasing
+option.TAA_HISTORY_WEIGHT=TAA history weight
+option.TAA_HISTORY_WEIGHT.comment=Blend weight when blending history frame with current frame. Higher value can anti aliasing better, reduce noise, but may cause ghosting
+option.TAA_HISTORY_CLIP_VARIANCE=TAA history clip variance
+option.TAA_HISTORY_CLIP_VARIANCE.comment=Lower value can reduce ghosting, but may cause more noise
 
 # Weather
 option.RAIN_PUDDLE=Rain puddle

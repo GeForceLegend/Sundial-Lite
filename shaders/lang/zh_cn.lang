@@ -38,6 +38,7 @@ screen.Exposure=曝光
 screen.DepthOfField=景深
 screen.ChromaticDispersion=色散
 screen.Sharpening=锐化
+screen.TAA=时间性抗锯齿
 screen.Weather=天气
 screen.ModSupport=Mod支持
 screen.ModSupport.comment=自动检测Mod方块的属性
@@ -302,7 +303,6 @@ option.CLOUD_REALISTIC_SHADOWLIGHT_STEPSCALE=体积云阴影光照采样步长�
 option.CLOUD_REALISTIC_FADE_DISTANCE=体积云消散距离
 
 # PostProcessing
-option.TAA=时间性抗锯齿
 option.DISTORTION_STRENGTH=畸变强度
 option.DISTORTION_STRENGTH.comment=正值会产生桶状畸变. 负值会产生枕状畸变
 option.BLOOM_INTENSITY=泛光强度
@@ -387,6 +387,12 @@ option.SHARPENING_DENOISE.comment=降低锐化过程中产生的噪声
 option.SHARPENING_SRENGTH=锐化强度
 option.SHARPENING_LIMIT=锐化限制
 option.SHARPENING_LIMIT.comment=锐化前后的变化限制，以避免产生不自然的结果
+# TAA
+option.TAA=时间性抗锯齿（TAA）
+option.TAA_HISTORY_WEIGHT=TAA 历史帧混合权重
+option.TAA_HISTORY_WEIGHT.comment=历史帧与当前帧混合时的权重. 较高的值能提升抗锯齿效果同时减少噪点，但是会增加拖影
+option.TAA_HISTORY_CLIP_VARIANCE=TAA 历史帧钳制方差
+option.TAA_HISTORY_CLIP_VARIANCE.comment=历史帧的颜色与当前帧临近像素颜色允许的差值. 较低的的值有助于减少拖影，但是会增加噪点
 
 # Weather
 option.RAIN_PUDDLE=雨天地面积水

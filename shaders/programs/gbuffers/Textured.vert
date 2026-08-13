@@ -99,7 +99,7 @@ void main() {
         gl_Position.xy += taaOffset * gl_Position.w;
     #endif
 
-    #if defined ENTITY_VERTEX_TBN
+    #ifdef ENTITY_VERTEX_TBN
         vec3 viewNormal = normalize(gl_NormalMatrix * gl_Normal);
         vec3 tangent = gl_NormalMatrix * at_tangent.xyz;
         float tangentLength = dot(tangent, tangent);
