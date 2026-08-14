@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Added end flash effect on supported Iris versions;
 - Added ENTITY_VERTEX_TBN option, can provide smooth normal look on some mod entities;
 - Added TAA_HISTORY_WEIGHT and TAA_HISTORY_CLIP_VARIANCE option;
+- Added water fog scatting options;
 
 ### Changed
 

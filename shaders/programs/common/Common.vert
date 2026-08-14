@@ -30,6 +30,7 @@ out vec2 texcoord;
 #ifdef SKY_COLOR_UP
     out vec3 skyColorUp;
 
+    #include "/settings/CloudSettings.glsl"
     #include "/libs/Atmosphere.glsl"
 #endif
 

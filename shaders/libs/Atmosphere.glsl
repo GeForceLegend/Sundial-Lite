@@ -246,6 +246,7 @@ vec3 renderSun(vec3 rayDir, vec3 lightDir, vec3 sunLight) {
 
 float blindnessFactor = max(darknessFactor * 0.5, blindness);
 vec3 waterAbsorptionBeta = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B) + blindnessFactor;
+vec3 waterScattering = vec3(WATER_SCATTERING_R, WATER_SCATTERING_G, WATER_SCATTERING_B);
 float lavaAbsorptionBeta = 1.0 * LAVA_FOG_DENSITY + blindnessFactor;
 float snowAbsorptionBeta = 2.0 * SNOW_FOG_DENSITY + blindnessFactor;
 float netherAbsorptionBeta = 0.01 * NETHER_FOG_DENSITY + blindnessFactor;
@@ -281,7 +282,10 @@ vec3 waterFogAbsorption(float waterDepth) {
 
 vec3 waterFogScattering(vec3 worldDir, vec3 skyColor, float waterDepth, float skyLight) {
     float miePhase = miePhase(worldDir.y, 0.4, 0.16);
-    vec3 scattering = skyLight * miePhase * skyColor * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * (1.0 - exp(-waterDepth * waterAbsorptionBeta)) * exp(-16.0 * (1.0 - skyLight * 0.8) * waterAbsorptionBeta);
+    skyColor =
+        (skyColor * 0.8 + sunColor * 2.0 * SUNLIGHT_BRIGHTNESS * (1.0 - (0.75 + 0.25 * float(CLOUD_TYPE != 2)) * weatherStrength)) *
+        (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength);
+    vec3 scattering = waterScattering * skyLight * miePhase * skyColor * (1.0 - exp(-waterDepth * waterAbsorptionBeta)) * exp(-16.0 * (1.0 - skyLight) * waterAbsorptionBeta);
     return scattering;
 }
 
