@@ -35,6 +35,7 @@ screen.ToneMapping=色调映射
 screen.ToneMapping.comment=调整画面的色调与映射曲线
 screen.Uchimura=Uchimura设置
 screen.AgX=AgX设置
+screen.GT7=GT7设置
 screen.Exposure=曝光
 screen.DepthOfField=景深
 screen.ChromaticDispersion=色散
@@ -342,6 +343,12 @@ value.AGX_LOOK.1=金黄
 value.AGX_LOOK.2=简洁
 option.AGX_EV_MIN=AgX最小曝光度
 option.AGX_EV_MAX=AgX最大曝光度
+# GT7
+option.GT7_MID_POINT=GT7中点
+option.GT7_LINEAR_SECTION=GT7线性区域
+option.GT7_TOE_STRENGTH=GT7末端强度
+option.GT7_FADE_START=GT7渐变开始
+option.GT7_FADE_END=GT7渐变结束
 # Exposure
 option.EXPOSURE_VALUE=曝光量
 option.EXPOSURE_VALUE.comment=曝光量与实际亮度的关系为 `实际亮度 = 2 ^ 曝光量`
