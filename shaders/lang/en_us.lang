@@ -84,7 +84,7 @@ option.PARALLAX_BASED_NORMAL.comment=Using normal generated from parallax data b
 option.SMOOTH_NORMAL=Smooth normal
 option.SMOOTH_NORMAL.comment=Smoothes normal sampling. Will be overwritten with parallax based normal if that setting is on
 option.ENTITY_VERTEX_TBN=Entity vertex TBN
-option.ENTITY_VERTEX_TBN.comment=Using vertex TBN instead of fragment derivative on entities. Low precision, but can create smooth normals on some mod entities
+option.ENTITY_VERTEX_TBN.comment=Using vertex TBN instead of fragment derivative on entities. Low precision, but can create smooth normals on some mod entities. Warning: some entity have incorrect vertex TBN
 # Parallax
 option.PARALLAX=Parallax
 option.SMOOTH_PARALLAX=Smooth parallax
