@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Added ENTITY_VERTEX_TBN option, can provide smooth normal look on some mod entities;
 - Added TAA_HISTORY_WEIGHT and TAA_HISTORY_CLIP_VARIANCE option;
 - Added water fog scatting options;
+- Added GT7 tonemapping;
 
 ### Changed
 
@@ -21,6 +22,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 - Fixed particle rendering in 1.12.2 (and maybe 1.8.9);
 - Fixed top and bottom face normal of item models using `builtin/generated` in 1.12.2 (and maybe 1.8.9);
+- Fixed objects with strange `mc_midTexCoord` may break translucent check in shadow;
 
 ## [1.1.0] - 2026-08-10
 

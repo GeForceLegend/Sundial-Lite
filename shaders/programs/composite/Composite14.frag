@@ -44,7 +44,7 @@ in vec2 texcoord;
         #define GT7_LINEAR_SECTION 0.45 // [0.0 0.01 0.02 0.03 0.04 0.06 0.08 0.1 0.12 0.14 0.16 0.18 0.2 0.22 0.24 0.26 0.28 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
         #define GT7_TOE_STRENGTH 1.28 // [1.0 1.04 1.08 1.12 1.16 1.2 1.24 1.28 1.32 1.36 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0]
         #define GT7_FADE_START 0.95 // [0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0]
-        #define GT7_FADE_END 1.8 // [0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0]
+        #define GT7_FADE_END 1.5 // [0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0]
 // Exposure
     #define EXPOSURE_VALUE 0.0 // [-10.0 -9.8 -9.6 -9.4 -9.2 -9.0 -8.8 -8.6 -8.4 -8.2 -8.0 -7.8 -7.6 -7.4 -7.2 -7.0 -6.8 -6.6 -6.4 -6.2 -6.0 -5.8 -5.6 -5.4 -5.2 -5.0 -4.8 -4.6 -4.4 -4.2 -4.0 -3.8 -3.6 -3.4 -3.2 -3.0 -2.8 -2.6 -2.4 -2.2 -2.0 -1.8 -1.6 -1.4 -1.2 -1.0 -0.8 -0.6 -0.4 -0.2 0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.2 5.4 5.6 5.8 6.0 6.2 6.4 6.6 6.8 7.0 7.2 7.4 7.6 7.8 8.0 8.2 8.4 8.6 8.8 9.0 9.2 9.4 9.6 9.8 10.0]
     #define AVERAGE_EXPOSURE_STRENGTH 0.60 // [0.00 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.10 0.12 0.14 0.16 0.18 0.20 0.24 0.28 0.32 0.36 0.40 0.44 0.48 0.52 0.56 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00]
@@ -122,6 +122,16 @@ vec3 colorTemperature() {
         );
     }
     return color;
+}
+
+vec3 vignette(vec2 coord, vec3 color) {
+    vec2 dist = (coord - 0.5);
+    return color * exp(-VIGNETTE_STRENGTH * dot(dist, dist));
+}
+
+vec3 averageExposure(vec3 color) {
+    float averageBrightness = textureLod(colortex7, vec2(0.0), 0.0).w;
+    return color * pow(averageBrightness + 1e-5, -AVERAGE_EXPOSURE_STRENGTH) * 0.2;
 }
 
 // Uchimura 2017, "HDR theory and practice"
@@ -360,6 +370,20 @@ vec3 GT7(vec3 color) {
     const float blendRatio_ = 0.6;
     const float framebufferLuminanceTargetUcs = 0.15;
 
+    // Colorspace transformation source: https://www.colour-science.org:8010/apps/rgb_colourspace_transformation_matrix
+    const mat3 Rec2020_2_sRGB = mat3(
+        1.6603034854, -0.1243755953, -0.0181122800,
+        -0.5875701425,  1.1328344814, -0.1005836085,
+        -0.0728900602, -0.0083597372,  1.1187703262
+    );
+    const mat3 sRGB_2_Rec2020 = mat3(
+        0.6274413721, 0.0690276171, 0.0163642351,
+        0.3292974595, 0.9195806669, 0.0880171625,
+        0.0433514584, 0.0113614226, 0.8955649727
+    );
+
+    color = sRGB_2_Rec2020 * color;
+
     // Convert to UCS to separate luminance and chroma.
     vec3 ucs = rgbToUcs(color);
 
@@ -386,6 +410,7 @@ vec3 GT7(vec3 color) {
     vec3 blended = mix(skewedRgb, scaledRgb, blendRatio_);
     color = clamp(blended, 0.0, 1.0);
 
+    color = Rec2020_2_sRGB * color;
     color = pow(color, vec3(1.0 / (2.2 * GAMMA)));
     return color;
 }
@@ -431,12 +456,7 @@ void main() {
     float bloomAmount = 0.2 * BLOOM_INTENSITY + 1.0 * step(weatherData, -0.3) + 0.6 * step(0.5, float(isEyeInWater)) + step(1.5, float(isEyeInWater));
     finalColor = (finalColor + bloomColor * bloomAmount) / (1.0 + bloomAmount * 0.5);
 
-    vec2 dist = (texcoord - 0.5);
-    float averageBrightness = textureLod(colortex7, vec2(0.0), 0.0).w;
-    finalColor *= exp2(
-        -2.0 * 1.44269502 * dot(dist, dist) * VIGNETTE_STRENGTH +       // Vignette
-        log2(averageBrightness + 1e-5) * -AVERAGE_EXPOSURE_STRENGTH     // Average exposure
-    ) * 0.2;
+    finalColor = averageExposure(finalColor);
 
     finalColor *= exp2(EXPOSURE_VALUE);
 
@@ -446,6 +466,8 @@ void main() {
     finalColor = colorTemperature() * finalColor;
 
     finalColor = TONEMAPPING(finalColor);
+
+    finalColor = vignette(texcoord, finalColor);
 
     finalColor += (blueNoiseTemporal(texcoord.st) - 0.5) * (2.0 / 255.0);
 
