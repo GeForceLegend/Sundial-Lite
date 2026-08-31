@@ -267,7 +267,7 @@ vec3 solidAtmosphereScattering(vec3 color, vec3 worldDir, vec3 skyColor, float w
 
     vec2 originRelativeHeight = earthScaledHeight - playerHeight / scaledHeight * 1.44269502;
     vec2 originDensity = exp2(originRelativeHeight);
-    vec2 opticalDepth = originDensity * worldDepth * 5.0 * (1.0 + RF_DENSITY * 5.0 * weatherStrength * weatherStrength);
+    vec2 opticalDepth = originDensity * worldDepth * 5.0 * (1.0 + RF_DENSITY * 5.0 * weatherStrength * weatherStrength * skyLight);
     vec3 absorption = exp2(-opticalDepth.x * rayleighBeta - opticalDepth.y * rainyMieBeta);
     return mix(scatteringColor, color, absorption);
 }

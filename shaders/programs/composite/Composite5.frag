@@ -210,9 +210,11 @@ void main() {
                 if (solidDepth> 0.999999)
                     solidColor.rgb += endStars(worldDir);
             #else
-                float atmosphereDepth = mix(waterDistance * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 1600.0, step(0.999999, solidDepth));
                 #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
-                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, worldDir, skyColorUp, atmosphereDepth, gbufferData.lightmap.y);
+                    float isSky = step(0.999999, solidDepth);
+                    float skyLight = clamp(gbufferData.lightmap.y + isSky, 0.0, 1.0);
+                    float atmosphereDepth = mix(waterDistance * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 1600.0, isSky);
+                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, worldDir, skyColorUp, atmosphereDepth, skyLight);
                 #endif
                 solidColor.rgb *= airAbsorption(waterDistance);
             #endif
@@ -297,8 +299,10 @@ void main() {
         #else
             #ifdef SHADOW_AND_SKY
                 #ifdef ATMOSPHERE_SCATTERING_FOG
-                    float atmosphereDepth = mix(waterViewDepthNoLimit * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 1600.0, step(0.999999, waterDepth));
-                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, waterWorldDir, skyColorUp, atmosphereDepth, eyeBrightnessSmooth.y / 240.0);
+                    float isSky = step(0.999999, waterDepth);
+                    float skyLight = clamp(eyeBrightnessSmooth.y / 240.0 + isSky, 0.0, 1.0);
+                    float atmosphereDepth = mix(waterViewDepthNoLimit * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 1600.0, isSky);
+                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, waterWorldDir, skyColorUp, atmosphereDepth, skyLight);
                 #endif
             #endif
             solidColor.rgb *= vec3(airAbsorption(waterViewDepth));
