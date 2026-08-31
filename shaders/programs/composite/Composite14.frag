@@ -452,7 +452,7 @@ void main() {
     #ifdef SHADOW_AND_SKY
         float skyLight = unpack2x8Bit(texelFetch(colortex2, ivec2(sampleCoord * screenSize), 0).z).y;
         skyLight = max(skyLight * pow(screenDepth, 2000.0) + float(screenDepth == 1.0), eyeBrightnessSmooth.y / 240.0);
-        finalColor = mix(bloomColor, finalColor, exp2(-weatherStrength * weatherStrength * skyLight * RAIN_BLOOM_FOG_DENSITY * 0.03 * viewDepth));
+        finalColor = mix(bloomColor, finalColor, exp2(-weatherStrength * weatherStrength * skyLight * RAIN_BLOOM_FOG_DENSITY * 0.03 * viewDepth * exp2(-cameraPosition.y / 2000.0 - WORLD_BASIC_HEIGHT / 2000.0)));
     #endif
     float weatherData = textureLod(colortex0, sampleCoord, 0.0).w * 2.5 - 1.5;
     float bloomAmount = 0.2 * BLOOM_INTENSITY + 1.0 * step(weatherData, -0.3) + 0.6 * step(0.5, float(isEyeInWater)) + step(1.5, float(isEyeInWater));
