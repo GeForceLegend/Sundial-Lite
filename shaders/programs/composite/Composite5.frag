@@ -433,9 +433,9 @@ void main() {
         float weatherLightData = abs(weatherData);
         if (weatherLightData > 0.3) {
             float sunlightStrength = 2.0 * weatherLightData - 1.0;
-            float basicSunlight = (1.0 - (0.75 + 0.25 * float(CLOUD_TYPE != 2)) * sqrt(weatherStrength)) * 8.0 * SUNLIGHT_BRIGHTNESS;
+            float basicSunlight = (1.0 - (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * 9.5 * SUNLIGHT_BRIGHTNESS;
             vec3 weatherLight = sunlightStrength * basicSunlight * sunColor + skyColorUp * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength);
-            float weatherBlendWeight = clamp(weatherData * 1e+10, 0.0, 1.0) * 0.8 + 0.2;
+            float weatherBlendWeight = clamp(weatherData * 1e+10, 0.0, 1.0) * 0.95 + 0.05;
             solidColor.rgb = mix(solidColor.rgb, weatherLight, weatherBlendWeight);
         }
     #endif
