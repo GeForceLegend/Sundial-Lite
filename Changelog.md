@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Changed
 
 - Adjusted default water look;
+- Improved rain fog rendering on sky and far away terrain when camera in cave;
+- Reduced rain fog strength when player is too high in atmosphere;
 
 ### Fixed
 
