@@ -449,7 +449,7 @@ void main() {
     #endif
     {
         viewDepth = screenToViewDepth(screenDepth);
-        screenDepth += 1.0;
+        screenDepth += float(screenDepth == 1.0);
     }
     #ifdef SHADOW_AND_SKY
         float skyLight = clamp(unpack2x8Bit(texelFetch(colortex2, ivec2(sampleCoord * screenSize), 0).z).y + float(screenDepth > 1.0), 0.0, 1.0);
