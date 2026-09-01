@@ -442,16 +442,18 @@ void main() {
     float viewDepth;
     #ifdef LOD
         if (screenDepth == 1.0) {
-            screenDepth = getLodDepthWater(sampleCoord);
-            viewDepth = screenToViewDepthLod(screenDepth);
+            float lodDepth = getLodDepthWater(sampleCoord);
+            viewDepth = screenToViewDepthLod(lodDepth);
+            screenDepth += lodDepth;
         } else
     #endif
     {
         viewDepth = screenToViewDepth(screenDepth);
+        screenDepth += 1.0;
     }
     #ifdef SHADOW_AND_SKY
-        float skyLight = unpack2x8Bit(texelFetch(colortex2, ivec2(sampleCoord * screenSize), 0).z).y;
-        skyLight = max(skyLight * pow(screenDepth, 2000.0) + float(screenDepth == 1.0), eyeBrightnessSmooth.y / 240.0);
+        float skyLight = clamp(unpack2x8Bit(texelFetch(colortex2, ivec2(sampleCoord * screenSize), 0).z).y + float(screenDepth > 1.0), 0.0, 1.0);
+        skyLight = max(skyLight * (1.0 - 100.0 * RAIN_BLOOM_FOG_DENSITY / (viewDepth + 100.0 * RAIN_BLOOM_FOG_DENSITY)) + float(screenDepth == 2.0), eyeBrightnessSmooth.y / 240.0);
         finalColor = mix(bloomColor, finalColor, exp2(-weatherStrength * weatherStrength * skyLight * RAIN_BLOOM_FOG_DENSITY * 0.03 * viewDepth * exp2(-cameraPosition.y / 2000.0 - WORLD_BASIC_HEIGHT / 2000.0)));
     #endif
     float weatherData = textureLod(colortex0, sampleCoord, 0.0).w * 2.5 - 1.5;
