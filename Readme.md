@@ -56,4 +56,6 @@ As a compartion to the full version, it does not use voxelization and world spac
 
 ## Notice for forks
 
-AI edits are not welcomed in developer community. Modrinth will not receive works that all or mostly done by AI in the future, including fork with only or mostly AI edits, and CurseForge has the possibility to do it too. If you want to edit Sundial Lite and publish it, learning OpenGL Shading Language and do all the thing on your own is suggested, or your work may rejected by those platforms.
+Sundial Lite's opening source is not intended to let others make tons of forks at first. I just want to share my ideas and my code to the developer community, and let other developers take those ideas when they want if they open the source of their projects too (or ask my permission if GPL3 does not suit them). However, if this shader becomes the door of your shader developing experience, or helped a lot in your GLSL learning, I will be glad to hear that.
+
+But please notice, AI edits are not welcomed in developer community. Modrinth will not receive works that all or mostly done by AI in the future, including fork with only or mostly AI edits, and CurseForge has the possibility to do it too. If you want to edit Sundial Lite and publish it, learning OpenGL Shading Language and do all the thing on your own is suggested, or your work may rejected by those platforms. Your work should be **YOUR** work, instead of something that only the AI worthes a credit.

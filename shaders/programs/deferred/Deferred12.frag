@@ -239,8 +239,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
     vec4 Q_fromV = Q_toV * vec4(vec3(-1.0), 1.0);
     vec3 normalVVS = Transform_Qz0(normal, Q_fromV);
 
-    vec2 noise = vec2(blueNoiseTemporal(texcoord).x, bayer64Temporal(gl_FragCoord.xy));
-    const float r2Double = 0.7548776662;
+    vec2 noise = texelFetch(noisetex, ivec2(screenSize * texcoord) & 63, 0).xy + vec2(0.734375, 0.359375) * float(frameCounter & 63);
     vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * originViewPos + gbufferProjection[3].xyz, -originViewPos.z);
     #ifdef TAA
         originProjPos.xy += taaOffset * originProjPos.w;
@@ -253,6 +252,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
 
     vec4 totalSamples = vec4(0.0);
     for (int i = 0; i < VB_TRACE_COUNT; i++) {
+        const float r2Double = 0.7548776662;
         noise = fract(noise + vec2(r2Double, r2Double * r2Double));
         vec2 screenDir = SamplePartialSliceDir(normalVVS, noise.x);
         vec3 rayDir = Transform_Vz0Qz0(screenDir, Q_toV);
