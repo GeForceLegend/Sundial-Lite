@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Adjusted default water look;
 - Improved rain fog rendering on sky and far away terrain when camera in cave;
 - Reduced rain fog strength when player is too high in atmosphere;
+- Removed beacon's alpha cutout in block entities shaders on 1.17+ and 1.15-, should provide better mod translucent block entities support;
 
 ### Fixed
 
