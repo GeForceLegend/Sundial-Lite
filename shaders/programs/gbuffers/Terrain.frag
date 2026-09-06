@@ -42,7 +42,7 @@ void main() {
     vec2 texGradX = dFdx(texlmcoord.st);
     vec2 texGradY = dFdy(texlmcoord.st);
     vec2 textureScale;
-    mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos.xyz, textureScale);
+    mat3 tbnMatrix = calcTbnMatrix(texGradX, texGradY, viewPos, textureScale);
     #if SR_ENABLE
         texGradX *= renderScale.x;
         texGradY *= renderScale.y;
@@ -266,6 +266,29 @@ void main() {
         weight = max(NdotV, curveStart) - weight;
         rawData.normal = viewDir * weight + edgeNormal * max(0.0, inversesqrt(dot(edgeNormal, edgeNormal) / (1.0 - weight * weight)));
     }
+    #ifdef DIRECTIONAL_LIGHT_LEVEL
+        vec3 dPosDX = dFdx(viewPos);
+        vec3 dPosDY = dFdy(viewPos);
+        vec3 normal = cross(dPosDX, dPosDY);
+        vec2 dLightLevelDX = dFdx(rawData.lightmap);
+        vec2 dLightLevelDY = dFdy(rawData.lightmap);
+
+        vec3 blockLightDirHelper = dPosDY * dLightLevelDX.x - dPosDX * dLightLevelDY.x;
+        float blockLightDirHelperLen = dot(blockLightDirHelper, blockLightDirHelper);
+        if (blockLightDirHelperLen > 0.0) {
+            vec3 blockLightDir = cross(blockLightDirHelper, normal) / blockLightDirHelperLen;
+            rawData.lightmap.x += dot(blockLightDir, rawData.normal) * DIRECTIONAL_BLOCK_LIGHT_STRENGTH * 15.0 / dot(blockLightDir, blockLightDir) * (rawData.lightmap.x - rawData.lightmap.x * rawData.lightmap.x);
+            rawData.lightmap.x = clamp(rawData.lightmap.x, 0.0, 1.0);
+        }
+
+        vec3 skyLightDirHelper = dPosDY * dLightLevelDX.y - dPosDX * dLightLevelDY.y;
+        float skyLightDirHelperLen = dot(skyLightDirHelper, skyLightDirHelper);
+        if (skyLightDirHelperLen > 0.0) {
+            vec3 skyLightDir = cross(skyLightDirHelper, normal) / skyLightDirHelperLen;
+            rawData.lightmap.y += dot(skyLightDir, rawData.normal) * DIRECTIONAL_SKY_LIGHT_STRENGTH * 15.0 / dot(skyLightDir, skyLightDir) * (rawData.lightmap.y - rawData.lightmap.y * rawData.lightmap.y);
+            rawData.lightmap.y = clamp(rawData.lightmap.y, 0.0, 1.0);
+        }
+    #endif
     rawData.lightmap =
         clamp(rawData.lightmap + blueNoiseTemporal(gl_FragCoord.st * texelSize).xy * 2.0 / 255.0 - 1.0 / 255.0, 0.0, 1.0) *
         clamp(rawData.lightmap * 500.0, 0.0, 1.0);

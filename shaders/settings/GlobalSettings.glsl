@@ -28,6 +28,10 @@
             #ifdef PARALLAX_BASED_NORMAL
             #endif
             // #define ENTITY_VERTEX_TBN
+            // Directional light level
+                #define DIRECTIONAL_LIGHT_LEVEL
+                #define DIRECTIONAL_BLOCK_LIGHT_STRENGTH 1.0 // [0.0 0.1 0.15 0.2 0.25 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.25 1.5 1.75 2.0]
+                #define DIRECTIONAL_SKY_LIGHT_STRENGTH 1.0 // [0.0 0.1 0.15 0.2 0.25 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.25 1.5 1.75 2.0]
         // Parallax
             #define PARALLAX
             #define SMOOTH_PARALLAX

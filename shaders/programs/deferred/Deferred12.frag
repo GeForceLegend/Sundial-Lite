@@ -405,6 +405,13 @@ void main() {
             vec3 worldPos = viewToWorldPos(viewPos);
             float eyeRelatedDistance = length(worldPos + relativeEyePosition);
             gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
+            #ifdef DIRECTIONAL_LIGHT_LEVEL
+                vec3 viewOffset = worldToViewPos(worldPos + relativeEyePosition);
+                float normalAngle = (dot(viewOffset, gbufferData.geoNormal) - dot(viewOffset, gbufferData.normal)) * inversesqrt(dot(viewOffset, viewOffset));
+                normalAngle = signMul(sqrt(abs(normalAngle)), normalAngle);
+                gbufferData.lightmap.x += normalAngle * DIRECTIONAL_BLOCK_LIGHT_STRENGTH * (gbufferData.lightmap.x - gbufferData.lightmap.x * gbufferData.lightmap.x);
+                gbufferData.lightmap.x = clamp(gbufferData.lightmap.x, 0.0, 1.0);
+            #endif
         #endif
 
         viewPos += gbufferData.geoNormal * 3e-3;

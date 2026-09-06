@@ -5,6 +5,7 @@ screen.Texture.comment=Texture resolution, normal, parallax and specular
 screen.PlantWave=Plant wave
 screen.Water=Water
 screen.Normal=Normal
+screen.DirectionalLightLevel=Directional light level
 screen.Parallax=Parallax
 screen.Specular=PBR
 screen.Reflection=Reflection
@@ -86,6 +87,11 @@ option.SMOOTH_NORMAL=Smooth normal
 option.SMOOTH_NORMAL.comment=Smoothes normal sampling. Will be overwritten with parallax based normal if that setting is on
 option.ENTITY_VERTEX_TBN=Entity vertex TBN
 option.ENTITY_VERTEX_TBN.comment=Using vertex TBN instead of fragment derivative on entities. Low precision, but can create smooth normals on some mod entities. Warning: some entity have incorrect vertex TBN
+# DirectionalLightLevel
+option.DIRECTIONAL_LIGHT_LEVEL=Directional light level
+option.DIRECTIONAL_LIGHT_LEVEL.comment=Let vanilla light level interact with texture normal. May looks strange on certain scene
+option.DIRECTIONAL_BLOCK_LIGHT_STRENGTH=Directional block light strength
+option.DIRECTIONAL_SKY_LIGHT_STRENGTH=Directional sky light strength
 # Parallax
 option.PARALLAX=Parallax
 option.SMOOTH_PARALLAX=Smooth parallax
