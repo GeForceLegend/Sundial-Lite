@@ -80,6 +80,18 @@ mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 texture
 }
 
 #ifdef MC_NORMAL_MAP
+    #if SMOOTH_PARALLAX_OFFSET == 0
+        const vec2 smoothParallaxOffset = vec2(0.0);
+    #elif SMOOTH_PARALLAX_OFFSET == 1
+        const vec2 smoothParallaxOffset = vec2(-1.0, -1.0);
+    #elif SMOOTH_PARALLAX_OFFSET == 2
+        const vec2 smoothParallaxOffset = vec2(-1.0,  1.0);
+    #elif SMOOTH_PARALLAX_OFFSET == 3
+        const vec2 smoothParallaxOffset = vec2( 1.0, -1.0);
+    #elif SMOOTH_PARALLAX_OFFSET == 4
+        const vec2 smoothParallaxOffset = vec2( 1.0,  1.0);
+    #endif
+
     vec4 heightGather(sampler2D normalSampler, vec2 coord, vec2 coord00, vec4 coordRange, vec2 quadTexelSize, vec2 normalTexSize) {
         ivec2 texel00 = ivec2(coord00);
         ivec2 texel11 = ivec2(clampCoordRange(coord + quadTexelSize, coordRange) * normalTexSize);
@@ -102,6 +114,9 @@ mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 texture
     }
 
     vec3 heightBasedNormal(sampler2D normalSampler, vec2 coord, vec4 coordRange, vec2 quadTexelSize, vec2 normalTexSize, vec2 pixelScale) {
+        #ifdef SMOOTH_PARALLAX
+            coord += smoothParallaxOffset * 0.5 / normalTexSize;
+        #endif
         vec2 tileCoord = (coord - coordRange.xy) / coordRange.zw;
         vec2 coord00 = clampCoordRange(tileCoord - 0.499 * quadTexelSize, coordRange) * normalTexSize;
         vec4 sh = heightGather(normalSampler, tileCoord, coord00, coordRange, 0.499 * quadTexelSize, normalTexSize);
@@ -192,6 +207,9 @@ mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 texture
     ) {
         vec2 quadTexelSize = 0.499 * albedoTexelSize * quadSize;
 
+        #ifdef SMOOTH_PARALLAX
+            coord += smoothParallaxOffset * 0.5 * albedoTexelSize;
+        #endif
         vec3 parallaxCoord = vec3(coord, 1.0);
 
         vec2 firstCoord = (coord - coordRange.xy) * quadSize;
@@ -244,6 +262,9 @@ mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 texture
             parallaxCoord.st = clampCoordRange(parallaxCoord.st, coordRange);
         }
         parallaxOffset = 1.0 - parallaxCoord.z;
+        #ifdef SMOOTH_PARALLAX
+            parallaxCoord.st -= smoothParallaxOffset * 0.5 * albedoTexelSize;
+        #endif
         return parallaxCoord.st;
     }
 #endif

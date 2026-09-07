@@ -106,6 +106,13 @@ option.PARALLAX_QUALITY=Parallax quality
 option.PARALLAX_QUALITY.comment=Improves parallax quality with more performance cost. Improves the "pane edge" effect
 option.PARALLAX_MAX_REFINEMENTS=Parallax fineness
 option.PARALLAX_MAX_REFINEMENTS.comment=Improves parallax quality with Less performance cost. Does not improve the "pane edge" effect
+option.SMOOTH_PARALLAX_OFFSET=Smooth parallax offset
+option.SMOOTH_PARALLAX_OFFSET.comment=Offset parallax to match the pixels with smooth parallax enabled. Applied on Parallax based normal too.
+value.SMOOTH_PARALLAX_OFFSET.0=Off
+value.SMOOTH_PARALLAX_OFFSET.1=Left lower
+value.SMOOTH_PARALLAX_OFFSET.2=Left upper
+value.SMOOTH_PARALLAX_OFFSET.3=Right lower
+value.SMOOTH_PARALLAX_OFFSET.4=Right upper
 # Specular
 option.SUBSERFACE_SCATTERING_STRENTGH=Sub-surface scattering strength
 option.PBR_BRIGHTNESS=PBR brightness

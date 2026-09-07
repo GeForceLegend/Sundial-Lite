@@ -114,6 +114,13 @@ option.PARALLAX_QUALITY=视差质量
 option.PARALLAX_QUALITY.comment=能提升视差精度，但是性能损耗较大. 能缓解未开启体素视差时的片状边缘现象.
 option.PARALLAX_MAX_REFINEMENTS=视差精度
 option.PARALLAX_MAX_REFINEMENTS.comment=能提升视差精度且性能损耗较小，但不能缓解片状边缘现象. 不会影响体素视差
+option.SMOOTH_PARALLAX_OFFSET=平滑视差偏移
+option.SMOOTH_PARALLAX_OFFSET.comment=偏移视差以在平滑视差开启时匹配像素位置. 同样影响基于视差的法线
+value.SMOOTH_PARALLAX_OFFSET.0=关
+value.SMOOTH_PARALLAX_OFFSET.1=左下
+value.SMOOTH_PARALLAX_OFFSET.2=左上
+value.SMOOTH_PARALLAX_OFFSET.3=右下
+value.SMOOTH_PARALLAX_OFFSET.4=右上
 # Specular
 option.SUBSERFACE_SCATTERING_STRENTGH=次表面散射强度
 option.PBR_BRIGHTNESS=PBR亮度
