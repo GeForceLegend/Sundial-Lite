@@ -205,15 +205,14 @@ mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 texture
     vec2 calculateParallax(
         vec2 coord, vec3 viewPos, mat3 tbnMatrix, vec2 textureScale, vec4 coordRange, vec2 quadSize, vec2 albedoTexSize, vec2 albedoTexelSize, inout float parallaxOffset
     ) {
-        vec2 quadTexelSize = 0.499 * albedoTexelSize * quadSize;
+        vec3 parallaxCoord = vec3(coord, 1.0);
 
         #ifdef SMOOTH_PARALLAX
             coord += smoothParallaxOffset * 0.5 * albedoTexelSize;
         #endif
-        vec3 parallaxCoord = vec3(coord, 1.0);
-
         vec2 firstCoord = (coord - coordRange.xy) * quadSize;
         #ifdef SMOOTH_PARALLAX
+            vec2 quadTexelSize = 0.499 * albedoTexelSize * quadSize;
             vec2 coord00 = clampCoordRange(firstCoord - quadTexelSize, coordRange) * albedoTexSize;
             vec4 sh = heightGather(normals, firstCoord, coord00, coordRange, quadTexelSize, albedoTexSize);
             float startHeight = dot(sh, vec4(0.25));
@@ -259,12 +258,12 @@ mat3 calcTbnMatrix(vec2 dCoordDX, vec2 dCoordDY, vec3 position, out vec2 texture
                 }
             }
             parallaxCoord += 2.0 * stepSize * stepScale;
+            #ifdef SMOOTH_PARALLAX
+                parallaxCoord.st -= smoothParallaxOffset * 0.5 * albedoTexelSize * quadSize;
+            #endif
             parallaxCoord.st = clampCoordRange(parallaxCoord.st, coordRange);
         }
         parallaxOffset = 1.0 - parallaxCoord.z;
-        #ifdef SMOOTH_PARALLAX
-            parallaxCoord.st -= smoothParallaxOffset * 0.5 * albedoTexelSize;
-        #endif
         return parallaxCoord.st;
     }
 #endif
