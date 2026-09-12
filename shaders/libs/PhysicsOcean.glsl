@@ -1,6 +1,6 @@
 #define PHYSICS_OCEAN_SUPPORT
 
-#ifdef PHYSICS_OCEAN
+#if defined PHYSICS_OCEAN && !defined PHYSICS_OCEAN_V3
     const int PHYSICS_ITERATIONS_OFFSET = 13;
     const float PHYSICS_DRAG_MULT = 0.048;
     const float PHYSICS_XZ_SCALE = 0.035;

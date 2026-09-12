@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Added GT7 tonemapping;
 - Added `Texture > Normal > Directional light level` option, provide better lighting with texture normal, but may look strange in certain scene;
 - Added `Texture > Parallax > Smooth parallax offset` option, make smooth parallax matches pixel range, also affect `Parallax based normal`;
+- Added physics ocean v3 compat;
 
 ### Changed
 
@@ -22,7 +23,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Improved rain fog rendering on sky and far away terrain when camera in cave;
 - Reduced rain fog strength when player is too high in atmosphere;
 - Removed beacon's alpha cutout in block entities shaders on 1.17+ and 1.15-, should provide better mod translucent block entities support;
-- Added noise for cloud shadow light sampling
+- Jittered cloud shadow light sampling;
 
 ### Fixed
 

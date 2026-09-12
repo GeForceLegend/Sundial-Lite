@@ -45,6 +45,9 @@ void main() {
     #ifdef PHYSICS_OCEAN
         WavePixelData physics_waveData = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
     #endif
+    #ifdef PHYSICS_OCEAN_V3
+        PhysicsOceanData ocean = physics_oceanFragment();
+    #endif
     GbufferData rawData;
     vec2 texcoord = texlmcoord.st;
     vec4 albedoData = texture(gtexture, texcoord, mipBias);
@@ -111,7 +114,14 @@ void main() {
     }
 
     float viewDepthInv = inversesqrt(dot(viewPos.xyz, viewPos.xyz));
-    #ifdef PHYSICS_OCEAN
+    #if defined PHYSICS_OCEAN_V3
+        rawData.normal = mat3(gbufferModelView) * ocean.normal;
+        #if WATER_TYPE == 0
+            rawData.albedo.rgb = color.rgb;
+        #else
+            rawData.albedo = albedoData;
+        #endif
+    #elif defined PHYSICS_OCEAN
         #ifndef PHYSICS_OCEAN_V2
             physics_waveData.normal.xz *= 0.5;
         #endif

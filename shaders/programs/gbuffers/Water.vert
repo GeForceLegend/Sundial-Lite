@@ -34,7 +34,7 @@ flat out int materialID;
 #include "/libs/Uniform.glsl"
 #include "/libs/PhysicsOcean.glsl"
 
-#ifdef PHYSICS_OCEAN
+#if defined PHYSICS_OCEAN && !defined PHYSICS_OCEAN_V3
     #ifdef PHYSICS_OCEAN_V2
         in float physics_waviness;
     #endif
@@ -44,7 +44,10 @@ flat out int materialID;
 #endif
 
 void main() {
-    #ifdef PHYSICS_OCEAN
+    #ifdef PHYSICS_OCEAN_V3
+        vec4 vertexPos = vec4(physics_oceanVertex(gl_Vertex.xyz), 1.0);
+        viewPos = (gl_ModelViewMatrix * vertexPos).xyz;
+    #elif defined PHYSICS_OCEAN
         #ifdef PHYSICS_OCEAN_V2
             // basic value to determine how shallow/far away from the shore the water is
             physics_localWaviness = physics_waviness;
