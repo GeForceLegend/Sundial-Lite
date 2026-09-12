@@ -50,7 +50,10 @@ void main() {
         color = gl_Color;
         worldNormal = normalize(mat3(shadowModelViewInverse) * gl_NormalMatrix * gl_Normal);
         texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;
-        #ifdef PHYSICS_OCEAN
+        #ifdef PHYSICS_OCEAN_V3
+            vec4 vertexPos = vec4(physics_oceanVertex(gl_Vertex.xyz), 1.0);
+            vec4 viewPos = gl_ModelViewMatrix * vertexPos;
+        #elif defined PHYSICS_OCEAN
             #ifdef PHYSICS_OCEAN_V2
                 // transform gl_Vertex (since it is the raw mesh, i.e. not transformed yet)
                 float baseWaveHeight = physics_waveHeight(gl_Vertex.xz, PHYSICS_ITERATIONS_OFFSET, physics_waviness, physics_gameTime);
