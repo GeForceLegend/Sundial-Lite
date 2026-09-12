@@ -116,6 +116,7 @@ void main() {
     float viewDepthInv = inversesqrt(dot(viewPos.xyz, viewPos.xyz));
     #if defined PHYSICS_OCEAN_V3
         rawData.normal = mat3(gbufferModelView) * ocean.normal;
+        rawData.normal = signI(dot(rawData.normal, rawData.geoNormal)) * rawData.normal;
         #if WATER_TYPE == 0
             rawData.albedo.rgb = color.rgb;
         #else
