@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Added physics ocean v3 compat;
 - Added Distant Horizons' LoD texture support (require Distant Horizons 3.2.1 or above, and Iris 1.11.4 or above);
 - Added support for enchantment glint in Iris 26.3;
+- Added colorwheel indirect shadow cull support (require Colorwheel 1.3.0 or above);
 
 ### Changed
 

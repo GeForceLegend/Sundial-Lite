@@ -1,0 +1,13 @@
+#define SHADOW_DISTORTION_STRENGTH 4.0 // [0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5 10.0]
+const float distortionStrength = exp(SHADOW_DISTORTION_STRENGTH) - 1.0;
+
+vec2 clrwl_distortShadowClipXY(vec2 vertexClipXY) {
+    float clipLengthInv = inversesqrt(dot(vertexClipXY, vertexClipXY));
+    float shadowDistortion = log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0);
+    vertexClipXY = vertexClipXY * max(0.0, clipLengthInv * shadowDistortion) * 0.5 + 0.5;
+    return vertexClipXY;
+}
+
+float clrwl_distortShadowClipZ(float vertexClipZ) {
+    return vertexClipZ * 0.2;
+}

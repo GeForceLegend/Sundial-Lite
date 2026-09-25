@@ -207,7 +207,7 @@ void main() {
                 solidColor.rgb = netherFogTotal(solidColor.rgb, waterDistance);
             #elif defined THE_END
                 solidColor.rgb = endFogTotal(solidColor.rgb, waterDistance);
-                if (solidDepth> 0.999999) {
+                if (solidDepth > 0.999999) {
                     solidColor.rgb += endStars(worldDir);
                     #ifdef END_FLASH
                         solidColor.rgb += endFlashDisc(worldDir, shadowDirection, vec3(300.0));
