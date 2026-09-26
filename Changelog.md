@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Added end flash effect on supported Iris versions;
 - Added `Texture > Normal > Entity vertex TBN` option, can provide smooth normal look on some mod entities;
 - Added TAA_HISTORY_WEIGHT and TAA_HISTORY_CLIP_VARIANCE option;
-- Added water fog scatting options;
+- Added water fog scattering options;
 - Added GT7 tonemapping;
 - Added `Texture > Normal > Directional light level` option, provide better lighting with texture normal, but may look strange in certain scene;
 - Added `Texture > Parallax > Smooth parallax offset` option, make smooth parallax matches pixel range, also affect `Parallax based normal`;
