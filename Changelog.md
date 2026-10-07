@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 - Fixed wrong direction space used when consider if reflection direction hits sky in screen pixels;
+- Fixed taa offset scale in some effects when SuperResolution is enabled;
 
 ## [1.2.0] - 2026-09-26
 

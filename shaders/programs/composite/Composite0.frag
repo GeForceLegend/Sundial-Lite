@@ -145,7 +145,11 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
         originProjPos.z += gbufferProjection[3].z;
         originProjPos.xy += gbufferProjection[2].xy * viewPos.z;
         #ifdef TAA
-            originProjPos.xy += taaOffset * originProjPos.w;
+            vec2 taaOffsetScaled = taaOffset;
+            #if SR_ENABLE
+                taaOffsetScaled = upscaleRatio * taaOffsetScaled;
+            #endif
+            originProjPos.xy += taaOffsetScaled * originProjPos.w;
         #endif
         float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
 
@@ -217,28 +221,28 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
         }
         rayDir = mat3(gbufferModelViewInverse) * rayDir;
         if (!hitSky) {
-            vec3 sampleViewPos;
+            vec3 sampleViewPos = sampleCoord.xyz * 2.0;
+            #ifdef TAA
+                sampleViewPos.st -= taaOffset;
+            #endif
+            #if SR_ENABLE
+                sampleViewPos.st *= upscaleRatio;
+            #endif
+            sampleViewPos -= 1.0;
             #ifdef LOD
                 if (sampleCoord.z >= 1.0) {
-                    vec3 sampleProjPos = sampleCoord.xyw * 2.0 - 1.0;
-                    #ifdef TAA
-                        sampleProjPos.st -= taaOffset;
-                    #endif
-                    sampleProjPos.xy *= vec2(projInvLod()[0].x, projInvLod()[1].y);
-                    sampleProjPos.xy += projInvLod()[3].xy;
-                    float projectionScale = projLod()[3].z / (sampleProjPos.z + projLod()[2].z);
-                    sampleViewPos = vec3(sampleProjPos.xy * projectionScale, -projectionScale);
+                    sampleViewPos.z = sampleCoord.w * 2.0 - 1.0;
+                    sampleViewPos.xy *= vec2(projInvLod()[0].x, projInvLod()[1].y);
+                    sampleViewPos.xy += projInvLod()[3].xy;
+                    float projectionScale = projLod()[3].z / (sampleViewPos.z + projLod()[2].z);
+                    sampleViewPos = vec3(sampleViewPos.xy * projectionScale, -projectionScale);
                 } else
             #endif
             {
-                vec3 sampleProjPos = sampleCoord.xyz * 2.0 - 1.0;
-                #ifdef TAA
-                    sampleProjPos.st -= taaOffset;
-                #endif
-                sampleProjPos.xy *= vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y);
-                sampleProjPos.xy += gbufferProjectionInverse[3].xy;
-                float projectionScale = gbufferProjection[3].z / (sampleProjPos.z + gbufferProjection[2].z);
-                sampleViewPos = vec3(sampleProjPos.xy * projectionScale, -projectionScale);
+                sampleViewPos.xy *= vec2(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y);
+                sampleViewPos.xy += gbufferProjectionInverse[3].xy;
+                float projectionScale = gbufferProjection[3].z / (sampleViewPos.z + gbufferProjection[2].z);
+                sampleViewPos = vec3(sampleViewPos.xy * projectionScale, -projectionScale);
             }
             float rayLength = distance(viewPos, sampleViewPos);
             vec3 sampleLight = texelFetch(colortex3, ivec2(sampleCoord.xy * screenSize), 0).rgb;

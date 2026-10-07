@@ -171,7 +171,11 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         originProjPos.z += gbufferProjection[3].z;
         originProjPos.xy += gbufferProjection[2].xy * viewPos.z;
         #ifdef TAA
-            originProjPos.xy += taaOffset * originProjPos.w;
+            vec2 taaOffsetScaled = taaOffset;
+            #if SR_ENABLE
+                taaOffsetScaled = upscaleRatio * taaOffsetScaled;
+            #endif
+            originProjPos.xy += taaOffsetScaled * originProjPos.w;
         #endif
         float projScale = 0.5 / originProjPos.w;
         vec4 originCoord = vec4(originProjPos.xyz * projScale + 0.5, 0.0);
@@ -192,19 +196,22 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
 
         vec4 stepSize = targetCoord - originCoord;
         stepSize *= inversesqrt(dot(stepSize.xy, stepSize.xy));
-        originCoord += stepSize * max(texelSize.x, texelSize.y) * 1.5;
+        vec2 pixelSize = texelSize;
+        #if SR_ENABLE
+            pixelSize = upscaleRatio * pixelSize;
+        #endif
+        originCoord += stepSize * max(pixelSize.x, pixelSize.y) * 1.5;
 
         float shadow = 1.0;
         float stepScale = 1.0;
         float porosityScale = (1.0 - clamp(porosity - 0.25, 0.0, 1.0));
         stepSize *= 0.003 * 12.0 / SCREEN_SPACE_SHADOW_SAMPLES;
 
-        targetCoord = originCoord + stepSize * SCREEN_SPACE_SHADOW_SAMPLES;
         #if SR_ENABLE
             originCoord.st *= renderScale;
-            targetCoord.st *= renderScale;
             stepSize.st *= renderScale;
         #endif
+        targetCoord = originCoord + stepSize * SCREEN_SPACE_SHADOW_SAMPLES;
         vec3 targetViewPos = screenToViewPos(targetCoord.xy, targetCoord.z);
         #ifdef LOD
             if (targetCoord.z >= 1.0) {
