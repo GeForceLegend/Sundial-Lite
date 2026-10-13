@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 - Added unverified support for 26.4 icicle and ice crystal;
 
+### Changed
+
+- Greatly smoothed horizons near sea level while keeping the space look;
+
 ### Fixed
 
 - Fixed wrong direction used when consider if reflection direction hits sky in screen pixels;
