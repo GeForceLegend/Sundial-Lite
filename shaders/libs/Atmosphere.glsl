@@ -1,4 +1,6 @@
-const vec3 rayleighBeta = vec3(5.2e-6, 12.1e-6, 29.6e-6);
+const vec3 ozoneAbsorption = vec3(2.1e-6,5.0e-6,0.2e-6);
+const vec3 pureRayleighBeta = vec3(5.2e-6, 12.1e-6, 29.6e-6);
+const vec3 rayleighBeta = pureRayleighBeta + ozoneAbsorption;
 const float mieBeta = 2.1e-5;
 const float rayLeighScaledHeight = 8500.0;
 const float mieScaledHeight = 1200.0;
@@ -88,20 +90,14 @@ vec3 singleAtmosphereScattering(
             b = min(0.0, b);
             originPos -= worldDir * b;
             atmosphereLength += b;
-            vec3 samplePosition = originPos;
             result *= intersectionData.w;
 
-            originHeight2 = dot(samplePosition, samplePosition);
+            originHeight2 = dot(originPos, originPos);
             float originHeightInv = inversesqrt(originHeight2);
             float originHeight = originHeight2 * originHeightInv;
-            vec2 prevRelativeDensity = exp2(earthScaledHeight - originHeight / scaledHeight * 1.44269502);
 
-            vec3 atmosphereAbsorption = atmosphereAbsorptionLUT(originHeight, dot(worldDir, samplePosition) * originHeightInv);
+            vec3 atmosphereAbsorption = atmosphereAbsorptionLUT(originHeight, dot(worldDir, originPos) * originHeightInv);
             result *= atmosphereAbsorption;
-
-            float originRdotP = dot(sunDir, samplePosition) * originHeightInv;
-            vec3 originSunInScattering, originMoonInScattering;
-            atmosphereAbsorptionDoubleSideLUT(originHeight, originRdotP, originSunInScattering, originMoonInScattering);
 
             float sunCosAngle = dot(worldDir, sunDir);
             float sunRayleigh = rayleighPhase(sunCosAngle);
@@ -109,20 +105,20 @@ vec3 singleAtmosphereScattering(
             float moonRayleigh = rayleighPhase(-sunCosAngle) * nightBrightness;
             float moonMie = miePhase(-sunCosAngle, mieG, mieG2) * nightBrightness;
 
-            vec3 prevRayleighInScattering = originSunInScattering * prevRelativeDensity.x * sunRayleigh + originMoonInScattering * prevRelativeDensity.x * moonRayleigh;
-            vec3 prevMieInScattering = originSunInScattering * prevRelativeDensity.y * sunMie + originMoonInScattering * prevRelativeDensity.y * moonMie;
-
-            vec2 opticalDepth = vec2(0.0);
-            vec3 totalRayleighInScattering = vec3(0.0);
-            vec3 totalMieInScattering = vec3(0.0);
+            vec3 transmittance = vec3(1.0);
+            vec3 totalInScattering = vec3(0.0);
+            vec3 currInScattering = vec3(0.0);
 
             const float viewSampleStepScale = 4.0;
             float stepUnit = atmosphereLength / ((ATMOSPHERE_VIEW_SAMPLE * 0.5 - 0.5 + viewSampleStepScale) * ATMOSPHERE_VIEW_SAMPLE);
             float stepLength = stepUnit * (viewSampleStepScale - 1.0);
+            float prevLength = 0.0;
 
             for (int i = 0; i < ATMOSPHERE_VIEW_SAMPLE; i++) {
                 stepLength += stepUnit;
-                samplePosition += sampleDirection * stepLength;
+                float middleLength = prevLength + stepLength * 0.5;
+                prevLength += stepLength;
+                vec3 samplePosition = originPos + sampleDirection * middleLength;
                 float sampleHeight2 = dot(samplePosition, samplePosition);
 
                 float sampleHeightInv = inversesqrt(sampleHeight2);
@@ -133,28 +129,20 @@ vec3 singleAtmosphereScattering(
                 vec3 currMoonInScattering;
                 atmosphereAbsorptionDoubleSideLUT(sampleHeight, sampleRdotP, currSunInScattering, currMoonInScattering);
 
-                vec2 currRelativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight * 1.44269502);
+                vec2 relativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight * 1.44269502);
+                currInScattering =
+                    relativeDensity.x * pureRayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) + 
+                    relativeDensity.y * mieBeta * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
 
-                opticalDepth += (0.5 * 1.44269502 * stepLength) * (prevRelativeDensity + currRelativeDensity);
-                vec3 viewAbsorption = exp2(-opticalDepth.x * rayleighBeta - opticalDepth.y * rainyMieBeta);
-                currSunInScattering *= viewAbsorption;
-                currMoonInScattering *= viewAbsorption;
-                prevRelativeDensity = currRelativeDensity;
+                vec3 stepAbsorptionBeta = relativeDensity.x * rayleighBeta + relativeDensity.y * rainyMieBeta;
+                vec3 stepOpticalDepth = stepAbsorptionBeta * stepLength;
+                vec3 stepTransmittance = exp(-stepOpticalDepth);
 
-                vec3 currRayleighInScattering = prevRelativeDensity.x * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh);
-                totalRayleighInScattering += stepLength * (prevRayleighInScattering + currRayleighInScattering);
-                prevRayleighInScattering = currRayleighInScattering;
-                vec3 currMieInScattering = prevRelativeDensity.y * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
-                totalMieInScattering += stepLength * (prevMieInScattering + currMieInScattering);
-                prevMieInScattering = currMieInScattering;
+                totalInScattering += transmittance * (currInScattering - currInScattering * stepTransmittance) / max(vec3(1e-20), stepAbsorptionBeta);
+                transmittance *= stepTransmittance;
             }
 
-            vec3 totalInScattering = totalRayleighInScattering * rayleighBeta + totalMieInScattering * rainyMieBeta;
-            totalInScattering *= 0.5;
-            totalInScattering += (prevRayleighInScattering + prevMieInScattering) * 0.15 * abs(dot(sunDir, normalize(samplePosition)));
-
-            atmosphere = totalInScattering * sunLightStrength * SUNLIGHT_BRIGHTNESS + skyColorUp * exp2(-opticalDepth.x * rayleighBeta - opticalDepth.y * rainyMieBeta) * 0.2;
-
+            atmosphere = totalInScattering * sunLightStrength * SUNLIGHT_BRIGHTNESS + skyColorUp * transmittance * 0.2;
             result += atmosphere;
         }
     }
@@ -167,20 +155,14 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
     float atmosphereLength = atmosphereHeight - playerHeight;
     vec3 result = vec3(0.0);
     if (atmosphereLength > 0.0) {
-        vec2 originRelativeDensity = exp2(earthScaledHeight - playerHeight / scaledHeight * 1.44269502);
-        vec3 originSunInScattering, originMoonInScattering;
-        atmosphereAbsorptionDoubleSideLUT(playerHeight, lightHeight, originSunInScattering, originMoonInScattering);
+        vec3 transmittance = vec3(1.0);
+        vec3 totalInScattering = vec3(0.0);
+        vec3 currInScattering = vec3(0.0);
 
-        vec3 prevSunRayleighInScattering = originSunInScattering * originRelativeDensity.x;
-        vec3 prevSunMieInScattering = originSunInScattering * originRelativeDensity.y;
-        vec3 prevMoonRayleighInScattering = originMoonInScattering * originRelativeDensity.x;
-        vec3 prevMoonMieInScattering = originMoonInScattering * originRelativeDensity.y;
-        originRelativeDensity *= 1.44269502 * scaledHeight;
-
-        vec3 totalSunRayleighInScattering = vec3(0.0);
-        vec3 totalSunMieInScattering = vec3(0.0);
-        vec3 totalMoonRayleighInScattering = vec3(0.0);
-        vec3 totalMoonMieInScattering = vec3(0.0);
+        float sunRayleigh = rayleighPhase(lightHeight);
+        float sunMie = miePhase(lightHeight, mieG, mieG2);
+        float moonRayleigh = rayleighPhase(-lightHeight) * nightBrightness;
+        float moonMie = miePhase(-lightHeight, mieG, mieG2) * nightBrightness;
 
         const float viewSampleStepScale = 4.0;
         float stepUnit = atmosphereLength / ((ATMOSPHERE_VIEW_SAMPLE * 0.5 - 0.5 + viewSampleStepScale) * ATMOSPHERE_VIEW_SAMPLE);
@@ -190,44 +172,24 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
         for (int i = 0; i < ATMOSPHERE_VIEW_SAMPLE; i++) {
             stepLength += stepUnit;
             sampleHeight += stepLength;
+            float middleHeight = sampleHeight - 0.5 * stepLength;
 
             vec3 currSunInScattering;
             vec3 currMoonInScattering;
-            atmosphereAbsorptionDoubleSideLUT(sampleHeight, lightHeight, currSunInScattering, currMoonInScattering);
+            atmosphereAbsorptionDoubleSideLUT(middleHeight, lightHeight, currSunInScattering, currMoonInScattering);
 
-            vec2 sampleRelativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight * 1.44269502);
+            vec2 relativeDensity = exp2(earthScaledHeight - middleHeight / scaledHeight * 1.44269502);
+            currInScattering =
+                relativeDensity.x * rayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) + 
+                relativeDensity.y * mieBeta * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
 
-            vec2 viewOpticalDepth = originRelativeDensity - 1.44269502 * scaledHeight * sampleRelativeDensity;
-            vec3 viewAbsorption = exp2(-viewOpticalDepth.x * rayleighBeta - viewOpticalDepth.y * rainyMieBeta);
-            currSunInScattering *= viewAbsorption;
-            currMoonInScattering *= viewAbsorption;
+            vec3 stepAbsorptionBeta = relativeDensity.x * pureRayleighBeta + relativeDensity.y * rainyMieBeta;
+            vec3 stepOpticalDepth = stepAbsorptionBeta * stepLength;
+            vec3 stepTransmittance = exp(-stepOpticalDepth);
 
-            vec3 currSunRayleighInScattering = currSunInScattering * sampleRelativeDensity.x;
-            totalSunRayleighInScattering += stepLength * (prevSunRayleighInScattering + currSunRayleighInScattering);
-            prevSunRayleighInScattering = currSunRayleighInScattering;
-            vec3 currSunMieInScattering = currSunInScattering * sampleRelativeDensity.y;
-            totalSunMieInScattering += stepLength * (prevSunMieInScattering + currSunMieInScattering);
-            prevSunMieInScattering = currSunMieInScattering;
-
-            vec3 currMoonRayleighInScattering = currMoonInScattering * sampleRelativeDensity.x;
-            totalMoonRayleighInScattering += stepLength * (prevMoonRayleighInScattering + currMoonRayleighInScattering);
-            prevMoonRayleighInScattering = currMoonRayleighInScattering;
-            vec3 currMoonMieInScattering = currMoonInScattering * sampleRelativeDensity.y;
-            totalMoonMieInScattering += stepLength * (prevMoonMieInScattering + currMoonMieInScattering);
-            prevMoonMieInScattering = currMoonMieInScattering;
+            totalInScattering += transmittance * (currInScattering - currInScattering * stepTransmittance) / max(vec3(1e-20), stepAbsorptionBeta);
+            transmittance *= stepTransmittance;
         }
-
-        totalSunRayleighInScattering *= rayleighPhase(lightHeight);
-        totalSunMieInScattering *= miePhase(lightHeight, mieG, mieG2);
-        float nightBrightness = mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);
-        totalMoonRayleighInScattering *= rayleighPhase(-lightHeight) * nightBrightness;
-        totalMoonMieInScattering *= miePhase(-lightHeight, mieG, mieG2) * nightBrightness;
-
-        vec3 totalRayleighInScattering = totalSunRayleighInScattering + totalMoonRayleighInScattering;
-        vec3 totalMieInScattering = totalSunMieInScattering + totalMoonMieInScattering;
-
-        vec3 totalInScattering = totalRayleighInScattering * rayleighBeta + totalMieInScattering * rainyMieBeta;
-        totalInScattering *= 0.5;
 
         result = totalInScattering * sunLightStrength * SUNLIGHT_BRIGHTNESS;
     }

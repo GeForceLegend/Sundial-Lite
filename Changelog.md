@@ -12,7 +12,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 
-- Greatly smoothed horizons near sea level while keeping the space look;
+- Greatly smoothed horizons near sea level;
+- Updated atmosphere scattering function, provide even better result with less sample around sea level;
+  - Space look on sunset/sunrise might be a bit worse. You can restore previous atmosphere view sample count in shader options.
 
 ### Fixed
 
