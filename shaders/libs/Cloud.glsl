@@ -241,10 +241,9 @@ vec4 realisticCloud(
         endIntersection = cloudTopIntersection.y;
     }
     else {
-        endIntersection = mix(cloudTopIntersection.y, cloudBottomIntersection.x, float(cloudBottomIntersection.x > 0.0));
-        float overCloud = clamp((cloudPos.y - cloudTopHeight) * 1e+10, 0.0, 1.0);
-        startIntersection = cloudTopIntersection.x * overCloud;
-        hit = cloudPos.y < cloudTopHeight || cloudTopIntersection.y > 0.0;
+        endIntersection = uintBitsToFloat(min(floatBitsToUint(cloudTopIntersection.y), floatBitsToUint(cloudBottomIntersection.x)));
+        startIntersection = max(0.0, cloudTopIntersection.x);
+        hit = cloudTopIntersection.y > 0.0;
     }
 
     if (backDepth > 1e-5) {
