@@ -11,7 +11,7 @@ Optifine released after 04.12.2019 (1.8.9 L5) is supported.
 
 Theoretically can run on Iris 1.5.0 and above, but for less bugs, latest Iris is suggested.
 
-Angelica (1.7.10) support is unverified, there are reports that Sundial Lite can run on it with some bugs.
+Angelica (1.7.10) is reported to be mostly run, tho there still might be some bugs.
 
 ## Features
 
