@@ -180,10 +180,10 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
 
             vec2 relativeDensity = exp2(earthScaledHeight - middleHeight / scaledHeight * 1.44269502);
             currInScattering =
-                relativeDensity.x * rayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) + 
+                relativeDensity.x * pureRayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) + 
                 relativeDensity.y * mieBeta * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
 
-            vec3 stepAbsorptionBeta = relativeDensity.x * pureRayleighBeta + relativeDensity.y * rainyMieBeta;
+            vec3 stepAbsorptionBeta = relativeDensity.x * rayleighBeta + relativeDensity.y * rainyMieBeta;
             vec3 stepOpticalDepth = stepAbsorptionBeta * stepLength;
             vec3 stepTransmittance = exp(-stepOpticalDepth);
 
