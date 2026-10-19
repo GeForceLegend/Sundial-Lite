@@ -7,7 +7,7 @@ Sundial Lite is the free and open source version of Sundial, using [GNU General 
 
 ## Supported versions
 
-Optifine released after 04.12.2019 (1.8.9 L5) is supported.
+Optifine released after 04.12.2019 (1.8.9 L5) is supported, however, latest Optifine (26.1 and above) becomes a bit buggy as the slow development speed cannot catch up with Minecraft's updating speed and lacks testing.
 
 Theoretically can run on Iris 1.5.0 and above, but for less bugs, latest Iris is suggested.
 
