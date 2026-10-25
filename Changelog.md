@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
   - Space look on sunset/sunrise might be a bit worse. You can restore previous atmosphere view sample count in shader options.
 - Marked 1.7.10 as compatible through only Angelica, Optifine 1.7.10 is not supported;
 - Jittered light level on translucent terrain to make smoother look on light level based effect;
+- Improved subsurface scattering fading on shadow mapping range;
 
 ### Fixed
 
