@@ -156,7 +156,12 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 if (needSubsurfaceScattering && SUBSERFACE_SCATTERING_STRENTGH > 0.0) {
                     const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
                     float absorptionBeta = -4e+3 * 0.5 * 1.44269502 / max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5) * opticalDepth / PCSS_SAMPLES;
-                    subsurfaceScattering *= exp2(absorptionBeta) * (1.0 - solidShadow) * NdotL;
+                    float fade = clamp(viewLength / 16.0 - shadowDistance / 16.0, 0.0, 1.0);
+                    subsurfaceScattering *= mix(
+                        exp2(absorptionBeta) * (1.0 - solidShadow) * NdotL,
+                        skyLight * (1.0 - normalFactor) * NdotL * step(64.5 / 255.0, porosity),
+                        fade
+                    );
                 }
                 shadow *= solidShadow;
             }
