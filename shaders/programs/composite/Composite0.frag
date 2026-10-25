@@ -181,6 +181,9 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
         bool hitSky = true;
         float minimumThichness = max(0.001 * originProjScale, abs(stepSize.z)) + 0.03 * float(gbufferData.materialID == MAT_HAND);
         float minimumThichnessLod = max(0.01 * originProjScale, abs(stepSize.w));
+        vec2 offset =
+            vec2(minimumThichness, minimumThichnessLod) -
+            min(vec2(0.001 * originProjScale, 0.01 * originProjScale), vec2(minimumThichness, minimumThichnessLod) * clamp(exp2(-SCREEN_SPACE_REFLECTION_REFINEMENTS + 1.0), 0.0, 1.0));
         for (int i = 0; i < SCREEN_SPACE_REFLECTION_STEP; i++) {
             float sampleDepth = uintBitsToFloat(textureLod(colortex6, sampleCoord.st, 0.0).x);
             sampleDepth -= float(sampleDepth > 1.0);
@@ -203,9 +206,9 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
                     stepScale *= 0.5;
                 }
 
-                bool hitTerrain = abs(refinementCoord.z - sampleDepth - minimumThichness) < minimumThichness && floatBitsToUint(sampleDepth) < 0x3F800000u;
+                bool hitTerrain = abs(refinementCoord.z - sampleDepth - offset.x) < minimumThichness && floatBitsToUint(sampleDepth) < 0x3F800000u;
                 #ifdef LOD
-                    hitTerrain = hitTerrain || (abs(sampleDepth + 0.5) < 0.5 && abs(refinementCoord.w + sampleDepth - minimumThichnessLod) < minimumThichnessLod);
+                    hitTerrain = hitTerrain || (abs(sampleDepth + 0.5) < 0.5 && abs(refinementCoord.w + sampleDepth - offset.y) < minimumThichnessLod);
                 #endif
                 hitTerrain = hitTerrain && dot(stepSize.st, refinementCoord.st - originCoord) > 0.0;
                 if (hitTerrain && all(lessThan(floatBitsToUint(refinementCoord.st), floatBitsToUint(screenEdge)))) {
