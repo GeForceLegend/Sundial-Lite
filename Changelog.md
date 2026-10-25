@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Fixed wrong direction used when consider if reflection direction hits sky in screen pixels;
 - Fixed taa offset scale in some effects when SuperResolution is enabled;
 - Fixed wrong reflection hit length when SuperResolution is enabled;
+- Fixed screen space reflection may consider hit on objects too close to camera;
 
 ## [1.2.0] - 2026-09-26
 
