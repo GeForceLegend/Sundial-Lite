@@ -10,7 +10,7 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
 
     vec3 distortShadowCoord(vec3 shadowCoord) {
         float clipLengthInv = inversesqrt(dot(shadowCoord.xy, shadowCoord.xy));
-        float shadowDistortion = log(distortionStrength / clipLengthInv + 1.0) / log(distortionStrength + 1.0) * 0.25;
+        float shadowDistortion = log2(distortionStrength / clipLengthInv + 1.0) / log2(distortionStrength + 1.0) * 0.25;
         shadowCoord.xy *= clipLengthInv * shadowDistortion;
         shadowCoord.xy = shadowCoord.xy + 0.75;
         return shadowCoord;
