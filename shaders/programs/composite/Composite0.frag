@@ -24,6 +24,7 @@ layout(location = 1) out vec4 texBuffer4;
 in vec2 texcoord;
 
 #define CLOUD_IN_REFLECTION
+// #define SCREEN_SPACE_REFLECTION_EDGE_FADE
 #define SCREEN_SPACE_REFLECTION_STEP 16 // [2 3 4 5 6 7 8 10 12 14 16 20 24 28 32]
 #define SCREEN_SPACE_REFLECTION_REFINEMENTS 5 // [1 2 3 4 5 6 8 10]
 
@@ -225,6 +226,11 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
             if (any(greaterThan(floatBitsToUint(sampleCoord.st), floatBitsToUint(screenEdge))) || sampleCoord.z < 0.0) break;
             sampleCoord += stepSize;
         }
+        #ifdef SCREEN_SPACE_REFLECTION_EDGE_FADE
+            float fade = blueNoiseTemporal(texcoord).x;
+            vec2 screenEdgeDistance = min(sampleCoord.st, 1.0 - sampleCoord.st);
+            hitSky = hitSky || (min(screenEdgeDistance.x, screenEdgeDistance.y) * 6.0 < fade);
+        #endif
         rayDir = mat3(gbufferModelViewInverse) * rayDir;
         if (!hitSky) {
             vec3 sampleViewPos = sampleCoord.xyz * 2.0;

@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - Added unverified support for 26.4 icicle and ice crystal;
+- Added `SCREEN_SPACE_REFLECTION_EDGE_FADE`, disabled by default;
 
 ### Changed
 
