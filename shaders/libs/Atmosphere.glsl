@@ -132,7 +132,7 @@ vec3 singleAtmosphereScattering(
                 vec2 relativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight * 1.44269502);
                 currInScattering =
                     relativeDensity.x * pureRayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) + 
-                    relativeDensity.y * mieBeta * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
+                    relativeDensity.y * rainyMieBeta * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
 
                 vec3 stepAbsorptionBeta = relativeDensity.x * rayleighBeta + relativeDensity.y * rainyMieBeta;
                 vec3 stepOpticalDepth = stepAbsorptionBeta * stepLength;
@@ -181,7 +181,7 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
             vec2 relativeDensity = exp2(earthScaledHeight - middleHeight / scaledHeight * 1.44269502);
             currInScattering =
                 relativeDensity.x * pureRayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) + 
-                relativeDensity.y * mieBeta * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
+                relativeDensity.y * rainyMieBeta * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
 
             vec3 stepAbsorptionBeta = relativeDensity.x * rayleighBeta + relativeDensity.y * rainyMieBeta;
             vec3 stepOpticalDepth = stepAbsorptionBeta * stepLength;
@@ -252,8 +252,10 @@ vec3 solidAtmosphereScattering(vec3 color, vec3 worldDir, vec3 skyColor, float w
     float depthFactor = 1.0 - exp2(-worldDepth * 0.001);
     float g = mieG * depthFactor;
     float g2 = g * g;
+    moonLightColor *= mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);
+    skyColor += (sunLightColor + moonLightColor) * 0.5;
     sunLightColor *= rayleighPhase(LdotV) + miePhase(LdotV, g, g2);
-    moonLightColor *= (rayleighPhase(-LdotV) + miePhase(-LdotV, g, g2)) * mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);
+    moonLightColor *= rayleighPhase(-LdotV) + miePhase(-LdotV, g, g2);
     vec3 scatteringColor = mix((sunLightColor + moonLightColor) * 30.0, skyColor * 0.25, sqrt(weatherStrength) * 0.99) * skyLight * skyLight;
 
     vec2 originRelativeHeight = earthScaledHeight - playerHeight / scaledHeight * 1.44269502;
