@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Marked 1.7.10 as compatible through only Angelica, Optifine 1.7.10 is not supported;
 - Jittered light level on translucent terrain to make smoother look on light level based effect;
 - Improved subsurface scattering fading on shadow mapping range;
+- Slightly improved screen space shadow with TAA;
 
 ### Fixed
 
