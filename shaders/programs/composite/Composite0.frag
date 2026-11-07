@@ -280,7 +280,6 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
                 #endif
                 reflectionColor.rgb = mix(reflectionColor.rgb, planeCloud.rgb, planeCloud.a);
                 #ifdef LIGHT_LEAKING_FIX
-                    float skyLightLevelFix = gbufferData.lightmap.y;
                     vec3 viewDir = mat3(gbufferModelView) * rayDir;
                     vec2 screenDir = viewDir.xy * vec2(gbufferProjection[0].x, gbufferProjection[1].y) / -viewDir.z;
                     if (all(lessThan(abs(screenDir), vec2(1.0))) && viewDir.z < 0.0) {
@@ -292,9 +291,9 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
                         #ifdef LOD
                             targetDepth = max(targetDepth, getLodDepthSolid(targetCoord));
                         #endif
-                        skyLightLevelFix = clamp(skyLightLevelFix + float(targetDepth == 1.0), 0.0, 1.0);
+                        gbufferData.lightmap.y = clamp(gbufferData.lightmap.y + float(targetDepth == 1.0), 0.0, 1.0);
                     }
-                    reflectionColor.rgb *= skyLightLevelFix;
+                    reflectionColor.rgb *= gbufferData.lightmap.y;
                 #endif
             #endif
             reflectionColor.w = 114514.0;

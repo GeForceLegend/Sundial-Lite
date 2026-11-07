@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Fixed taa offset scale in some effects when SuperResolution is enabled;
 - Fixed wrong reflection hit length when SuperResolution is enabled;
 - Fixed screen space reflection may self hit when ray start point near objects closer to camera;
+- Fixed atmosphere fog when low sky light area place hits sky in reflection;
 
 ## [1.2.0] - 2026-09-26
 
