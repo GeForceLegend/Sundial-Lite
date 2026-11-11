@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Reflection filter stage 2
+//  Reflection filter stage 1
 //
 
 layout(location = 0) out vec4 texBuffer4;
@@ -34,9 +34,7 @@ void main() {
         depth += float(depth == 1.0) * (getLodDepthWater(texcoord) - 1.0);
     #endif
     if (abs(depth) < 1.0 && reflectionColor.w > 1e-6) {
-        reflectionColor = reflectionFilter(reflectionColor, texel, 2.5, false);
-    } else {
-        discard;
+        reflectionColor = reflectionFilter(reflectionColor, texel, 6.0, false);
     }
     texBuffer4 = reflectionColor;
 }

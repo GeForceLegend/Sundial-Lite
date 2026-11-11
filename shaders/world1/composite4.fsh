@@ -3,4 +3,4 @@
 #define THE_END
 #define BASIC_LIGHT 0.01
 
-#include "/programs/composite/Composite5.frag"
+#include "/programs/composite/Composite4.frag"

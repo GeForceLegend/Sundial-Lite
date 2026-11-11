@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Jittered light level on translucent terrain to make smoother look on light level based effect;
 - Improved subsurface scattering fading on shadow mapping range;
 - Slightly improved screen space shadow with TAA;
+- Reordered and merged some shaders to slightly improve performance;
 
 ### Fixed
 

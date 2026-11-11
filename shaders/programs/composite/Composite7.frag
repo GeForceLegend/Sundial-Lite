@@ -25,6 +25,10 @@ layout(location = 2) out vec4 texBuffer5;
 in float smoothCenterDepth;
 in vec2 texcoord;
 
+#ifdef SHADOW_AND_SKY
+    in vec3 skyColorUp;
+#endif
+
 // Depth of field
     #define DEPTH_OF_FIELD
     #define FOCUS_MODE 0 // [0 1]
@@ -199,6 +203,18 @@ void main() {
     float centerDepth = uintBitsToFloat(textureLod(colortex6, texcoord, 0.0).x);
     float centerCoC = circleOfConfusionRadius(centerDepth, focusDepth);
     float sampleRadius = clamp(abs(centerCoC), 0.0, 1.0);
+
+    #ifdef SHADOW_AND_SKY
+        float weatherData = texelFetch(colortex0, texel, 0).w * 2.5 - 1.5;
+        float weatherLightData = abs(weatherData);
+        if (weatherLightData > 0.3) {
+            float sunlightStrength = 2.0 * weatherLightData - 1.0;
+            float basicSunlight = (1.0 - (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * 9.5 * SUNLIGHT_BRIGHTNESS;
+            vec3 weatherLight = sunlightStrength * basicSunlight * sunColor + skyColorUp * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength);
+            float weatherBlendWeight = clamp(weatherData * 1e+10, 0.0, 1.0) * 0.95 + 0.05;
+            centerData.rgb = mix(centerData.rgb, weatherLight, weatherBlendWeight);
+        }
+    #endif
 
     #ifdef DEPTH_OF_FIELD
         float strength = 15.0 * MAX_BLUR_RADIUS;
