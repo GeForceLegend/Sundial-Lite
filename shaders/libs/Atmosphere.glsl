@@ -81,7 +81,7 @@ vec3 singleAtmosphereScattering(
             float atmosphereHeight = clamp((originPos.y - earthRadius) / atmosphereThickness * 3.0, 0.0, 1.0);
             sampleDirection.y *= clamp(float(sampleDirection.y > 0.0) + 2.0 * atmosphereHeight - atmosphereHeight * atmosphereHeight, 0.0, 1.0);
             sampleDirection = normalize(sampleDirection);
-    
+
             float groundLength = intersectionData.z;
             float originHeight2 = dot(originPos, originPos);
             groundLength = max(groundLength, uintBitsToFloat(floatBitsToUint(-sqrt(originHeight2 - earthRadius * earthRadius)) ^ (floatBitsToUint(groundLength) & 0x80000000u)));
@@ -131,7 +131,7 @@ vec3 singleAtmosphereScattering(
 
                 vec2 relativeDensity = exp2(earthScaledHeight - sampleHeight / scaledHeight * 1.44269502);
                 currInScattering =
-                    relativeDensity.x * pureRayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) + 
+                    relativeDensity.x * pureRayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) +
                     relativeDensity.y * rainyMieBeta * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
 
                 vec3 stepAbsorptionBeta = relativeDensity.x * rayleighBeta + relativeDensity.y * rainyMieBeta;
@@ -180,7 +180,7 @@ vec3 atmosphereScatteringUp(float lightHeight, float sunLightStrength) {
 
             vec2 relativeDensity = exp2(earthScaledHeight - middleHeight / scaledHeight * 1.44269502);
             currInScattering =
-                relativeDensity.x * pureRayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) + 
+                relativeDensity.x * pureRayleighBeta * (currSunInScattering * sunRayleigh + currMoonInScattering * moonRayleigh) +
                 relativeDensity.y * rainyMieBeta * (currSunInScattering * sunMie + currMoonInScattering * moonMie);
 
             vec3 stepAbsorptionBeta = relativeDensity.x * rayleighBeta + relativeDensity.y * rainyMieBeta;

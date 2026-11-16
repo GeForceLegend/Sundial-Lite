@@ -359,6 +359,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
                     uint occBits0 = mX & mY;
 
                     uint visBits0 = occBits0 & (~occBits);
+                    occBits = occBits | occBits0;
                     #ifdef VBGI
                         if(visBits0 != 0u) {
                             float vis0 = float(CountBits(visBits0)) * (1.0 / 32.0);
@@ -366,7 +367,6 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
                             totalSamples.rgb += sampleData.rgb * vis0 * clamp(1.0 - isOriginNotHand * isHand, 0.0, 1.0);
                         }
                     #endif
-                    occBits = occBits | occBits0;
                 }
             }
             float occ0 = float(CountBits(occBits)) * (1.0 / 32.0);
