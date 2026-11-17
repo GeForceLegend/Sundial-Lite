@@ -133,7 +133,7 @@ void main() {
         vec3 stainedColor = vec3(0.0);
         if (isTargetNotParticle) {
             stainedColor += gbufferData.smoothness * gbufferData.smoothness;
-            float refractionStrength = REFRACTION_STRENGTH * 4e-2 * clamp((1.0 - waterViewDepthNoLimit * worldDistanceInv) / (waterViewDepthNoLimit * worldDistanceInv + worldDistanceInv), 0.0, 1.0);
+            float refractionStrength = REFRACTION_STRENGTH * 4e-2 * (1.0 - waterViewDepthNoLimit * worldDistanceInv) * (1.0 + float(isTargetWater));
 
             float roughness = 1.0 - gbufferData.smoothness;
             vec2 blueNoise = textureLod(noisetex, texcoord * screenSize / 64.0, 0.0).xy;
