@@ -122,7 +122,7 @@ value.SMOOTH_PARALLAX_OFFSET.2=左上
 value.SMOOTH_PARALLAX_OFFSET.3=右下
 value.SMOOTH_PARALLAX_OFFSET.4=右上
 # Specular
-option.SUBSERFACE_SCATTERING_STRENTGH=次表面散射强度
+option.SUBSURFACE_SCATTERING_STRENGTH=次表面散射强度
 option.PBR_BRIGHTNESS=PBR亮度
 option.PBR_BRIGHTNESS.comment=控制PBR发光与硬编码光源本身的亮度
 option.SPECULAR_FORMAT=PBR格式
@@ -462,7 +462,7 @@ option.TEMPORAL_IGNORE_HAND_ANIMATION.comment=在时间性累积中忽略原版�
 option.AUTHOR=作者
 option.AUTHOR.comment=https://afdian.net/a/geforcelegend. https://space.bilibili.com/129209703. Sundial Lite 默认开启所有效果. 如对性能不满意，请自行尝试关闭或降低某些效果
 option.GLOWING_OVERLAY=发光实体遮罩
-option.GLOWING_OVERLAY.comment=让拥有发光效果的实体透过其他物体渲染. 会严重影响景深（DoF）
+option.GLOWING_OVERLAY.comment=让拥有发光效果的实体透过其他物体渲染. 会严重影响景深（DoF），且在 Iris 上无效
 option.UNDERGROUND_MODE=地底模式
 option.UNDERGROUND_MODE.comment=完全禁用所有天空与阳光的渲染. 在下界与末地恒定启用
 option.SHADOW_DISTORTION_FIX=阴影形变补偿

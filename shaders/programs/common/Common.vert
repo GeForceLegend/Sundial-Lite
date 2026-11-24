@@ -92,7 +92,7 @@ void main() {
             viewCurrCenterDepth += (parallaxOffset * 0.2 * PARALLAX_DEPTH) / max(1e-5, abs(geoNormalZ));
             currCenterDepth = viewToScreenDepth(viewCurrCenterDepth);
         #endif
-        float fadeFactor = exp(log(0.5) * frameTime * 10.0 / centerDepthHalflife) * float(prevCenterDepth > 0.0);
+        float fadeFactor = exp2(-10.0 / centerDepthHalflife * frameTime) * float(prevCenterDepth > 0.0);
         smoothCenterDepth = mix(currCenterDepth, prevCenterDepth, fadeFactor);
     #endif
 

@@ -53,7 +53,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec3 worldPos, vec3 worldGeoNormal, float NdotL, float viewLength, float smoothness,
         float porosity, float skyLight, vec2 noise, inout vec3 shadow, inout vec3 subsurfaceScattering
     ) {
-        subsurfaceScattering *= clamp(SUBSERFACE_SCATTERING_STRENTGH * 1e+10, 0.0, 1.0);
+        subsurfaceScattering *= clamp(SUBSURFACE_SCATTERING_STRENGTH * 1e+10, 0.0, 1.0);
         if (weatherStrength < 0.999) {
             vec3 sssShadowCoord = worldPosToShadowCoordNoDistort(worldPos);
             float normalOffsetLen = (viewLength * 2e-3 + 2e-2) * (1.0 + sqrt(1.0 - NdotL));
@@ -153,8 +153,8 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 #endif
 
                 solidShadow *= normalFactor / PCSS_SAMPLES;
-                if (needSubsurfaceScattering && SUBSERFACE_SCATTERING_STRENTGH > 0.0) {
-                    const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
+                if (needSubsurfaceScattering && SUBSURFACE_SCATTERING_STRENGTH > 0.0) {
+                    const float absorptionScale = SUBSURFACE_SCATTERING_STRENGTH / (191.0);
                     float absorptionBeta = -4e+3 * 0.5 * 1.44269502 / max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5) * opticalDepth / PCSS_SAMPLES;
                     float fade = clamp(viewLength / 16.0 - shadowDistance / 16.0, 0.0, 1.0);
                     subsurfaceScattering *= mix(
@@ -225,7 +225,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
                 targetViewPos = screenToViewPosLod(targetCoord.xy, targetCoord.w);
             }
         #endif
-        const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
+        const float absorptionScale = SUBSURFACE_SCATTERING_STRENGTH / (191.0);
         vec3 viewPosDiff = targetViewPos - viewPos;
         float absorptionBeta = -0.5 / (max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5) * inversesqrt(dot(viewPosDiff, viewPosDiff)));
         float absorption = exp2(absorptionBeta * porosityScale * 0.5) * step(0.25, porosity) * (1.0 - clamp(NdotL * 10.0, 0.0, 1.0) * porosityScale) + 1.0;

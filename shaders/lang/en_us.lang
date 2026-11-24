@@ -114,7 +114,7 @@ value.SMOOTH_PARALLAX_OFFSET.2=Left upper
 value.SMOOTH_PARALLAX_OFFSET.3=Right lower
 value.SMOOTH_PARALLAX_OFFSET.4=Right upper
 # Specular
-option.SUBSERFACE_SCATTERING_STRENTGH=Sub-surface scattering strength
+option.SUBSURFACE_SCATTERING_STRENGTH=Sub-surface scattering strength
 option.PBR_BRIGHTNESS=PBR brightness
 option.PBR_BRIGHTNESS.comment=Control brightness of PBR and hardcoded emissive objects
 option.SPECULAR_FORMAT=PBR format
@@ -420,7 +420,7 @@ option.TEMPORAL_IGNORE_HAND_ANIMATION.comment=Ignore hand animation of view bobb
 option.AUTHOR=Author
 option.AUTHOR.comment=https://afdian.net/a/geforcelegend. https://space.bilibili.com/129209703. Sundial Lite enables ALL effect by default. Disable or lower some option if you want better performance
 option.GLOWING_OVERLAY=Glowing entities overlay
-option.GLOWING_OVERLAY.comment=Let glowing entities rendering above others. Have serious artifact with DoF
+option.GLOWING_OVERLAY.comment=Let glowing entities rendering above others. Have serious artifact with DoF, and does not work on Iris
 option.UNDERGROUND_MODE=Underground mode
 option.UNDERGROUND_MODE.comment=Disable all sky and sunlight rendering. Always enabled in nether and the end
 option.SHADOW_DISTORTION_FIX=Shadow distortion fix

@@ -59,7 +59,7 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
         vec3 worldPos, vec3 geoNormal, float NdotL, float smoothness, float porosity,
         float skyLight, inout vec3 shadow, inout vec3 subsurfaceScattering
     ) {
-        subsurfaceScattering *= clamp(SUBSERFACE_SCATTERING_STRENTGH * 1e+10, 0.0, 1.0);
+        subsurfaceScattering *= clamp(SUBSURFACE_SCATTERING_STRENGTH * 1e+10, 0.0, 1.0);
         if (weatherStrength < 0.999) {
             vec3 sssShadowCoord = worldPosToShadowCoordNoDistort(worldPos);
             float normalFactor = clamp(pow(NdotL, pow2(1.0 - min(0.3, smoothness))), 0.0, 1.0);
@@ -80,7 +80,7 @@ const float realShadowMapResolution = shadowMapResolution * MC_SHADOW_QUALITY;
                 if (porosity > 64.5 / 255.0) {
                     float shadowDepth = textureLod(shadowtex1, shadowCoord.st, 0.0).r;
                     float opticalDepth = clamp(shadowCoord.z - shadowDepth + sssOffsetZ, 0.0, 1.0);
-                    const float absorptionScale = SUBSERFACE_SCATTERING_STRENTGH / (191.0);
+                    const float absorptionScale = SUBSURFACE_SCATTERING_STRENGTH / (191.0);
                     float absorptionBeta = -4e+3 * 0.5 * 1.44269502 / max(porosity * absorptionScale * 255.0 - absorptionScale * 64.0, 1e-5) * opticalDepth;
 
                     subsurfaceScattering *= exp2(absorptionBeta) * subsurfaceScatteringWeight;
