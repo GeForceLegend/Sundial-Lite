@@ -176,32 +176,28 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
         vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos, -viewPos.z);
         originProjPos.z += gbufferProjection[3].z;
         originProjPos.xy += gbufferProjection[2].xy * viewPos.z;
-        vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewShadowDirection, -viewShadowDirection.z);
-        projDirection.xy += gbufferProjection[2].xy * viewShadowDirection.z;
+        vec4 rayEnd = vec4(gbufferProjection[0].x, gbufferProjection[1].y, -gbufferProjection[2].z, 0.0);
+        rayEnd.xy *= viewShadowDirection.xy / -viewShadowDirection.z;
+        rayEnd.xy -= gbufferProjection[2].xy;
         #ifdef TAA
             vec2 taaOffsetScaled = taaOffset;
             #if SR_ENABLE
                 taaOffsetScaled = upscaleRatio * taaOffsetScaled;
             #endif
             originProjPos.xy += taaOffsetScaled * originProjPos.w;
-            projDirection.xy += taaOffsetScaled * projDirection.w;
+            rayEnd.xy += taaOffsetScaled;
         #endif
         float projScale = 0.5 / originProjPos.w;
         vec4 originCoord = vec4(originProjPos.xyz * projScale + 0.5, 0.0);
-
-        float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
-        vec4 targetProjPos = originProjPos + projDirection * traceLength;
-        float targetProjScale = 0.5 / targetProjPos.w;
-        vec4 targetCoord = vec4(targetProjPos.xyz * targetProjScale + 0.5, 0.0);
+        rayEnd = rayEnd * 0.5 + 0.5;
 
         #ifdef LOD
-            projDirection.z = viewShadowDirection.z * projLod()[2].z;
+            rayEnd.w = projLod()[2].z * -0.5 + 0.5;
             float originProjDepthLod = viewPos.z * projLod()[2].z + projLod()[3].z;
             originCoord.w = originProjDepthLod * projScale + 0.5;
-            targetCoord.w = (originProjDepthLod + projDirection.z * traceLength) * targetProjScale + 0.5;
         #endif
 
-        vec4 stepSize = targetCoord - originCoord;
+        vec4 stepSize = signI(viewShadowDirection.z) * (originCoord - rayEnd);
         stepSize *= inversesqrt(dot(stepSize.xy, stepSize.xy));
         vec2 pixelSize = texelSize;
         #if SR_ENABLE
@@ -218,7 +214,7 @@ const float shadowDistance = 120.0; // [80.0 120.0 160.0 200.0 240.0 280.0 320.0
             originCoord.st *= renderScale;
             stepSize.st *= renderScale;
         #endif
-        targetCoord = originCoord + stepSize * SCREEN_SPACE_SHADOW_SAMPLES;
+        vec4 targetCoord = originCoord + stepSize * SCREEN_SPACE_SHADOW_SAMPLES;
         vec3 targetViewPos = screenToViewPos(targetCoord.xy, targetCoord.z);
         #ifdef LOD
             if (targetCoord.z >= 1.0) {
