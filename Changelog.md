@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Slightly improved screen space shadow with TAA;
 - Reordered and merged some shaders to slightly improve performance;
 - Adjusted how refraction offset scale with depth;
+- Improved screen space reflection quality with SuperResolution;
 
 ### Fixed
 

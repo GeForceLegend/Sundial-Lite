@@ -250,6 +250,7 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
     #endif
     float originProjScale = 0.5 / originProjPos.w;
     vec2 originCoord = vec2(originProjPos.xy * originProjScale + 0.5);
+    vec2 originCoordRaw = originCoord;
     #if SR_ENABLE
         originCoord *= renderScale;
     #endif
@@ -260,19 +261,19 @@ vec4 screenSpaceVisibiliyBitmask(vec3 originViewPos, vec3 normal, vec2 texcoord,
         noise = fract(noise + vec2(r2Double, r2Double * r2Double));
         vec2 screenDir = SamplePartialSliceDir(normalVVS, noise.x);
         vec3 rayDir = Transform_Vz0Qz0(screenDir, Q_toV);
+        vec2 rayEnd = vec2(gbufferProjection[0].x, gbufferProjection[1].y) * rayDir.xy / -rayDir.z - gbufferProjection[2].xy;
+        rayEnd = rayEnd * 0.5 + 0.5;
 
-        vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);
-        projDirection.xy += gbufferProjection[2].xy * rayDir.z;
-        float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
-
-        vec4 targetProjPos = originProjPos + projDirection * traceLength;
-        float targetProjScale = 0.5 / targetProjPos.w;
-        vec2 targetCoord = vec2(targetProjPos.xy * targetProjScale + 0.5);
+        float screenInOut = signI(-rayDir.z);
+        vec2 sampleDirection = screenInOut * (rayEnd - originCoordRaw);
+        vec2 screenEdgeDistanceScale = (step(vec2(0.0), sampleDirection) - originCoordRaw) / sampleDirection.st;
+        uint directionScale = min(floatBitsToUint(screenEdgeDistanceScale.x), floatBitsToUint(screenEdgeDistanceScale.y));
+        sampleDirection *= uintBitsToFloat(min(directionScale, floatBitsToUint(screenInOut)));
         #if SR_ENABLE
-            targetCoord *= renderScale;
+            sampleDirection *= renderScale;
         #endif
 
-        vec2 sampleRange = (targetCoord - originCoord) * screenSize;
+        vec2 sampleRange = sampleDirection * screenSize;
         float projTraceLength = inversesqrt(dot(sampleRange, sampleRange));
         vec2 stepDir = sampleRange * projTraceLength * texelSize;
         float VB_LENGTH = VB_AO_LENGTH;

@@ -440,19 +440,3 @@ float viewToScreenDepth(float depth) {
     depth = (1.0 / depth - gbufferProjectionInverse[3].w) / gbufferProjectionInverse[2].w;
     return depth * 0.5 + 0.5;
 }
-
-uvec2 projIntersection(vec4 origin, vec4 direction, vec2 targetCoord) {
-    return floatBitsToUint((targetCoord * origin.ww - origin.xy) / (direction.xy - targetCoord * direction.ww));
-}
-
-float projIntersectionScreenEdge(vec4 origin, vec4 direction) {
-    uvec2 intersectionAA = projIntersection(origin, direction, vec2(1.0));
-    uvec2 intersectionBB = projIntersection(origin, direction, vec2(-1.0));
-    uint intersection = min(min(intersectionAA.x, intersectionAA.y), min(intersectionBB.x, intersectionBB.y));
-    float depthLimit = far;
-    #ifdef LOD
-        depthLimit = lodRenderDistance() * 1.01;
-    #endif
-    intersection = min(intersection, floatBitsToUint(depthLimit + 32.0));
-    return uintBitsToFloat(intersection);
-}

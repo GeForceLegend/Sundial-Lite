@@ -140,40 +140,43 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
     vec3 totalWeight = brdfWeight * firstWeight;
     vec4 reflectionColor = vec4(0.0);
     if (dot(totalWeight, totalWeight) > 1e-6) {
-        vec4 projDirection = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * rayDir, -rayDir.z);
         vec4 originProjPos = vec4(vec3(gbufferProjection[0].x, gbufferProjection[1].y, gbufferProjection[2].z) * viewPos, -viewPos.z);
-        projDirection.xy += gbufferProjection[2].xy * rayDir.z;
         originProjPos.z += gbufferProjection[3].z;
         originProjPos.xy += gbufferProjection[2].xy * viewPos.z;
+        vec4 rayEnd = vec4(gbufferProjection[0].x, gbufferProjection[1].y, -gbufferProjection[2].z, 0.0);
+        rayEnd.xy *= rayDir.xy / -rayDir.z;
+        rayEnd.xy -= gbufferProjection[2].xy;
         #ifdef TAA
             vec2 taaOffsetScaled = taaOffset;
             #if SR_ENABLE
                 taaOffsetScaled = upscaleRatio * taaOffsetScaled;
             #endif
             originProjPos.xy += taaOffsetScaled * originProjPos.w;
+            rayEnd.xy += taaOffsetScaled;
         #endif
-        float traceLength = projIntersectionScreenEdge(originProjPos, projDirection);
 
         float originProjScale = 0.5 / originProjPos.w;
         vec4 sampleCoord = vec4(originProjPos.xyz * originProjScale + 0.5, 0.0);
-        vec4 targetProjPos = originProjPos + projDirection * traceLength;
-        float targetProjScale = 0.5 / targetProjPos.w;
-        vec4 targetCoord = vec4(targetProjPos.xyz * targetProjScale + 0.5, 0.0);
-        #if SR_ENABLE
-            sampleCoord.st *= renderScale;
-            targetCoord.st *= renderScale;
-        #endif
-
+        rayEnd = rayEnd * 0.5 + 0.5;
         #ifdef LOD
-            projDirection.z = rayDir.z * projLod()[2].z;
+            rayEnd.w = projLod()[2].z * -0.5 + 0.5;
             float originProjDepthLod = viewPos.z * projLod()[2].z + projLod()[3].z;
             sampleCoord.w = originProjDepthLod * originProjScale + 0.5;
-            targetCoord.w = (originProjDepthLod + projDirection.z * traceLength) * targetProjScale + 0.5;
+        #endif
+        float screenInOut = signI(-rayDir.z);
+        vec4 sampleDirection = screenInOut * (rayEnd - sampleCoord);
+        vec2 screenEdgeDistanceScale = (step(vec2(0.0), sampleDirection.st) - sampleCoord.st) / sampleDirection.st;
+        uint directionScale = min(floatBitsToUint(screenEdgeDistanceScale.x), floatBitsToUint(screenEdgeDistanceScale.y));
+        sampleDirection *= uintBitsToFloat(min(directionScale, floatBitsToUint(screenInOut)));
+
+        #if SR_ENABLE
+            sampleCoord.st *= renderScale;
+            sampleDirection.st *= renderScale;
         #endif
         vec2 originCoord = sampleCoord.st;
 
         float noise = blueNoiseTemporal(texcoord).x + 0.1;
-        vec4 stepSize = (targetCoord - sampleCoord) / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
+        vec4 stepSize = sampleDirection / (SCREEN_SPACE_REFLECTION_STEP - 1.0);
         float stepSizeLengthInv = texelSize.y * inversesqrt(dot(stepSize.xy, stepSize.xy));
         sampleCoord += max(noise, stepSizeLengthInv) * stepSize;
         stepSize *= max(1.0, stepSizeLengthInv);
