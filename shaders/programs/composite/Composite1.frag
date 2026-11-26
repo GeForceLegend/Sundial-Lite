@@ -222,6 +222,7 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
                 hitTerrain = hitTerrain && dot(stepSize.st, refinementCoord.st - originCoord) > 0.0;
                 if (hitTerrain && all(lessThan(floatBitsToUint(refinementCoord.st), floatBitsToUint(screenEdge)))) {
                     sampleCoord = refinementCoord;
+                    sampleCoord.z = sampleDepth;
                     hitSky = false;
                     break;
                 }
@@ -245,8 +246,8 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
             #endif
             sampleViewPos -= 1.0;
             #ifdef LOD
-                if (sampleCoord.z >= 1.0) {
-                    sampleViewPos.z = sampleCoord.w * 2.0 - 1.0;
+                if (sampleCoord.z < 0.0) {
+                    sampleViewPos.z = -sampleCoord.z * 2.0 - 1.0;
                     sampleViewPos.xy *= vec2(projInvLod()[0].x, projInvLod()[1].y);
                     sampleViewPos.xy += projInvLod()[3].xy;
                     float projectionScale = projLod()[3].z / (sampleViewPos.z + projLod()[2].z);

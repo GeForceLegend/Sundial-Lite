@@ -32,6 +32,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Fixed screen space reflection may self hit when ray start point near objects closer to camera;
 - Fixed atmosphere fog when low sky light area place hits sky in reflection;
 - Fixed rain bloom fog still applies when player camera is not in air;
+- Fixed unstable screen space reflection hit length when ray starts too close to camera;
 
 ## [1.2.0] - 2026-09-26
 
