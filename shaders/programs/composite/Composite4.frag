@@ -93,197 +93,36 @@ float volumetricFogDensity(vec3 position) {
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.xy);
-    GbufferData gbufferData = getGbufferData(texel, texcoord);
     float waterDepth = textureLod(depthtex0, texcoord, 0.0).r;
-    float solidDepth = gbufferData.depth;
+    float solidDepth = textureLod(depthtex1, texcoord, 0.0).r;
     vec3 viewPos;
     #ifdef LOD
-        if (solidDepth == 1.0) {
-            solidDepth = getLodDepthSolid(texcoord);
-            viewPos = screenToViewPosLod(texcoord, solidDepth);
-            solidDepth += 1.0;
-        } else
-    #endif
-    {
-        viewPos = screenToViewPos(texcoord, solidDepth);
-    }
-    vec3 waterViewPos;
-    #ifdef LOD
+        solidDepth += float(solidDepth == 1.0) * getLodDepthSolid(texcoord);
         if (waterDepth == 1.0) {
             waterDepth = getLodDepthWater(texcoord);
-            waterViewPos = screenToViewPosLod(texcoord, waterDepth);
+            viewPos = screenToViewPosLod(texcoord, waterDepth);
             waterDepth += 1.0;
         } else
     #endif
     {
-        waterViewPos = screenToViewPos(texcoord, waterDepth);
+        viewPos = screenToViewPos(texcoord, waterDepth);
     }
     vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
-    float worldDistanceInv = inversesqrt(dot(worldPos, worldPos));
-    vec3 waterWorldDir = worldPos * worldDistanceInv;
+    float worldDistanceInv = inversesqrt(dot(viewPos, viewPos));
+    vec3 worldDir = worldPos * worldDistanceInv;
 
-    float waterViewDepthNoLimit = length(waterViewPos);
+    float waterViewDepthNoLimit = 1.0 / worldDistanceInv;
     vec4 solidColor = texelFetch(colortex3, texel, 0);
-    solidColor.w = clamp(solidColor.w + float(waterDepth == solidDepth), 0.0, 1.0);
-    if (waterDepth < solidDepth) {
-        bool isTargetWater = gbufferData.materialID == MAT_WATER;
-        bool isTargetNotParticle = gbufferData.materialID != MAT_PARTICLE;
-        vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);
-        float LdotH = clamp(dot(-worldNormal, waterWorldDir), 0.0, 1.0);
-        vec3 stainedColor = vec3(0.0);
-        if (isTargetNotParticle) {
-            stainedColor += gbufferData.smoothness * gbufferData.smoothness;
-            float refractionStrength = REFRACTION_STRENGTH * 4e-2 * (1.0 - waterViewDepthNoLimit * worldDistanceInv) * (1.0 + float(isTargetWater));
-
-            float roughness = 1.0 - gbufferData.smoothness;
-            vec2 blueNoise = textureLod(noisetex, texcoord * screenSize / 64.0, 0.0).xy;
-            vec2 randomOffset = vec2(cos(blueNoise.x * 2.0 * PI), sin(blueNoise.x * 2.0 * PI)) * blueNoise.y;
-            float k = sqrt(1.5 * 1.5 - (1.0 - LdotH * LdotH));
-            vec3 viewDir = viewPos * worldDistanceInv;
-            vec3 refractDirection = normalize(
-                viewDir - (LdotH + k) * gbufferData.normal +
-                (dot(-gbufferData.geoNormal, viewDir) + k) * gbufferData.geoNormal * float(isTargetWater) // Get this idea from zombye/spectrum, MIT Licence
-            );
-            vec2 refractionOffset = (refractDirection.xy - viewPos.xy / viewPos.z * refractDirection.z + roughness * randomOffset) * refractionStrength * screenEdge;
-            refractionOffset.x *= screenSize.y * texelSize.x;
-            vec2 screenEdgeIntersection = mix(texcoord, screenEdge - texcoord, clamp(refractionOffset * 1e+20, 0.0, 1.0)) / abs(refractionOffset);
-            float screenEdgeLength = min(screenEdgeIntersection.x, screenEdgeIntersection.y);
-            if (screenEdgeLength < 1.0 / (1.0 - REFRACTION_EDGE_FADE)) {
-                refractionOffset *= screenEdgeLength + pow2(REFRACTION_EDGE_FADE * screenEdgeLength) / (-1.0 + (1.0 - 2.0 * REFRACTION_EDGE_FADE) * screenEdgeLength);
-            }
-
-            vec2 refractionTarget = texcoord + refractionOffset;
-            float targetSolidDepth = textureLod(depthtex1, refractionTarget, 0.0).r;
-            #ifdef LOD
-                targetSolidDepth += float(targetSolidDepth == 1.0) * getLodDepthSolid(refractionTarget);
-            #endif
-            if (waterDepth < targetSolidDepth) {
-                solidDepth = targetSolidDepth;
-                solidColor.rgb = texelFetch(colortex3, ivec2(refractionTarget * screenSize), 0).rgb;
-                vec3 viewPos;
-                #ifdef LOD
-                    if (solidDepth > 1.0) {
-                        viewPos = screenToViewPosLod(refractionTarget, solidDepth - 1.0);
-                    } else
-                #endif
-                {
-                    viewPos = screenToViewPos(refractionTarget, solidDepth);
-                }
-                worldPos = mat3(gbufferModelViewInverse) * viewPos;
-            }
-        }
-
-        vec3 worldDir = normalize(worldPos);
-        worldPos += gbufferModelViewInverse[3].xyz;
-        vec3 waterWorldPos = waterWorldDir * waterViewDepthNoLimit + gbufferModelViewInverse[3].xyz;
-        float waterDistance = distance(worldPos, waterWorldPos);
-        vec3 rawSolidColor = solidColor.rgb;
-        vec3 f0 = vec3(0.04 - 0.02 * float(isTargetWater));
-        #ifdef LABPBR_F0
-            f0 = mix(f0, vec3(gbufferData.metalness) , step(0.001, gbufferData.metalness));
-            gbufferData.metalness = step(229.5 / 255.0, gbufferData.metalness);
-        #endif
-        f0 = mix(f0, gbufferData.albedo.rgb, gbufferData.metalness);
-        #ifdef LOD
-            solidDepth -= float(solidDepth > 1.0);
-        #endif
-        waterDistance = mix(waterDistance, 114514.0, step(0.999999, solidDepth));
-        if (isEyeInWater == 1 ^^ isTargetWater) {
-            solidColor.rgb = waterFogTotal(solidColor.rgb, worldDir, skyColorUp, waterDistance, gbufferData.lightmap.y);
-        }
-        else if (isEyeInWater == 2) {
-            solidColor.rgb = lavaFogTotal(solidColor.rgb, waterDistance);
-        }
-        else if (isEyeInWater == 3) {
-            solidColor.rgb = snowFogTotal(solidColor.rgb, skyColorUp, waterDistance, gbufferData.lightmap.y);
-        }
-        else {
-            #ifdef NETHER
-                solidColor.rgb = netherFogTotal(solidColor.rgb, waterDistance);
-            #elif defined THE_END
-                solidColor.rgb = endFogTotal(solidColor.rgb, waterDistance);
-                if (solidDepth > 0.999999) {
-                    solidColor.rgb += endStars(worldDir);
-                    #ifdef END_FLASH
-                        solidColor.rgb += endFlashDisc(worldDir, shadowDirection, vec3(300.0));
-                    #endif
-                }
-            #else
-                #if defined ATMOSPHERE_SCATTERING_FOG && defined SHADOW_AND_SKY
-                    float isSky = step(0.999999, solidDepth);
-                    float skyLight = clamp(gbufferData.lightmap.y + isSky, 0.0, 1.0);
-                    float atmosphereDepth = mix(waterDistance * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 1600.0, isSky);
-                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, worldDir, skyColorUp, atmosphereDepth, skyLight);
-                #endif
-                solidColor.rgb *= airAbsorption(waterDistance);
-            #endif
-            f0 -= 0.04 * float(isTargetWater);
-        }
-        float waterStain = 1.0;
-        #if WATER_TYPE == 0
-            waterStain = float(!isTargetWater);
-        #endif
-        stainedColor *= log2(1.0 - fresnel(LdotH, f0));
-        stainedColor += sqrt(gbufferData.albedo.w * 1.5) * log2(clamp(gbufferData.albedo.rgb + 1e-5, 0.0, 1.0) * (1.0 - 0.5 * gbufferData.albedo.w * gbufferData.albedo.w)) * waterStain;
-        stainedColor = exp2(stainedColor);
-
-        stainedColor = mix(vec3(1.0), stainedColor, vec3(solidColor.w));
-        solidColor.rgb = mix(rawSolidColor, solidColor.rgb, vec3(solidColor.w)) * stainedColor;
-
-        float isTargetParticle = 1.0 - float(isTargetNotParticle);
-        vec3 vanillaLight = vec3(0.0);
-        #ifdef SHADOW_AND_SKY
-            vanillaLight +=
-                pow2(1.0 / (0.75 - 0.75 * 0.75 / (1.0 + 0.75) * gbufferData.lightmap.y) - 1.0 / 0.75) *
-                (skyColorUp * 0.8 + sunColor * 2.0 * SUNLIGHT_BRIGHTNESS * (1.0 - (0.75 + 0.25 * float(CLOUD_TYPE != 2)) * weatherStrength)) *
-                (1.0 - gbufferData.metalness) * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength);
-        #endif
-        #ifdef IS_IRIS
-            float eyeRelatedDistance = length(waterWorldPos + relativeEyePosition);
-            gbufferData.lightmap.x = max(gbufferData.lightmap.x, heldBlockLightValue / 15.0 * clamp(1.0 - eyeRelatedDistance / 15.0, 0.0, 1.0));
-        #endif
-        const float fadeFactor = VANILLA_BLOCK_LIGHT_FADE;
-        vec3 blockLight = pow2(1.0 / (fadeFactor - fadeFactor * fadeFactor / (1.0 + fadeFactor) * gbufferData.lightmap.x) - 1.0 / fadeFactor) * commonLightColor;
-        vanillaLight += blockLight + BASIC_LIGHT;
-        #ifdef MOD_NIGHT_VISION_COMPAT
-            vanillaLight += pow(texelFetch(colortex5, ivec2(0), 0).rgb, vec3(2.2)) * NIGHT_VISION_BRIGHTNESS;
-        #else
-            vanillaLight += nightVision * NIGHT_VISION_BRIGHTNESS;
-        #endif
-        solidColor.rgb += gbufferData.albedo.rgb * gbufferData.albedo.w * (gbufferData.emissive * PBR_BRIGHTNESS * PI + vanillaLight * isTargetParticle);
-        #if defined SHADOW_AND_SKY || defined END_FLASH
-            float NdotL = clamp(dot(worldNormal, shadowDirection) + isTargetParticle, 0.0, 1.0);
-            if (NdotL > 0.0) {
-                vec3 shadow = vec3(1.0);
-                vec3 subsurfaceScattering = vec3(float(gbufferData.porosity > 64.5 / 255.0));
-                singleSampleShadow(
-                    waterWorldPos, mat3(gbufferModelViewInverse) * gbufferData.geoNormal, NdotL, gbufferData.smoothness,
-                    gbufferData.porosity, gbufferData.lightmap.y, shadow, subsurfaceScattering
-                );
-                shadow *= (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle + sunlightSpecular(
-                    waterWorldDir, shadowDirection, worldNormal, gbufferData.smoothness * 0.995, NdotL, LdotH, f0, vec3(1.0)
-                ) * airAbsorption(11.4 * gbufferData.smoothness) * clamp(19.0 - gbufferData.smoothness * 20.0, 0.0, 1.0);
-                shadow += subsurfaceScattering * (1.0 - gbufferData.metalness) * gbufferData.albedo.rgb * gbufferData.albedo.w * isTargetParticle;
-                #ifdef SHADOW_AND_SKY
-                    #ifdef CLOUD_SHADOW
-                        shadow *= cloudShadow(waterWorldPos, shadowDirection);
-                    #endif
-                    shadow *= sunColor;
-                #elif defined END_FLASH
-                    shadow *= endFlashIntensity * vec3(0.5, 0.2, 0.8);
-                #else
-                    shadow = vec3(0.0);
-                #endif
-                solidColor.rgb += shadow * basicSunlight;
-            }
-        #endif
-    }
     vec3 reflectionColor = vec3(0.0);
     #ifdef REFLECTION
         if (waterDepth - float(waterDepth > 1.0) < 1.0) {
             vec4 originData = texelFetch(colortex4, texel, 0);
-            float smoothness = gbufferData.smoothness;
-            float metalness = gbufferData.metalness;
+            vec4 originGbufferData = texelFetch(colortex1, texel, 0);
+            vec2 originSmoothnessMetalness = unpack2x8Bit(originGbufferData.z);
+
+            float smoothness = originSmoothnessMetalness.x;
+            float metalness = originSmoothnessMetalness.y;
+            vec3 originNormal = decodeNormal(originGbufferData.xy);
 
             #ifdef LABPBR_F0
                 metalness = step(229.5 / 255.0, metalness);
@@ -322,7 +161,7 @@ void main() {
 
                             float weight =
                                 exp2(
-                                    roughnessInv * log2(max(dot(gbufferData.normal, sampleNormal), 1e-6)) +
+                                    roughnessInv * log2(max(dot(originNormal, sampleNormal), 1e-6)) +
                                     100.0 * log2(1.0 - abs(roughness - pow2(1.0 - sampleSmoothness))) -
                                     1.44269502 * abs(originReflectionDepth - sampleReflectionDepth) / (max(originReflectionDepth, sampleReflectionDepth) + 0.2) * originSmoothness
                                 ) *
@@ -342,7 +181,8 @@ void main() {
         }
     #endif
     solidColor.rgb += reflectionColor * solidColor.w;
-    solidColor.w = gbufferData.parallaxOffset - float(gbufferData.materialID == MAT_END_PORTAL);
+    vec2 gbufferData = texelFetch(colortex0, texel, 0).yz;
+    solidColor.w = gbufferData.y - float(abs(gbufferData.x - MAT_END_PORTAL / 7.0) < 0.05);
 
     waterDepth -= float(waterDepth > 1.0);
     float waterViewDepth = mix(waterViewDepthNoLimit, 114514.0, step(0.999999, waterDepth));
@@ -354,9 +194,9 @@ void main() {
             solidColor.rgb *= vec3(endFogAbsorption(waterViewDepth));
             solidColor.rgb += endFogScattering(waterViewDepth);
             if (waterDepth > 0.999999) {
-                solidColor.rgb += endStars(waterWorldDir);
+                solidColor.rgb += endStars(worldDir);
                 #ifdef END_FLASH
-                    solidColor.rgb += endFlashDisc(waterWorldDir, shadowDirection, vec3(300.0));
+                    solidColor.rgb += endFlashDisc(worldDir, shadowDirection, vec3(300.0));
                 #endif
             }
         #else
@@ -365,7 +205,7 @@ void main() {
                     float isSky = step(0.999999, waterDepth);
                     float skyLight = clamp(eyeBrightnessSmooth.y / 240.0 + isSky, 0.0, 1.0);
                     float atmosphereDepth = mix(waterViewDepthNoLimit * (1.0 + RF_GROUND_EXTRA_DENSITY * 3.0 * weatherStrength), 1600.0, isSky);
-                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, waterWorldDir, skyColorUp, atmosphereDepth, skyLight);
+                    solidColor.rgb = solidAtmosphereScattering(solidColor.rgb, worldDir, skyColorUp, atmosphereDepth, skyLight);
                 #endif
             #endif
             solidColor.rgb *= vec3(airAbsorption(waterViewDepth));
@@ -373,7 +213,7 @@ void main() {
     }
     else if (isEyeInWater == 1) {
         solidColor.rgb *= waterFogAbsorption(waterViewDepth);
-        solidColor.rgb += waterFogScattering(waterWorldDir, skyColorUp, waterViewDepth, eyeBrightnessSmooth.y / 240.0);
+        solidColor.rgb += waterFogScattering(worldDir, skyColorUp, waterViewDepth, eyeBrightnessSmooth.y / 240.0);
     }
     else if (isEyeInWater == 2) {
         solidColor.rgb *= vec3(lavaFogAbsorption(waterViewDepth));
@@ -389,7 +229,7 @@ void main() {
             if (isEyeInWater < 2) {
                 float basicWeight = 1.0;
                 vec3 absorptionBeta = vec3(blindnessFactor + 0.003);
-                float LdotV = dot(waterWorldDir, shadowDirection);
+                float LdotV = dot(worldDir, shadowDirection);
                 float volumetricFogScattering = 0.0;
                 float airScattering = VL_STRENGTH;
                 if (isEyeInWater == 1) {
@@ -415,13 +255,13 @@ void main() {
                 #ifdef LOD
                     maxHorizonalRange = lodRenderDistance() * 1.1;
                 #endif
-                float waterWorldDirY2 = waterWorldDir.y * waterWorldDir.y;
+                float waterWorldDirY2 = worldDir.y * worldDir.y;
                 float maxAllowedDistance = maxHorizonalRange * maxVerticalRange * inversesqrt(pow2(maxHorizonalRange) * waterWorldDirY2 + pow2(maxVerticalRange) * (1.0 - waterWorldDirY2));
                 maxAllowedDistance = min(maxAllowedDistance, min(64.0 * inversesqrt(dot(absorptionBeta, absorptionBeta) + 1e-6), 5000.0 * exp(-6.0 * length(absorptionBeta))));
 
                 float targetLength = min(maxAllowedDistance, waterViewDepthNoLimit);
                 float stepLength = targetLength / VL_SAMPLES;
-                vec3 stepSize = waterWorldDir * stepLength;
+                vec3 stepSize = worldDir * stepLength;
                 vec3 samplePos = gbufferModelViewInverse[3].xyz + stepSize * (noise + VL_SAMPLES - 1.0);
 
                 basicWeight *= stepLength;
@@ -489,6 +329,18 @@ void main() {
                 }
             }
         #endif
+    #endif
+
+    #ifdef SHADOW_AND_SKY
+        float weatherData = texelFetch(colortex0, texel, 0).w * 2.5 - 1.5;
+        float weatherLightData = abs(weatherData);
+        if (weatherLightData > 0.3) {
+            float sunlightStrength = 2.0 * weatherLightData - 1.0;
+            float basicSunlight = (1.0 - (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * 9.5 * SUNLIGHT_BRIGHTNESS;
+            vec3 weatherLight = sunlightStrength * basicSunlight * sunColor + skyColorUp * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength);
+            float weatherBlendWeight = clamp(weatherData * 1e+10, 0.0, 1.0) * 0.95 + 0.05;
+            solidColor.rgb = mix(solidColor.rgb, weatherLight, weatherBlendWeight);
+        }
     #endif
 
     texBuffer3 = solidColor;

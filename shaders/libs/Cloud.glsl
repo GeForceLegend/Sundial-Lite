@@ -14,7 +14,7 @@ float blockyCloudDensity(ivec2 cloudTexel) {
     return step(1.0 - CLOUD_BLOCKY_AMOUNT, texelFetch(noisetex, cloudTexel, 0).z);
 }
 
-vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, vec3 shadowDir, vec3 skyColorUp, float backDepth, out float cloudDepth) {
+vec3 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, vec3 shadowDir, vec3 skyColorUp, float backDepth, out float cloudDepth) {
     cloudDepth = -1.0;
 
     float worldHeight = worldPos.y + cameraPosition.y;
@@ -22,7 +22,7 @@ vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, 
     float bottomIntersection = (CLOUD_BLOCKY_HEIGHT - worldHeight) / worldDir.y;
 
     float intersection = max(-clamp(topIntersection * bottomIntersection, 0.0, 1.0), min(topIntersection, bottomIntersection));
-    vec4 result = vec4(baseColor, 0.0);
+    vec3 result = baseColor;
     backDepth -= intersection * step(1e-5, backDepth);
     if (intersection >= 0.0 && 0.0 <= backDepth) {
         vec2 wind = frameTimeCounter * CLOUD_SPEED * vec2(4.0, 2.0);
@@ -105,7 +105,7 @@ vec4 blockyCloud(vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, 
             atmosphere = mix(baseColor, atmosphere, cloudDensity);
             cloudColor = mix(atmosphere, cloudColor, cloudFade);
             cloudColor = mix(baseColor, cloudColor, cloudAbsorptionFade);
-            result = vec4(cloudColor, cloudFade);
+            result = cloudColor;
         }
     }
     return result;
@@ -222,7 +222,7 @@ vec4 sampleRealisticCloud(vec3 cloudPos, vec3 sunDir, vec3 atmosphere, float noi
     return result;
 }
 
-vec4 realisticCloud(
+vec3 realisticCloud(
     vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, vec3 sunDir, vec3 skyColorUp, vec3 intersectionData, float backDepth, out float cloudDepth
 ) {
     vec3 cloudPos = worldPos;
@@ -252,7 +252,7 @@ vec4 realisticCloud(
     }
     endIntersection = min(endIntersection, startIntersection + 50000.0);
 
-    vec4 result = vec4(baseColor, 0.0);
+    vec3 result = baseColor;
     cloudDepth = -1.0;
     if (hit) {
         float cloudTransmittance = 1.0;
@@ -283,7 +283,7 @@ vec4 realisticCloud(
             float cloudFalloff = exp(-startIntersection / CLOUD_REALISTIC_FADE_DISTANCE);
             cloudColor = cloudColor * cloudFalloff + (1.0 - cloudDensity * cloudFalloff) * atmosphere;
             cloudColor = mix(baseColor, cloudColor, cloudDensity * clamp(cloudFalloff * 2.7, 0.0, 1.0));
-            result = vec4(cloudColor, cloudDensity * cloudFalloff);
+            result = cloudColor;
         } else {
             cloudDepth = -1.0;
         }
@@ -291,7 +291,7 @@ vec4 realisticCloud(
     return result;
 }
 
-vec4 sampleClouds(
+vec3 sampleClouds(
     vec3 baseColor, vec3 atmosphere, vec3 worldPos, vec3 worldDir, vec3 shadowDir,
     vec3 sunDir, vec3 skyColorUp, vec3 intersectionData, float backDepth, out float cloudDepth
 ) {
@@ -301,7 +301,7 @@ vec4 sampleClouds(
         return realisticCloud(baseColor, atmosphere, worldPos, worldDir, sunDir, skyColorUp, intersectionData, backDepth, cloudDepth);
     #else
         cloudDepth = -1.0;
-        return vec4(baseColor, 0.0);
+        return baseColor;
     #endif
 }
 

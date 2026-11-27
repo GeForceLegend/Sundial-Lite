@@ -353,6 +353,7 @@ void main() {
     #ifdef REFLECTION
         if (waterDepth - float(waterDepth > 1.0) < 1.0) {
             GbufferData gbufferData = getGbufferData(texel, texcoord);
+            texBuffer0.g = gbufferData.parallaxOffset;
             texBuffer0.b = gbufferData.materialID / 255.0 + 0.1 / 255.0;
             if (gbufferData.materialID == MAT_HAND) {
                 waterDepth = waterDepth / MC_HAND_DEPTH - 0.5 / MC_HAND_DEPTH + 0.5;
