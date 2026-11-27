@@ -295,7 +295,7 @@ vec4 reflection(GbufferData gbufferData, float depth, vec3 f0, vec3 f82, float f
                         #ifdef LOD
                             targetDepth = max(targetDepth, getLodDepthSolid(targetCoord));
                         #endif
-                        gbufferData.lightmap.y = clamp(gbufferData.lightmap.y + float(targetDepth == 1.0), 0.0, 1.0);
+                        gbufferData.lightmap.y = clamp(gbufferData.lightmap.y + float(targetDepth == 1.0) * float(isEyeInWater == 0), 0.0, 1.0);
                     }
                     reflectionColor.rgb *= gbufferData.lightmap.y;
                 #endif
