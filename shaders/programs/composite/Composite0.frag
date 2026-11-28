@@ -21,18 +21,10 @@
 layout(location = 0) out vec4 texBuffer3;
 
 in vec2 texcoord;
+in vec3 skyColorUp;
 
 #include "/settings/CloudSettings.glsl"
 #include "/settings/GlobalSettings.glsl"
-
-#ifdef SHADOW_AND_SKY
-    in vec3 skyColorUp;
-#elif defined END_FLASH
-    const vec3 skyColorUp = END_FOG_BRIGHTNESS * 0.1 * vec3(0.5, 0.2, 0.8);
-#else
-    const vec3 skyColorUp = vec3(0.0);
-#endif
-
 #include "/libs/Uniform.glsl"
 #include "/libs/Common.glsl"
 #include "/libs/Atmosphere.glsl"
@@ -41,6 +33,7 @@ in vec2 texcoord;
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
+
     float depth = texelFetch(depthtex1, texel, 0).r;
     vec3 viewPos;
     #ifdef LOD
@@ -58,7 +51,7 @@ void main() {
     vec3 worldDir = worldPos * worldDepth;
     vec4 intersectionData = planetIntersectionData(gbufferModelViewInverse[3].xyz, worldDir);
 
-    vec4 solidColor = texelFetch(colortex3, texel, 0);
+    vec4 solidColor = vec4(texelFetch(colortex3, texel, 0).rgb, 1.0);
 
     float backDepth;
     vec3 backColor;
@@ -73,17 +66,17 @@ void main() {
         #ifdef PLANE_CLOUD
             planeCloud = planeClouds(gbufferModelViewInverse[3].xyz, worldDir, sunDirection, skyColorUp, intersectionData.xyz);
         #endif
-        solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a * float(gbufferModelViewInverse[3].y + cameraPosition.y + WORLD_BASIC_HEIGHT - 500.0 < PLANE_CLOUD_HEIGHT));
+        if (gbufferModelViewInverse[3].y + cameraPosition.y + WORLD_BASIC_HEIGHT - 500.0 < PLANE_CLOUD_HEIGHT) {
+            solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
+            planeCloud.a = 0.0;
+        }
     }
-
     float cloudDepth;
-    vec4 finalColor = sampleClouds(
+    solidColor = sampleClouds(
         solidColor.rgb, backColor, gbufferModelViewInverse[3].xyz, worldDir, shadowDirection, sunDirection, skyColorUp, intersectionData.xyz, backDepth, cloudDepth
     );
 
-    if (gbufferModelViewInverse[3].y + cameraPosition.y + WORLD_BASIC_HEIGHT - 500.0 >= PLANE_CLOUD_HEIGHT) {
-        finalColor.rgb = mix(finalColor.rgb, planeCloud.rgb, planeCloud.a);
-    }
+    solidColor.rgb = mix(solidColor.rgb, planeCloud.rgb, planeCloud.a);
 
     float transparentDensity = 1.0;
     if (cloudDepth > -0.5) {
@@ -109,11 +102,12 @@ void main() {
             #else
                 float minimumDensity = 1.0;
             #endif
-            transparentDensity = max(1.0 - finalColor.w, minimumDensity);
+            transparentDensity = max(1.0 - solidColor.w, minimumDensity);
         }
     }
+    solidColor.w = transparentDensity;
 
-    texBuffer3 = vec4(finalColor.rgb, transparentDensity);
+    texBuffer3 = solidColor;
 }
 
 /* DRAWBUFFERS:3 */

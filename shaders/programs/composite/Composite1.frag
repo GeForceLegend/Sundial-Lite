@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Transparent blending and common fog
+//  Translucent blending
 //
 
 #extension GL_ARB_gpu_shader5 : enable
@@ -49,25 +49,21 @@ in vec2 texcoord;
 
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.st);
-    float solidDepth = texelFetch(depthtex1, texel, 0).r;
+    GbufferData gbufferData = getGbufferData(texel, texcoord);
+    float waterDepth = textureLod(depthtex0, texcoord, 0.0).r;
+    float solidDepth = gbufferData.depth;
+    vec4 solidColor = texelFetch(colortex3, texel, 0);
     vec3 viewPos;
     #ifdef LOD
-        if (depth == 1.0) {
-            depth = getLodDepthSolid(texcoord);
-            viewPos = screenToViewPosLod(texcoord, depth);
+        if (solidDepth == 1.0) {
+            solidDepth = getLodDepthSolid(texcoord);
+            viewPos = screenToViewPosLod(texcoord, solidDepth);
             solidDepth += 1.0;
         } else
     #endif
     {
         viewPos = screenToViewPos(texcoord, solidDepth);
     }
-    vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
-    float worldDepth = inversesqrt(dot(worldPos, worldPos));
-    vec3 worldDir = worldPos * worldDepth;
-
-    vec4 solidColor = texelFetch(colortex3, texel, 0);
-    GbufferData gbufferData = getGbufferData(texel, texcoord);
-    float waterDepth = textureLod(depthtex0, texcoord, 0.0).r;
     vec3 waterViewPos;
     #ifdef LOD
         if (waterDepth == 1.0) {
@@ -79,12 +75,12 @@ void main() {
     {
         waterViewPos = screenToViewPos(texcoord, waterDepth);
     }
-
+    vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
     float worldDistanceInv = inversesqrt(dot(worldPos, worldPos));
     vec3 waterWorldDir = worldPos * worldDistanceInv;
 
     float waterViewDepthNoLimit = length(waterViewPos);
-    if (waterViewPos.z > viewPos.z) {
+    if (waterDepth < solidDepth) {
         bool isTargetWater = gbufferData.materialID == MAT_WATER;
         bool isTargetNotParticle = gbufferData.materialID != MAT_PARTICLE;
         vec3 worldNormal = normalize(mat3(gbufferModelViewInverse) * gbufferData.normal);

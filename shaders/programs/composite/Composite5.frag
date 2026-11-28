@@ -13,7 +13,7 @@
 //  https://github.com/GeForceLegend/Sundial-Lite
 //  https://www.gnu.org/licenses/gpl-3.0.en.html
 //
-//  Reflection filter stage 3, applying BRDF weight; Volumetric light and fog
+//  Reflection filter stage 3, applying BRDF weight; Volumetric light and fog, common fog
 //
 
 #extension GL_ARB_gpu_shader5 : enable
