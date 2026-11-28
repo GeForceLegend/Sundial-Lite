@@ -422,6 +422,6 @@ option.AUTHOR.comment=https://afdian.net/a/geforcelegend. https://space.bilibili
 option.GLOWING_OVERLAY=Glowing entities overlay
 option.GLOWING_OVERLAY.comment=Let glowing entities rendering above others. Have serious artifact with DoF, and does not work on Iris
 option.UNDERGROUND_MODE=Underground mode
-option.UNDERGROUND_MODE.comment=Disable all sky and sunlight rendering. Always enabled in nether and the end
+option.UNDERGROUND_MODE.comment=Disable all sky and sunlight rendering. Always enabled in nether and the end (if there is no end flash)
 option.SHADOW_DISTORTION_FIX=Shadow distortion fix
 option.SHADOW_DISTORTION_FIX.comment=Fix depth difference caused by rasterizer in distorted shadow mapping. Partially fix shadow issue on huge faces. Affects performance.

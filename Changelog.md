@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Improved screen space reflection quality with SuperResolution;
 - Do translucent stuff before reflection to let them show in reflection;
 - Disabled screen sky check in reflection when camera is not in air;
+- `Experimental > Underground mode` also disables end flash now;
+- Changed fog color in powder snow;
 
 ### Fixed
 
@@ -36,6 +38,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Fixed rain bloom fog still applies when player camera is not in air;
 - Fixed unstable screen space reflection hit length when ray starts too close to camera;
 - Fixed held directional light level calculation affect terrain block light level;
+- Fixed water fog being bright after enable `Experimental > Underground mode`;
 
 ## [1.2.0] - 2026-09-26
 

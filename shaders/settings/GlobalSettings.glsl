@@ -124,9 +124,16 @@
 
 // #define UNDERGROUND_MODE
 
+#if defined IS_IRIS && defined THE_END && MC_VERSION >= 12109
+    #define END_FLASH
+#endif
+
 #ifdef UNDERGROUND_MODE
     #ifdef SHADOW_AND_SKY
         #undef SHADOW_AND_SKY
+    #endif
+    #ifdef END_FLASH
+        #undef END_FLASH
     #endif
 #endif
 

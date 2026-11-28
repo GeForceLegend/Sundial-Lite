@@ -23,6 +23,8 @@ in vec2 texcoord;
 
 #ifdef SHADOW_AND_SKY
     in vec3 skyColorUp;
+#elif defined END_FLASH
+    const vec3 skyColorUp = END_FOG_BRIGHTNESS * 0.1 * vec3(0.5, 0.2, 0.8);
 #else
     const vec3 skyColorUp = vec3(0.0);
 #endif

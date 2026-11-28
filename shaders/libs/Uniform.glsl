@@ -109,9 +109,11 @@ const mat2 goldenRotate = mat2(cos(2.39996323), sin(2.39996323), -sin(2.39996323
 
 #ifdef SETTINGS
     float nightBrightness = mix(NIGHT_BRIGHTNESS, NIGHT_VISION_BRIGHTNESS, nightVision);
-    vec3 sunColor = sunlightColor * clamp(nightBrightness + clamp(sunDirection.y * 1e+5, 0.0, 1.0), 0.0, 1.0);
-#endif
-
-#if defined IS_IRIS && defined THE_END && MC_VERSION >= 12109
-    #define END_FLASH
+    #ifdef SHADOW_AND_SKY
+        vec3 sunColor = sunlightColor * clamp(nightBrightness + clamp(sunDirection.y * 1e+5, 0.0, 1.0), 0.0, 1.0);
+    #elif defined END_FLASH
+        vec3 sunColor = endFlashIntensity * vec3(0.5, 0.2, 0.8);
+    #else
+        vec3 sunColor = vec3(0.0);
+    #endif
 #endif

@@ -307,6 +307,9 @@ float snowFogAbsorption(float snowDepth) {
 }
 
 vec3 snowFogScattering(vec3 skyColor, float snowDepth, float skyLight) {
+    skyColor =
+        (skyColor * 0.8 + sunColor * 2.0 * SUNLIGHT_BRIGHTNESS * (1.0 - (0.75 + 0.25 * float(CLOUD_TYPE != 2)) * weatherStrength)) *
+        (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength);
     vec3 scattering = (skyLight * skyLight * skyLight) * (1.0 - 0.75 * (1.0 - exp2(-RF_DENSITY * 4.0)) * weatherStrength) * skyColor * (1.0 - exp(-snowDepth * snowAbsorptionBeta));
     return scattering;
 }
